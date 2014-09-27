@@ -38,9 +38,17 @@ ul { list-style-type: none; padding: 0; }
 .users_pane, .repo_pane { float: left; width: 400px; margin: 20px 0 0 0; }
 
 .repo { font-size: 16px; line-height: 20px; margin: 0 0 12px 0; display: inline-block; border-bottom: 2px solid transparent; }
-.repo:hover { color: #7E5DA3; }
-.add_repo { display: inline-block; width: 60px; height: 26px; background:url(i/add.png); background-size: 100% 200%; }
-.add_repo:hover { background-position-y: 26px; }
+.repo.a:hover { color: #7E5DA3; }
+.repo__url { font-size: 12px; color: #999; }
+
+.tag { font-size: 12px; line-height: 25px; display: inline; font-weight: bold; color: white; padding: 3px 4px 1px 4px; border-radius: 3px; text-transform: uppercase; letter-spacing: 1px; }
+.repo__added { background-color: #67D514; margin-left: 8px; }
+
+.add_repo > input, .add_repo > button { outline: none; }
+.add_repo > input  { font-size: 16px; border: 3px solid #A9A9A9; border-radius: 3px; padding: 8px 6px; width: 300px; }
+.add_repo > input:focus { border-color: #7E5DA3; }
+.add_repo > button { border: none; width: 60px; height: 26px; background:url(i/add.png); background-size: 100% 200%; position: relative; top: 4px; margin: 0 0 0 8px; cursor: pointer; }
+.add_repo > button:hover { background-position-y: 26px; }
 
 .user { position: relative; width: 300px; height: 79px; padding: 5px 5px 5px 77px; margin: 0 0 16px 0; line-height: 18px; overflow: hidden; }
 .user__avatar { position: absolute; left: 5px; top: 5px; width: 57px; height: 57px;  }

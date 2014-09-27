@@ -1,6 +1,9 @@
 (ns acha.db
-  (:require [clojure.java.jdbc :refer :all]
-            [acha.util :as util]))
+  (:require
+    [clojure.java.io :as io]
+    [clojure.java.jdbc :refer :all]
+    [clojure.tools.logging :as logging]
+    [acha.util :as util]))
 
 (def ^:dynamic db
   {:classname   "org.sqlite.JDBC"
@@ -9,30 +12,34 @@
    })
 
 (defn create-db []
-  (try (db-do-commands db
-                       (create-table-ddl :user
-                                         [:id "integer primary key autoincrement"]
-                                         [:name :text]
-                                         [:email :text]
-                                         [:gravatar :text])
-                       "CREATE UNIQUE INDEX `email_unique` ON `user` (`email` ASC)"
-                       (create-table-ddl :repo
-                                         [:id "integer primary key autoincrement"]
-                                         [:url :text]
-                                         [:state :text]
-                                         [:reason :text]
-                                         [:timestamp :text])
-                       "CREATE UNIQUE INDEX `url_unique` ON `repo` (`url` ASC)"
-                       (create-table-ddl :achievement
-                                         [:id "integer primary key autoincrement"]
-                                         [:type :text]
-                                         [:timestamp :text]
-                                         [:level :integer]
-                                         [:userid :integer]
-                                         [:repoid :integer])
-                       "CREATE INDEX `userid_index` ON `achievement` (`userid` ASC)"
-                       "CREATE INDEX `repoid_index` ON `achievement` (`repoid` ASC)")
-       (catch Exception e (println e))))
+  (when-not (.exists (io/as-file (:subname db)))
+    (try
+      (logging/info "Creating DB" (:subname db))
+      (db-do-commands db
+        (create-table-ddl :user
+                          [:id "integer primary key autoincrement"]
+                          [:name :text]
+                          [:email :text]
+                          [:gravatar :text])
+        "CREATE UNIQUE INDEX `email_unique` ON `user` (`email` ASC)"
+        (create-table-ddl :repo
+                          [:id "integer primary key autoincrement"]
+                          [:url :text]
+                          [:state :text]
+                          [:reason :text]
+                          [:timestamp :text])
+        "CREATE UNIQUE INDEX `url_unique` ON `repo` (`url` ASC)"
+        (create-table-ddl :achievement
+                          [:id "integer primary key autoincrement"]
+                          [:type :text]
+                          [:timestamp :text]
+                          [:level :integer]
+                          [:userid :integer]
+                          [:repoid :integer])
+        "CREATE INDEX `userid_index` ON `achievement` (`userid` ASC)"
+        "CREATE INDEX `repoid_index` ON `achievement` (`repoid` ASC)")
+      (catch Exception e
+        (logging/error e "Failed to initialize DB")))))
 
 (defn add-fake-data []
   (insert! db :repo {:url "git@github.com:tonsky/datascript"})

@@ -11,7 +11,10 @@
     goog.history.Html5History
     goog.net.XhrIo))
 
+
+
 (enable-console-print!)
+
 
 ;; DB
 
@@ -19,22 +22,24 @@
 
 ;; Utils
 
-(defn- ajax [url callback]
+(defn- ajax [url callback & [method]]
   (.send goog.net.XhrIo url
     (fn [reply]
       (-> (.-target reply)
           (.getResponseText)
           (->> (.parse js/JSON))
           (js->clj :keywordize-keys true)
-          (callback)))))
+          (callback)))
+    (or method "GET")))
 
 (defn map-by [f xs]
   (reduce (fn [acc x] (assoc acc (f x) x)) {} xs))
 
-(defn repo-name [repo]
-  (when-let [url (:url repo)]
-    (let [[_ match] (re-matches #".*:(.*)" url)]
-      match)))
+(defn repo-name [url]
+  (let [[_ m] (re-matches #".*/([^/]+)" url)]
+    (if (and m (re-matches #".*\.git" m))
+      (subs m 0 (- (count m) 4))
+      m)))
 
 ;; Navigation
 
@@ -59,10 +64,29 @@
 
 (r/defc repo [repo]
   (s/html
-    [:.repo.a
-      {:on-click (fn [_] (go! "/repos/" (:repo/id repo)))}
-      (:repo/name repo)
-      [:span.id (:repo/id repo)]]))
+    [:.repo.a {:on-click (fn [_] (go! "/repos/" (:repo/id repo)))}
+      [:.repo__name
+        (:repo/name repo)
+        [:span.id (:repo/id repo)]
+        (when (= :added (:repo/status repo)) [:.tag.repo__added "Added"])]
+      [:.repo__url (:repo/url repo)]     
+      ]))
+
+(defn add-repo []
+  (let [el  (.getElementById js/document "add_repo__input")
+        url (str/trim (.-value el))]
+    (when-not (str/blank? url)
+      (ajax (str "/api/add-repo/?url=" (js/encodeURIComponent url))
+        (fn [data]
+          (if (= "added" (:status data))
+            (d/transact! conn [{:repo/id     (get-in data [:repo :id])
+                                :repo/url    (get-in data [:repo :url])
+                                :repo/name   (repo-name (get-in data [:repo :url]))
+                                :repo/status :added}])
+            (println "Repo already exist" data)))
+        "POST")
+      (set! (.-value el) "")
+      (.focus el))))
 
 (r/defc repo-pane [repos]
   (s/html
@@ -70,7 +94,11 @@
       [:h1 "Repos"]
       [:ul
         (map (fn [r] [:li (repo r)]) repos)]
-      [:div.add_repo.a]]))
+      [:form.add_repo {:on-submit (fn [e] (add-repo) (.preventDefault e))}
+        [:input {:id "add_repo__input" :type :text :placeholder "Clone URL"}]
+;;         [:button]
+       ]
+    ]))
 
 ;; (def silhouette "https%3A%2F%2Fdl.dropboxusercontent.com%2Fu%2F561580%2Fsilhouette.png")
 
@@ -98,7 +126,7 @@
       [:.window
         (header)
         (users-pane (u/qes-by db :user/id))
-        (repo-pane  (u/qes-by db :repo/id))])))
+        (repo-pane  (u/qes-by db :repo/name))])))
 
 (r/defc repo-page [db id]
   (let [repo (u/qe-by db :repo/id id)]
@@ -167,5 +195,5 @@
       (d/transact! conn
         (map (fn [r] {:repo/id   (:id r)
                       :repo/url  (:url r)
-                      :repo/name (repo-name r) })
+                      :repo/name (repo-name (:url r)) })
              rs)))))
