@@ -177,111 +177,111 @@
        {:name "Quest complete"
         :description "get all achievements"
         :picture "..."}
-    :ivory-tower
+    :haskell
        {:name "Ivory tower"
         :description "Being first to commit Haskell file to a repo"
         :picture "..."}
-    :chmod-200
+    :perl
        {:name "Chmod 200"
         :description "same for Perl"
         :picture "..."}
-    :back-on-the-rails
+    :ruby
        {:name "Back on the rails"
         :description "same for Ruby"
         :picture "..."}
-    :even-lispers-hate-lisp
+    :clojure
        {:name "Even lispers hate Lisp"
         :description "Clojure"
         :picture "..."}
-    :even-lispers-hate-lisp-in-a-browser
+    :clojurescript
        {:name "Even lispers hate Lisp (in a browser)"
         :description "ClojureScript"
         :picture "..."}
-    :happily-never-after
+    :javascript
        {:name "Happily never after"
         :description "JavaScript"
         :picture "..."}
-    :why-not-ruby
+    :python
        {:name "Why not Ruby?"
         :description "Python"
         :picture "..."}
-    :write-once-run-anywhere
+    :java
        {:name "Write once. Run. Anywhere"
         :description "Java"
         :picture "..."}
-    :troubles-14
+    :cxx
        {:name "Troubles++14"
         :description "C++"
         :picture "..."}
-    :its-dangerous-to-go-alone-take-linq
+    :c-sharp
        {:name "It's dangerous to go alone, take LINQ"
         :description "C#"
         :picture "..."}
-    :nsverydescriptiveachievementnamewithparame
+    :objective-c
        {:name "NSVeryDescriptiveAchievementNameWithParame..."
         :description "Objective C"
         :picture "..."}
-    :i-need-to-sort-complex-objects-fast
+    :swift
        {:name "I need to sort complex objects fast!"
         :description "Swift"
         :picture "..."}
-    :not-a-web-scale
+    :sql
        {:name "Not a Web Scale"
         :description "SQL"
         :picture "..."}
-    :its-like-objc-but-for-ericsson-phones
+    :erlang
        {:name "It’s like ObjC, but for Ericsson phones"
         :description "Erlang"
         :picture "..."}
-    :well-rewrite-that-later
+    :shell
        {:name "We’ll rewrite that later"
         :description "Bash"
         :picture "..."}
-    :new-facebook-is-born
+    :php
        {:name "New Facebook is born"
         :description "PHP"
         :picture "..."}
-    :really
+    :pascal
        {:name "Really?"
         :description "Pascal"
         :picture "..."}
-    :well-typed-bro
+    :scala
        {:name "Well typed, bro"
         :description "Scala"
         :picture "..."}
-    :zeds-dead-baby
+    :xml
        {:name "Zed’s dead, baby"
         :description "XML"
         :picture "..."}
-    :you-designer-now
+    :css
        {:name "You designer now?"
         :description "CSS"
         :picture "..."}
-    :you-work-in-google
+    :dart
        {:name "You work in Google?"
         :description "Dart"
         :picture "..."}
-    :you-cant-program-on-windows-can-you
+    :windows-language
        {:name "You can't program on Windows, can you?"
         :description "Windows shell"
         :picture "..."}
-    :cradle-of-civilization
+    :basic
        {:name "Cradle of civilization"
         :description "Basic"
         :picture "..."}
-    :professional-pride
+    :programmers-day
        {:name "Professional pride"
         :description "make a commit at Programmer’s day"
         :picture "..."}
-    :ruined-christmas
+    :christmas
        {:name "Ruined christmas"
         :description "commit something at Dec 25"
         :picture "..."}
-    :this-code-looks-scary
+    :halloween
        {:name "This code looks scary"
         :description "Halloween"
         :picture "..."}
-    :new-year-new-bugs
+    :new-year
        {:name "New year, new bugs"
         :description "New Year"
         :picture "..."}
@@ -289,47 +289,47 @@
        {:name "Anniversary"
         :description "Commit at project’s birthday"
         :picture "..."}
-    :in-love-with-work
+    :valentine
        {:name "In love with work"
         :description "Feb 14"
         :picture "..."}
-    :rare-occasion
+    :leap-day
        {:name "Rare occasion"
         :description "Feb 29"
         :picture "..."}
-    :from-russia-with-love
+    :russia-day
        {:name "From Russia with love"
         :description "Russia Day"
         :picture "..."}
-    :turkey-code
+    :thanksgiving
        {:name "Turkey code"
         :description "Thanksgiving day"
         :picture "..."}
-    :mission-impossible
+    :impossible
        {:name "Mission impossible"
         :description "use word “impossible” in a message"
         :picture "..."}
-    :the-colour-of-magic
+    :magic
        {:name "The Colour of Magic"
         :description "use word “magic” in a message"
         :picture "..."}
-    :salvation
+    :sorry
        {:name "Salvation"
         :description "use word “sorry” in a message"
         :picture "..."}
-    :i-can-sort-it-out-myself
+    :google
        {:name "I can sort it out myself"
         :description "use word “google” in a message"
         :picture "..."}
-    :second-thoughts
+    :forgot
        {:name "Second thoughts"
         :description "forget something (use word “forgot”)"
         :picture "..."}
-    :save-the-day
+    :fix
        {:name "Save the day"
         :description "use word “fix”"
         :picture "..."}
-    :were-safe-now
+    :secure
        {:name "We’re safe now"
         :description "use word “secure”"
         :picture "..."}
@@ -345,7 +345,7 @@
        {:name "Hello, Linus"
         :description "10+ swear words in a message"
         :picture "..."}
-    :a-man-of-few-words
+    :man-of-few-words
        {:name "A man of few words"
         :description "commit with 3-letter message or less"
         :picture "..."}
@@ -373,7 +373,7 @@
        {:name "Borat"
         :description "Misspell word"
         :picture "..."}
-    :real-hacker
+    :hack
        {:name "Real Hacker"
         :description "use word “hack”"
         :picture "..."}
