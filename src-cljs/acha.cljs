@@ -33,11 +33,13 @@
     [:ul
       (map (fn [r] [:li (repo-name r)]) (repos))]])
 
+;; (def silhouette "https%3A%2F%2Fdl.dropboxusercontent.com%2Fu%2F561580%2Fsilhouette.png")
+
 (r/defc user [user]
   (let [email-hash (js/md5 (:email user))]
   [:.user
     [:.user__avatar
-      [:img {:src (str "http://www.gravatar.com/avatar/" email-hash)}]]
+      [:img {:src (str "http://www.gravatar.com/avatar/" email-hash "?d=retro")}]]
     [:.user__name (:name user)]
     [:.user__email (:email user)]
     [:.user__ach (:achievements user 0)]]))
