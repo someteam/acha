@@ -10,9 +10,10 @@
     goog.net.XhrIo))
 
 (enable-console-print!)
-(declare index-page user-page)
+(declare index-page user-page repo-page)
 
 (def users (atom {}))
+(def repos (atom {}))
 
 ;; Utils
 
@@ -28,6 +29,11 @@
 (defn map-by [f xs]
   (reduce (fn [acc x] (assoc acc (f x) x)) {} xs))
 
+(defn repo-name [repo]
+  (when-let [url (:url repo)]
+    (let [[_ match] (re-matches #".*:(.*)" url)]
+      match)))
+
 ;; Navigation
 
 (def ^:private history (Html5History.))
@@ -37,52 +43,55 @@
 (defn set-title! [title]
   (set! (.-title js/document) (if title (str title " — " *title-suffix*) *title-suffix*)))
 
-(defn go! [path]
-  (.setToken history path))
+(defn go! [& path]
+  (.setToken history (apply str path)))
 
 
 ;; Routes
 
-(defroute index-route "/" []
+(defroute "/" []
   (set-title! nil)
   (r/render (index-page) (.-body js/document)))
 
-(defroute user-route "/users/:id" [id]
+(defroute "/users/:id" [id]
   (let [id   (js/parseInt id)
         user (get @users id)]
     (set-title! (:name user))
     (r/render (user-page id) (.-body js/document))))
 
+(defroute "/repos/:id" [id]
+  (let [id   (js/parseInt id)
+        repo (get @repos id)]
+    (set-title! (repo-name repo))
+    (r/render (repo-page id) (.-body js/document))))
+
+
 ;; Rendering
 
 (r/defc header []
   [:#header
-    [:h1 {:on-click (fn [_] (go! "")) :style {:cursor "pointer"}} "Acha-acha"]
+    [:h1.a {:on-click (fn [_] (go! "")) } "Acha-acha"]
     [:h2 "Enterprise Git Achievement provider. Web scale. In the cloud "]])
 
-(def repos (atom {}))
-
-(defn repo-name [repo]
-  (when-let [url (:url repo)]
-    (let [[_ match] (re-matches #".*:(.*)" url)]
-      match)))
-
-(r/defc repo-pane []
+(r/defc repo-pane [repos]
   [:.repo_pane
     [:h1 "Repositories"]
     [:ul
-      (map (fn [[_ r]]
-             [:li (repo-name r)])
-           @repos)]])
+      (map (fn [r]
+             [:li.a
+               {:on-click (fn [_] (go! "/repos/" (:id r)))}
+               (repo-name r)
+               [:span.id (:id r)]])
+           repos)]])
 
 ;; (def silhouette "https%3A%2F%2Fdl.dropboxusercontent.com%2Fu%2F561580%2Fsilhouette.png")
 
 (r/defc user [user]
   (let [email-hash (when-let [email (:email user)] (js/md5 email))]
-    [:.user {:on-click (fn [_] (go! (user-route {:id (:id user)}))) }
+    [:.user.a {:on-click (fn [_] (go! "/users/" (:id user)))}
       [:.user__avatar
         [:img {:src (str "http://www.gravatar.com/avatar/" email-hash "?d=retro")}]]
-      [:.user__name (:name user) [:span.user__id (:id user)]]
+      [:.user__name (:name user) [:span.id (:id user)]]
       [:.user__email (:email user)]
       [:.user__ach (:achievements user 0)]]))
 
@@ -95,8 +104,14 @@
 (r/defc index-page []
   [:#window
     (header)
-    (repo-pane)
+    (repo-pane (vals @repos))
     (users-pane (vals @users))
+   ])
+
+(r/defc repo-page [id]
+  [:#window
+    (header)
+    (repo-pane [(@repos id)])
    ])
 
 (r/defc user-page [id]
@@ -104,6 +119,7 @@
     (header)
     (users-pane [(@users id)])
    ])
+
 
 (defn redraw []
   (secretary/dispatch! (.getToken history)))
@@ -119,5 +135,4 @@
                         (redraw)))
   (ajax "/api/repos/" (fn [us]
                         (reset! repos (map-by :id us))
-                        (println @repos)
                         (redraw))))

@@ -27,16 +27,17 @@ html {}
 td { vertical-align: top; }
 ul { list-style-type: none; }
 h1 { font-family: "PressStart2P"; }
-
+.a { cursor: pointer; }
+.id:before { content: " ["; } .id:after { content: "]"; }
 
 .user { position: relative; width: 300px; height: 79px; padding: 5px 5px 5px 77px; margin: 0 0 16px 0; line-height: 18px; overflow: hidden; }
 .user__avatar { position: absolute; left: 5px; top: 5px; width: 57px; height: 57px;  }
 .user__avatar > img { width: 100%; height: 100%; -webkit-mask-box-image: url('i/avatar_mask.png'); }
-.user__id:before { content: " ["; } .user__id:after { content: "]"; }
+
 .user__name, .user__email { display: block; }
 .user__name { font-weight: bold; }
 .user__email { color: #999; }
 .user { border: 6px solid transparent; border-image:url(i/border.png) 12 12 repeat; }
-.user:hover { background: #f7f7f7; cursor: pointer; }
+.user:hover { background: #f7f7f7; }
 
 .user__ach { line-height: 25px; display: inline; color: #F0434D; font-weight: bold; background-image: url(i/medal.png); background-size: 10px 8px; background-repeat: no-repeat; background-position: 100% 3px; border: 2px solid #F0434D; padding: 2px 12px 0 2px; border-radius: 3px; }
