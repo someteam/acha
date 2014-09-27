@@ -2,7 +2,8 @@
   (:require
     [acha.util :as util]
     [clojure.string :as str])
-  (:import [java.util Calendar]))
+  (:import
+    [java.util Calendar]))
 
 ; FIXME: All commit-info scanners return commit's time and author.
 ;        That's a lot of boilerplate.
@@ -12,7 +13,7 @@
    :level 3
    :time #inst "2014-04-16T17:43:20.000-00:00"})
 
-(defn make-substring-scanner [achievement-id needle]
+(defn make-substring-scanner [[achievement-id needle]]
   [achievement-id
    (fn [commit-info]
      (let [l-needle (str/lower-case needle)
@@ -22,7 +23,7 @@
           :time (:time commit-info)})))])
 
 ; months are zero-based because java
-(defn make-date-scanner [achievement-id month day]
+(defn make-date-scanner [[achievement-id month day]]
   [achievement-id
    (fn [commit-info]
      (let [time (:time commit-info)
@@ -35,7 +36,7 @@
          {:username (:author commit-info)
           :time time})))])
 
-(defn make-filename-scanner [achievement-id filename-pred]
+(defn make-filename-scanner [[achievement-id filename-pred]]
   [achievement-id
    (fn [{:keys [changed-files author time]}]
      (let [added-files (->> changed-files
@@ -45,11 +46,11 @@
          {:username author
           :time time})))])
 
-(defn make-language-scanner [achievement-id extensions]
+(defn make-language-scanner [[achievement-id extensions]]
   (let [dot-extensions (map #(str "." %) extensions)
         has-interesting-extension?
         (fn [file] (some #(.endsWith file %) dot-extensions))]
-    (make-filename-scanner achievement-id has-interesting-extension?)))
+    (make-filename-scanner [achievement-id has-interesting-extension?])))
 
 (def bad-motherfucker
   [:bad-motherfucker
@@ -73,7 +74,7 @@
            :username author
            :time time}])))])
 
-(defn make-message-scanner [achievement-id message-predicate]
+(defn make-message-scanner [[achievement-id message-predicate]]
   [achievement-id
    (fn [{:keys [message author time]}]
      (when (message-predicate message)
@@ -82,19 +83,19 @@
 
 (def leo-tolstoy
   (make-message-scanner
-    :leo-tolstoy
-    #(>= (count (str/split-lines %)) 10)))
+    [:leo-tolstoy
+    #(>= (count (str/split-lines %)) 10)]))
 
 (def man-of-few-words
   (make-message-scanner
-    :man-of-few-words
-    #(< (count %) 4)))
+    [:man-of-few-words
+    #(< (count %) 4)]))
 
 (def no-more-letters
   (make-message-scanner
-    :no-more-letters
+    [:no-more-letters
     (fn [message]
-      (some #(Character/isLetter (.charValue %)) message))))
+      (some #(Character/isLetter (.charValue %)) message))]))
 
 (def narcissist
   [:narcissist
@@ -114,7 +115,7 @@
           :time time})))])
 
 ; sha achievements
-(defn make-sha-scanner [achievement-id sha-predicate]
+(defn make-sha-scanner [[achievement-id sha-predicate]]
   [achievement-id
    (fn [{:keys [id author time]}]
      (when (sha-predicate id)
@@ -123,16 +124,16 @@
 
 (def lucky
   (make-sha-scanner
-    :lucky
-    #(.contains % "777")))
+    [:lucky
+    #(.contains % "777")]))
 
 (def mark-of-the-beast
   (make-sha-scanner
-    :mark-of-the-beast
-    #(.contains % "666")))
+    [:mark-of-the-beast
+    #(.contains % "666")]))
 
 ; LOC achievements
-(defn make-loc-scanner [achievement-id loc-predicate]
+(defn make-loc-scanner [[achievement-id loc-predicate]]
   [achievement-id
    (fn [{:keys [loc author time]}]
      (when (loc-predicate loc)
@@ -141,18 +142,37 @@
 
 (def world-balance
   (make-loc-scanner
-    :world-balance
-    (fn [loc] (= (:added loc) (:deleted loc)))))
+    [:world-balance
+    (fn [loc] (= (:added loc) (:deleted loc)))]))
 
 (def eraser
   (make-loc-scanner
-    :eraser
-    (fn [loc] (nil? (:added loc)))))
+    [:eraser
+    (fn [loc] (nil? (:added loc)))]))
 
 (def massive
   (make-loc-scanner
-    :massive
-    (fn [loc] (>= (:added loc) 1000))))
+    [:massive
+    (fn [loc] (>= (:added loc) 1000))]))
+
+; diff achievements
+(def easy-fix
+  [:easy-fix
+   (fn [{:keys [diffs author time]}]
+     (let [two-line-swapped?
+           (fn [diff]
+             (and
+               ; exactly two lines are changed
+               (= (count diff) 2)
+               ; one is added and one removed
+               (= (count (filter #(= :add (first %)) diff)))
+               ; content is the same
+               (= ((first diff) 1) ((last diff) 1))
+               ; line number absolute difference is 1
+               (= 1 (Math/abs (- (last (first diff)) (last (last diff)))))))]
+       (when (some two-line-swapped? diffs)
+         [{:username author
+           :time time}])))])
 
 ; TODO date achievements
 (def professional-pride
@@ -177,15 +197,10 @@
      nil)])
 
 ; TODO diff achievements
-(def easy-fix
-  [:easy-fix
-   (fn [commit-info]
-     nil)])
 (def mover
   [:mover
    (fn [commit-info]
      nil)])
-
 
 ; TODO commit-info achievements
 (def borat
