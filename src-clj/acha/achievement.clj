@@ -129,7 +129,7 @@
 (def mark-of-the-beast
   (make-sha-scanner
     :mark-of-the-beast
-    #(.contains sha "666")))
+    #(.contains % "666")))
 
 ; LOC achievements
 (defn make-loc-scanner [achievement-id loc-predicate]
