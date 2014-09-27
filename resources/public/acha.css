@@ -26,13 +26,15 @@ html, textarea, button {
 html {}
 td { vertical-align: top; }
 ul { list-style-type: none; padding: 0; }
-#header > h1 { font-family: "PressStart2P"; }
-#header > h1:hover { color: #7E5DA3; }
 .a { cursor: pointer; }
 .id:before { content: " ["; } .id:after { content: "]"; }
 
-#window { padding: 40px 80px; vertical-align: top; }
-#header { border-bottom: 3px solid #7E5DA3; }
+.window { padding: 40px 80px; vertical-align: top; }
+
+.header > h1 { font-family: "PressStart2P"; }
+.header > h1:hover { color: #7E5DA3; }
+.header { border-bottom: 3px solid #7E5DA3; }
+
 .users_pane, .repo_pane { float: left; width: 400px; margin: 20px 0 0 0; }
 
 .repo { font-size: 16px; line-height: 20px; margin: 0 0 12px 0; display: inline-block; border-bottom: 2px solid transparent; }
