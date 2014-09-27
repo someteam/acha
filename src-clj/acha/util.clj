@@ -6,3 +6,6 @@
   [^String s]
   (let [digest (doto (MessageDigest/getInstance "MD5") (.reset) (.update (.getBytes s)))]
     (apply str (map #(format "%02x" %) (.digest digest)))))
+
+(defn count-substring-occurrences [haystack needle]
+  (count (re-seq (re-pattern needle) haystack)))
