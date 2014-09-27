@@ -5,10 +5,7 @@
   (:import [java.util Calendar]))
 
 (def example-achievement
-  { ; this keyword can be used to look up name, description and picture
-    ; using achievement-static/table
-   :keyword :shiny-metal-ass
-   :username "Bender"
+  {:username "Bender"
    :level 3
    :time #inst "2014-04-16T17:43:20.000-00:00"})
 
@@ -37,8 +34,16 @@
 
 (defn make-language-scanner [achievement-id extensions]
   [achievement-id
-   (fn [commit-info]
-     nil)])
+   (fn [{:keys [changed-files author time]}]
+     (let [added-files (->> changed-files
+                            (filter #(= (first %) :add))
+                            (map (comp :path last)))
+           dot-extensions (map #(str "." %) extensions)
+           has-interesting-extension?
+             (fn [file] (some #(.endsWith file %) extensions))]
+       (when (some has-interesting-extension? added-files)
+         {:username author
+          :time time})))])
 
 (def bad-motherfucker
   [:bad-motherfucker
@@ -65,14 +70,6 @@
 ; TODO commit-info achievements
 (def borat
   [:borat
-   (fn [commit-info]
-     nil)])
-(def catchphrase
-  [:catchphrase
-   (fn [commit-info]
-     nil)])
-(def citation-needed
-  [:citation-needed
    (fn [commit-info]
      nil)])
 (def cool-kid
@@ -288,7 +285,9 @@
    [:valentine 1 14]])
 
 (def substring-table
-  [[:fix "fix"]
+  [[:beggar "achievement"]
+   [:citation-needed "www.stackoverflow.com"]
+   [:fix "fix"]
    [:forgot "forgot"]
    [:google "google"]
    [:hack "hack"]
@@ -296,7 +295,6 @@
    [:magic "magic"]
    [:secure "secure"]
    [:sorry "sorry"]
-   [:beggar "achievement"]
    [:wow "wow"]])
 
 (def language-table
@@ -334,8 +332,6 @@
     (map make-substring-scanner substring-table)
     [bad-motherfucker
      borat
-     catchphrase
-     citation-needed
      cool-kid
      eraser
      hello-linus
