@@ -4,7 +4,7 @@
 (def db
   {:classname   "org.sqlite.JDBC"
    :subprotocol "sqlite"
-   :subname     "db/database.db"
+   :subname     "sqlite/acha.db"
    })
 
 (defn create-db []
@@ -22,21 +22,21 @@
                                          [:timestamp :text])
                        (create-table-ddl :achievement
                                          [:id "integer primary key autoincrement"]
-                                         [:type :keyword]
+                                         [:type :text]
                                          [:level :integer]
                                          [:user-id :integer]
                                          [:repo-id :integer]))
        (catch Exception e (println e))))
 
-(def testdata
-  {:name "test",
-   :email "t@email.com"})
+;(def testdata
+;  {:name "test",
+;   :email "t@email.com"})
 
-(create-db)
-(insert! db :users testdata)
+;(create-db)
+;(insert! db :users testdata)
 
-(def output
+(defn get-all-users []
   (query db "select * from users"))
 
-(keys (first output))
-(:body (first output))
+;(keys (first output))
+;(:body (first output))
