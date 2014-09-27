@@ -2,7 +2,7 @@
   (:use clojure.data)
   (:require
     [acha.util :as util]
-    [acha.achievement-static])
+    [acha.achievement-static]
     [clojure.string :as str])
   (:import
     [java.util Calendar]))
