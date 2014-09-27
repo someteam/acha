@@ -39,7 +39,7 @@
   (let [email-hash (js/md5 (:email user))]
   [:.user
     [:.user__avatar
-      [:img {:src (str "http://www.gravatar.com/avatar/" email-hash "?d=retro")}]]
+      [:img {:src (str "http://www.gravatar.com/avatar/" email-hash "?d=retro&r=pg&s=114")}]]
     [:.user__name (:name user)]
     [:.user__email (:email user)]
     [:.user__ach (:achievements user 0)]]))
