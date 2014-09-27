@@ -145,17 +145,17 @@
 (def world-balance
   (make-loc-scanner
     [:world-balance
-    (fn [loc] (= (:added loc) (:deleted loc)))]))
+    (fn [loc] (= (:added loc 0) (:deleted loc 0)))]))
 
 (def eraser
   (make-loc-scanner
     [:eraser
-    (fn [loc] (nil? (:added loc)))]))
+    (fn [loc] (nil? (:added loc 0)))]))
 
 (def massive
   (make-loc-scanner
     [:massive
-    (fn [loc] (>= (:added loc) 1000))]))
+    (fn [loc] (>= (:added loc 0) 1000))]))
 
 ; diff achievements
 (def easy-fix
