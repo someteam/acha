@@ -73,26 +73,28 @@
            :username author
            :time time}])))])
 
-(def leo-tolstoy
-  [:leo-tolstoy
+(defn make-message-scanner [achievement-id message-predicate]
+  [achievement-id
    (fn [{:keys [message author time]}]
-     (when (>= (count (str/split-lines message)) 10)
+     (when (message-predicate message)
        {:username author
         :time time}))])
+
+(def leo-tolstoy
+  (make-message-scanner
+    :leo-tolstoy
+    #(>= (count (str/split-lines %)) 10)))
 
 (def man-of-few-words
-  [:man-of-few-words
-   (fn [{:keys [message author time]}]
-     (when (< (count message) 4)
-       {:username author
-        :time time}))])
+  (make-message-scanner
+    :man-of-few-words
+    #(< (count %) 4)))
 
 (def no-more-letters
-  [:no-more-letters
-   (fn [{:keys [message author time]}]
-     (when-not (some #(Character/isLetter (.charValue %)) message)
-       {:username author
-        :time time}))])
+  (make-message-scanner
+    :no-more-letters
+    (fn [message]
+      (some #(Character/isLetter (.charValue %)) message))))
 
 (def narcissist
   [:narcissist
@@ -101,23 +103,17 @@
          {:username author
           :time time}))])
 
-; TODO commit-info achievements
-(def borat
-  [:borat
-   (fn [commit-info]
-     nil)])
-(def cool-kid
-  [:cool-kid
-   (fn [commit-info]
-     nil)])
-(def eraser
-  [:eraser
-   (fn [commit-info]
-     nil)])
-(def massive
-  [:massive
-   (fn [commit-info]
-     nil)])
+(def change-of-mind
+  [:change-of-mind
+   (fn [{:keys [changed-files author time]}]
+     (let [edited-files (->> changed-files
+                             (filter #(= (first %) :add))
+                             (map (comp :path last)))]
+       (when (some #{"LICENSE"} edited-files)
+         {:username author
+          :time time})))])
+
+; TODO date achievement
 (def professional-pride
   [:professional-pride
    (fn [commit-info]
@@ -130,12 +126,26 @@
   [:owl
    (fn [commit-info]
      nil)])
-(def easy-fix
-  [:easy-fix
+(def dangerous-game
+  [:dangerous-game
    (fn [commit-info]
      nil)])
-(def multilingual
-  [:multilingual
+(def time-get
+  [:time-get
+   (fn [commit-info]
+     nil)])
+
+; TODO diff achievements
+(def eraser
+  [:eraser
+   (fn [commit-info]
+     nil)])
+(def massive
+  [:massive
+   (fn [commit-info]
+     nil)])
+(def easy-fix
+  [:easy-fix
    (fn [commit-info]
      nil)])
 (def mover
@@ -146,16 +156,32 @@
   [:world-balance
    (fn [commit-info]
      nil)])
-(def blamer
-  [:blamer
-   (fn [commit-info]
-     nil)])
+
+; TODO sha achievements
 (def lucky
   [:lucky
    (fn [commit-info]
      nil)])
 (def mark-of-the-beast
   [:mark-of-the-beast
+   (fn [commit-info]
+     nil)])
+(def commit-get
+  [:commit-get
+   (fn [timeline]
+     nil)])
+
+; TODO commit-info achievements
+(def borat
+  [:borat
+   (fn [commit-info]
+     nil)])
+(def cool-kid
+  [:cool-kid
+   (fn [commit-info]
+     nil)])
+(def multilingual
+  [:multilingual
    (fn [commit-info]
      nil)])
 (def commenter
@@ -178,24 +204,12 @@
   [:deal-with-it
    (fn [commit-info]
      nil)])
-(def dangerous-game
-  [:dangerous-game
-   (fn [commit-info]
-     nil)])
 (def empty-commit
   [:empty-commit
    (fn [commit-info]
      nil)])
-(def time-get
-  [:time-get
-   (fn [commit-info]
-     nil)])
 (def for-stallman
   [:for-stallman
-   (fn [commit-info]
-     nil)])
-(def change-of-mind
-  [:change-of-mind
    (fn [commit-info]
      nil)])
 (def wrecking-ball
@@ -208,6 +222,10 @@
      nil)])
 
 ; TODO timeline achievements
+(def blamer
+  [:blamer
+   (fn [timeline]
+     nil)])
 (def catchphrase
   [:catchphrase
    (fn [timeline]
@@ -230,10 +248,6 @@
      nil)])
 (def necromancer
   [:necromancer
-   (fn [timeline]
-     nil)])
-(def commit-get
-  [:commit-get
    (fn [timeline]
      nil)])
 (def collision
@@ -360,7 +374,6 @@
      mover
      world-balance
      narcissist
-     blamer
      lucky
      mark-of-the-beast
      commenter
@@ -379,6 +392,7 @@
 (def all-timeline-scanners
   [catchphrase
    anniversary
+   blamer
    flash
    waste
    loneliness
