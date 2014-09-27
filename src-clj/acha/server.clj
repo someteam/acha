@@ -1,4 +1,4 @@
-(ns acha.core
+(ns acha.server
   (:require
     [acha.git-parser :as git-parser]
     [clojure.tools.logging :as logging]

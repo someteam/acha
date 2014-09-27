@@ -2,13 +2,14 @@
   :description "Enterprise Git Achievements Provider. Web scale. In the cloud"
   :url "http://acha.clojurecup.com"
 
-  :global-vars    {*warn-on-reflection* true}
-  :source-paths   ["src-clj"]
-  :main acha.core
+  :global-vars  {*warn-on-reflection* true}
+  :source-paths ["src-clj"]
+  :main         acha.server
+  :aot          [:all]
+  :uberjar-name "acha-uber.jar"
 
   :dependencies [
     [org.clojure/clojure "1.6.0"]
-    
     [org.clojure/tools.logging "0.3.1"]
 
     [ring "1.3.1"]
@@ -28,8 +29,6 @@
     [lein-cljsbuild "1.0.3"]
   ]
 
-  
-  
   :cljsbuild { 
     :builds [
       { :id "dev"
@@ -54,7 +53,7 @@
   
   :profiles {
     :dev {
-      :ring { :handler acha.core/handler-dev }
+      :ring { :handler acha.server/handler-dev }
     }
   }
 )

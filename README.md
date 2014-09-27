@@ -5,7 +5,7 @@ Git Achievements
 ## Usage
 
     lein uberjar
-    java -jar target/acha-0.1.0-SNAPSHOT-standalone.jar
+    java -jar target/acha-uber.jar
 
 ## License
 

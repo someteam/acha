@@ -1,4 +1,6 @@
-(ns acha.achievement)
+(ns acha.achievement
+  (:require
+    [clojure.string :as str]))
 
 (def example-achievement
   {:name "Shiny Metal Ass"
@@ -8,8 +10,8 @@
 
 (defn substring-phrasing-scanner [name needle]
   (fn [commit-info]
-    (let [l-needle (.toLowerCase needle)
-          l-msg (.toLowerCase (:message commit-info))]
+    (let [l-needle (str/lower-case needle)
+          l-msg    (str/lower-case (:message commit-info))]
     (when (.contains l-msg l-needle)
       {:name name
        :username (:author-name commit-info)
