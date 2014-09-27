@@ -9,7 +9,7 @@
 
 (defn create-db []
   (try (db-do-commands db
-                       (create-table-ddl :users
+                       (create-table-ddl :user
                                          [:id "integer primary key autoincrement"]
                                          [:name :text]
                                          [:email :text]
@@ -28,14 +28,23 @@
                                          [:repoid :integer]))
        (catch Exception e (println e))))
 
-;(def testdata
-;  {:name "test",
-;   :email "t@email.com"})
+(defn add-fake-data []
+  (insert! db :repo {:url "git@github.com:tonsky/datascript"})
+  (insert! db :repo {:url "git@github.com:tonsky/41-socks"})
+  (insert! db :repo {:url "git@github.com:tonsky/datascript-chat"})
+  (insert! db :repo {:url "git@github.com:tonsky/net.async"}))
 
-;(insert! db :users testdata)
+(defn get-repo-list []
+  (query db "select * from repo"))
 
-(defn get-all-users []
-  (query db "select * from users"))
+(defn get-user-list []
+  (query db "select * from user"))
 
-;(keys (first output))
-;(:body (first output))
+(defn get-ach-list []
+  (query db "select * from achievement"))
+
+(defn get-user-ach [id]
+  (query db (str "select * from achievement where userid=" id)))
+
+(defn get-repo-ach [id]
+  (query db (str "select * from achievement where repoid=" id)))

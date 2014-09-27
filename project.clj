@@ -18,6 +18,7 @@
 
     [ring "1.3.1"]
     [compojure "1.1.9"]
+    [clj-json "0.5.3"]
 
     [clj-jgit "0.7.6"]
 
