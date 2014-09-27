@@ -30,6 +30,7 @@
     [datascript "0.4.1"]
     [sablono "0.2.22"]
     [com.facebook/react "0.11.2"]
+    [secretary "1.2.1"]
   ]
 
   :plugins [
