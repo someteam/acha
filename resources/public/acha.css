@@ -1,0 +1,29 @@
+/* fonts */
+
+@font-face {
+    font-family: 'PressStart2P';
+    src: url('fonts/pressstart2p-webfont.eot');
+    src: url('fonts/pressstart2p-webfont.eot?#iefix') format('embedded-opentype'),
+         url('fonts/pressstart2p-webfont.woff') format('woff'),
+         url('fonts/pressstart2p-webfont.ttf') format('truetype');
+    font-weight: normal;
+    font-style: normal;
+}
+
+/* styles */
+
+* {
+  box-sizing: border-box;
+  -moz-box-sizing: border-box;
+  -ms-box-sizing: border-box;
+  -webkit-box-sizing: border-box;
+}
+
+html, textarea, button {
+  font: 12px/20px Consolas, 'PragmataPro', 'Envy Code R', 'Consolas', 'Menlo', monospace;
+}
+
+html {}
+td { vertical-align: top; }
+ul { list-style-type: none; }
+h1 { font-family: "PressStart2P"; }
