@@ -13,4 +13,5 @@
         (catch Exception e
           (logging/error e "Unable to parse commit"))
         (finally 
-          ;; mark this tweets as viewed)))))
+          ;; mark this tweets as viewed
+          )))))
