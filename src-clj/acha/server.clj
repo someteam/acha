@@ -17,4 +17,5 @@
 (def handler-dev (reload/wrap-reload handler ["src-clj"]))
 
 (defn -main [& opts]
+  (db/create-db)
   (jetty/run-jetty handler {:port 8080}))

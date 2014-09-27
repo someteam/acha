@@ -4,7 +4,7 @@
 (def db
   {:classname   "org.sqlite.JDBC"
    :subprotocol "sqlite"
-   :subname     "resources/acha.db"
+   :subname     "acha-sqlite.db"
    })
 
 (defn create-db []
@@ -27,8 +27,6 @@
                                          [:userid :integer]
                                          [:repoid :integer]))
        (catch Exception e (println e))))
-
-(create-db)
 
 ;(def testdata
 ;  {:name "test",
