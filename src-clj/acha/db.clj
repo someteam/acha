@@ -1,5 +1,6 @@
 (ns acha.db
-  (:require [clojure.java.jdbc :refer :all]))
+  (:require [clojure.java.jdbc :refer :all]
+            [acha.util :as util]))
 
 (def db
   {:classname   "org.sqlite.JDBC"
@@ -25,6 +26,7 @@
                        (create-table-ddl :achievement
                                          [:id "integer primary key autoincrement"]
                                          [:type :text]
+                                         [:timestamp :text]
                                          [:level :integer]
                                          [:userid :integer]
                                          [:repoid :integer])
@@ -61,3 +63,32 @@
 
 (defn get-repo-ach [id]
   (query db (str "SELECT * FROM achievement WHERE repoid=" id)))
+
+(defn get-repo-by-url [url] 
+  (first (query db ["select * from repo where url = ?" url])))
+
+(defn get-or-insert-repo [url]
+  (if-let [repo (get-repo-by-url url)]
+    repo
+    (do
+      (insert! db :repo {:url url})
+      (get-repo-by-url url))))
+
+(defn get-user-by-email [email] 
+  (first (query db ["select * from user where email = ?" email])))
+
+(defn get-or-insert-user [email name]
+  (let [email (util/normalize-str email)]
+    (if-let [user (get-user-by-email email)]
+      user
+      (do
+        (insert! db :user {:email email :name name})
+        (get-user-by-email email)))))
+
+(defn get-achievements-by-repo [id]
+  (query db ["select achievement.*, user.* from achievement
+             left join user on user.id = achievement.userid
+             where repoid= ?" id]))
+
+(defn insert-achievement [body]
+  (insert! db :achievement body))
