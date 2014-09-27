@@ -29,8 +29,8 @@
       (jgit.p/git-clone url path))))
 
 (gen-interface
-  :name achivement.git.IDiffStatsProvider
-  :methods [[calculateStats [java.util.List] clojure.lang.APersistentMap]
+  :name achievement.git.IDiffStatsProvider
+  :methods [[calculateDiffs [java.util.List] clojure.lang.APersistentMap]
             [treeIterator [org.eclipse.jgit.revwalk.RevCommit] org.eclipse.jgit.treewalk.AbstractTreeIterator ]])
 
 (defn- diff-formatter
@@ -38,21 +38,32 @@
   (let [stats (atom {})
         stream (ByteArrayOutputStream.)
         reader (-> repo .getRepository .newObjectReader)
-        formatter (proxy [DiffFormatter achivement.git.IDiffStatsProvider] [stream]
+        diffs (atom [])
+        section (atom [])
+        formatter (proxy [DiffFormatter achievement.git.IDiffStatsProvider] [stream]
                     (writeAddedLine [text line]
-                      (swap! stats update-in [:added] (fnil inc 0)))
+                      (swap! section conj [:add (.getString text line) line])
+                      (swap! stats update-in [:loc :added] (fnil inc 0)))
                     (writeRemovedLine [text line]
-                      (swap! stats update-in [:deleted] (fnil inc 0)))
-                    (treeIterator [commit] 
+                      (swap! section conj [:remove (.getString text line) line])
+                      (swap! stats update-in [:loc :deleted] (fnil inc 0)))
+                    (writeHunkHeader [& _]
+                      (swap! diffs conj @section)
+                      (reset! section []))
+                    (treeIterator [commit]
                       (if commit
                         (doto (CanonicalTreeParser.) (.reset reader (.getTree commit)))
                         (EmptyTreeIterator.)))
-                    (calculateStats [diffs]
-                      (.reset stream)
+                    (calculateDiffs [diff-entities]
+                      (reset! diffs [])
+                      (reset! section [])
                       (reset! stats nil)
-                      (proxy-super format diffs)
+                      (.reset stream)
+                      (proxy-super format diff-entities)
                       (proxy-super flush)
-                      @stats))]
+                      (when-not (empty? @section)
+                        (swap! diffs conj @section))
+                      (assoc @stats :diffs @diffs)))]
     (doto formatter
       (.setRepository (.getRepository repo))
       (.setDiffComparator RawTextComparator/DEFAULT))))
@@ -97,9 +108,9 @@
             :email (.getEmailAddress ident)
             :time time
             :message message
-            :changed_files (mapv parse-diff-entry diffs)
+            :changed-files (mapv parse-diff-entry diffs)
             :merge (> (.getParentCount rev-commit) 1)}
-           (.calculateStats df diffs))))
+           (.calculateDiffs df diffs))))
 
 (defn- repo-info [url]
   (let [repo (load-repo url)
@@ -107,5 +118,6 @@
     (map #(commit-info repo % formatter) (jgit.q/rev-list repo))))
 
 (defn setup []
-  (repo-info "https://github.com/tonsky/datascript.git"))
+ (repo-info "https://github.com/tonsky/datascript.git"))
+;  (spit "test_rails" (prn-str (repo-info "https://github.com/rails/rails.git"))))
 
