@@ -1,12 +1,13 @@
 (ns acha.achievement
   (:require
-    [clojure.string :as str]))
+    [clojure.string :as str])
+  (:import [java.util Calendar]))
 
 (def example-achievement
   {:name "Shiny Metal Ass"
    :username "Bender"
    :level 3
-   :timestamp 1234567890})
+   :time #inst "2014-04-16T17:43:20.000-00:00"})
 
 (defn substring-phrasing-scanner [name needle]
   (fn [commit-info]
@@ -14,27 +15,42 @@
           l-msg    (str/lower-case (:message commit-info))]
     (when (.contains l-msg l-needle)
       {:name name
-       :username (:author-name commit-info)
-       :timestamp (:timestamp commit-info)}))))
+       :username (:author commit-info)
+       :time (:time commit-info)}))))
+
+; months are zero-based because java
+(defn date-scanner [name month day]
+  (fn [commit-info]
+    (let [time (:time commit-info)
+          cal (Calendar/getInstance)
+          _ (.setTime cal time)
+          commit-day (.get cal Calendar/DAY_OF_MONTH)
+          commit-month (.get cal Calendar/MONTH)
+          _ (print "XXX" commit-day commit-month)]
+      (when (= [month day] [commit-month commit-day])
+        {:name name
+         :username (:author commit-info)
+         :time time}))))
 
 ; TODO commit-info achievements
-(defn catchphrase [timeline] nil)
-(defn bad-motherfucker [timeline] nil)
-(defn hello-linus [timeline] nil)
-(defn man-of-few-words [timeline] nil)
-(defn leo-tolstoy [timeline] nil)
-(defn citation-needed [timeline] nil)
-(defn no-more-letters [timeline] nil)
-(defn cool-kid [timeline] nil)
-(defn beggar [timeline] nil)
-(defn borat [timeline] nil)
-(defn never-probably [timeline] nil)
+(defn bad-motherfucker [commit-info] nil)
+(defn hello-linus [commit-info] nil)
+(defn man-of-few-words [commit-info] nil)
+(defn leo-tolstoy [commit-info] nil)
+(defn citation-needed [commit-info] nil)
+(defn no-more-letters [commit-info] nil)
+(defn cool-kid [commit-info] nil)
+(defn beggar [commit-info] nil)
+(defn borat [commit-info] nil)
+(defn never-probably [commit-info] nil)
+(defn professional-pride [commit-info] nil)
+(defn turkey-day [commit-info] nil)
 
 ; TODO diff achievements
 
 ; TODO timeline achievements
-(defn catchphrase [timeline]
-  nil)
+(defn catchphrase [timeline] nil)
+(defn anniversary [timeline] nil)
 
 ; All the scanners return either nil or an achievement
 
@@ -42,7 +58,15 @@
   [])
 
 (def all-commit-info-scanners
-  [(substring-phrasing-scanner "Mission impossible" "impossible")
+  [professional-pride
+   turkey-day
+   (date-scanner "Ruined Christmas" 11 25)
+   (date-scanner "This code looks scary" 9 31)
+   (date-scanner "New year, new bugs" 0 1)
+   (date-scanner "In love with work" 1 14)
+   (date-scanner "Rare occasion" 1 29)
+   (date-scanner "From Russia with Love" 5 12)
+   (substring-phrasing-scanner "Mission impossible" "impossible")
    (substring-phrasing-scanner "The Colour of Magic" "magic")
    (substring-phrasing-scanner "Salvation" "sorry")
    (substring-phrasing-scanner "I can sort it out myself" "google")
@@ -67,5 +91,6 @@
 
 (def all-timeline-scanners
   [catchphrase
+   anniversary
    ])
 
