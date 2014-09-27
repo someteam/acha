@@ -7,6 +7,10 @@
   :main         acha.server
   :aot          [acha.server]
   :uberjar-name "acha-uber.jar"
+  :uberjar-exclusions [#".*\.piko"
+                       #"public/out/.*"
+                       #"public/index_dev\.html"
+                       #"public/react-.*"]
 
   :dependencies [
     [org.clojure/clojure "1.7.0-alpha2"]
@@ -39,7 +43,7 @@
         :source-paths ["src-cljs"]
         :compiler {
           :externs       ["react/externs/react.js" "datascript/externs.js"]
-          :preamble      ["react/react.min.js"]
+          :preamble      ["react/react.min.js" "public/md5.js"]
           :output-to     "resources/public/acha.min.js"
           :optimizations :advanced
           :pretty-print  false
