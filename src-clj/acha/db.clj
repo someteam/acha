@@ -30,8 +30,8 @@
                                          [:level :integer]
                                          [:userid :integer]
                                          [:repoid :integer])
-                       "CREATE UNIQUE INDEX `userid_index` ON `achievement` (`userid` ASC)"
-                       "CREATE UNIQUE INDEX `repoid_index` ON `achievement` (`repoid` ASC)")
+                       "CREATE INDEX `userid_index` ON `achievement` (`userid` ASC)"
+                       "CREATE INDEX `repoid_index` ON `achievement` (`repoid` ASC)")
        (catch Exception e (println e))))
 
 (defn add-fake-data []
