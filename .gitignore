@@ -8,3 +8,6 @@ pom.xml.asc
 /.lein-*
 /.nrepl-port
 /remotes
+/resources/public/out/*
+/resources/public/acha.js
+/resources/public/acha.min.js

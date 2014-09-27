@@ -5,7 +5,14 @@ Git Achievements
 ## Usage
 
     lein uberjar
-    java -jar target/acha-uber.jar
+    java -jar target/acha-uber.jar &
+    open http://localhost:8080/
+
+## Development mode
+
+    lein cljsbuild auto dev &
+    lein ring server-headless 8080 &
+    open http://localhost:8080/index_dev.html
 
 ## License
 

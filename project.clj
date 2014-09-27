@@ -5,11 +5,11 @@
   :global-vars  {*warn-on-reflection* true}
   :source-paths ["src-clj"]
   :main         acha.server
-  :aot          [:all]
+  :aot          [acha.server]
   :uberjar-name "acha-uber.jar"
 
   :dependencies [
-    [org.clojure/clojure "1.6.0"]
+    [org.clojure/clojure "1.7.0-alpha2"]
     [org.clojure/tools.logging "0.3.1"]
 
     [ring "1.3.1"]
@@ -32,22 +32,15 @@
     [lein-cljsbuild "1.0.3"]
   ]
 
+  :hooks [leiningen.cljsbuild]
   :cljsbuild { 
     :builds [
-      { :id "dev"
-        :source-paths ["src"]
-        :compiler {
-          :output-to     "web/acha.js"
-          :output-dir    "web/out"
-          :optimizations :none
-          :source-map    true
-        }}
       { :id "prod"
-        :source-paths ["src"]
+        :source-paths ["src-cljs"]
         :compiler {
-          :externs  ["react/externs/react.js" "datascript/externs.js"]
-          :preamble ["react/react.min.js"]
-          :output-to     "web/achca.min.js"
+          :externs       ["react/externs/react.js" "datascript/externs.js"]
+          :preamble      ["react/react.min.js"]
+          :output-to     "resources/public/acha.min.js"
           :optimizations :advanced
           :pretty-print  false
         }}
@@ -57,6 +50,17 @@
   :profiles {
     :dev {
       :ring { :handler acha.server/handler-dev }
+      :cljsbuild {
+        :builds [
+          { :id "dev"
+            :source-paths ["src-cljs"]
+            :compiler {
+              :output-to     "resources/public/acha.js"
+              :output-dir    "resources/public/out"
+              :optimizations :none
+              :source-map    true
+            }}
+      ]}
     }
   }
 )
