@@ -14,18 +14,22 @@
                                          [:name :text]
                                          [:email :text]
                                          [:gravatar :text])
+                       "CREATE UNIQUE INDEX `email_unique` ON `user` (`email` ASC)"
                        (create-table-ddl :repo
                                          [:id "integer primary key autoincrement"]
                                          [:url :text]
                                          [:state :text]
                                          [:reason :text]
                                          [:timestamp :text])
+                       "CREATE UNIQUE INDEX `url_unique` ON `repo` (`url` ASC)"
                        (create-table-ddl :achievement
                                          [:id "integer primary key autoincrement"]
                                          [:type :text]
                                          [:level :integer]
                                          [:userid :integer]
-                                         [:repoid :integer]))
+                                         [:repoid :integer])
+                       "CREATE UNIQUE INDEX `userid_index` ON `achievement` (`userid` ASC)"
+                       "CREATE UNIQUE INDEX `repoid_index` ON `achievement` (`repoid` ASC)")
        (catch Exception e (println e))))
 
 (defn add-fake-data []
