@@ -59,9 +59,9 @@
    (fn [{:keys [message author time]}]
      (let [fuck-count (util/count-substring-occurrences message "fuck")]
        (when (pos? fuck-count)
-         [{:level fuck-count
-           :username author
-           :time time}])))])
+         {:level fuck-count
+          :username author
+          :time time})))])
 
 (def swear-words
   ["fuck" "shit" "damn" "sucks"])
@@ -72,9 +72,9 @@
      (let [count-word (fn [word] (util/count-substring-occurrences message word))
            swear-count (reduce + (map count-word swear-words))]
        (when (pos? swear-count)
-         [{:level swear-count
-           :username author
-           :time time}])))])
+         {:level swear-count
+          :username author
+          :time time})))])
 
 (defn make-message-scanner [[achievement-id message-predicate]]
   [achievement-id

@@ -2,7 +2,7 @@
   (:require [clojure.java.jdbc :refer :all]
             [acha.util :as util]))
 
-(def db
+(def ^:dynamic db
   {:classname   "org.sqlite.JDBC"
    :subprotocol "sqlite"
    :subname     "acha-sqlite.db"
@@ -92,3 +92,8 @@
 
 (defn insert-achievement [body]
   (insert! db :achievement body))
+
+(defmacro with-connection [& body]
+  `(with-db-connection [con# db]
+      (binding [db con#]
+        ~@body)))

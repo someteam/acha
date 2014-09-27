@@ -11,7 +11,7 @@
   (try
     (scanner commit-info)
     (catch Exception e
-      (logging/error e "Error occured during achivement scan commit"))))
+      (logging/error e "Error occured during achievement scan commit"))))
 
 (defn- analyze-commit [repo commit df]
   (try
@@ -55,15 +55,20 @@
 (defn- sync-achievements [url new-achs]
   (let [repo-db (db/get-or-insert-repo url)
         current-achs (current-achievements (:id repo-db))]
-        (doseq [[[email code level] data] (intersect-achievements new-achs current-achs)]
-          (let [user (db/get-or-insert-user email (:author-name data))]
-            (db/insert-achievement {:type (name code),
-                                    :level level,
-                                    :userid (:id user),
-                                    :repoid (:id repo-db),
-                                    :timestamp (util/format-date (:time data))})))))
+    (db/with-connection
+      (doseq [[[email code level] data] (intersect-achievements new-achs current-achs)]
+        (let [user (db/get-or-insert-user email (:author-name data))]
+          (db/insert-achievement {:type (name code),
+                                  :level level,
+                                  :userid (:id user),
+                                  :repoid (:id repo-db),
+                                  :timestamp (util/format-date (:time data))}))))))
 
 (defn analyze [url]
   (let [repo (git-parser/load-repo url)
         new-achievements (find-achievements repo)]
-    (sync-achievements url new-achievements)))
+    (logging/info (time (sync-achievements url new-achievements)))
+    
+    
+    ))
+
