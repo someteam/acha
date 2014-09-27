@@ -1,6 +1,7 @@
 (ns acha.server
   (:require
     [acha.git-parser :as git-parser]
+    [acha.achievement :as achievement]
     [acha.db :as db]
     [clojure.tools.logging :as logging]
     [ring.adapter.jetty :as jetty]
@@ -33,6 +34,7 @@
 (def handler-dev (reload/wrap-reload handler ["src-clj"]))
 
 (defn -main [& opts]
+  (print (achievement/all-unused-achievements))
   (db/create-db)
   (db/add-fake-data)
   (jetty/run-jetty handler {:port 8080}))

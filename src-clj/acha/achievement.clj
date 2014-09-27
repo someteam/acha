@@ -1,7 +1,9 @@
 (ns acha.achievement
+  (:use clojure.data)
   (:require
     [acha.util :as util]
-    [clojure.string :as str])
+    [clojure.string :as str]
+    [acha.achievement-static])
   (:import [java.util Calendar]))
 
 ; FIXME: All commit-info scanners return commit's time and author.
@@ -434,3 +436,8 @@
   [gandalf
    unpretending
    munchkin])
+
+(def all-unused-achievements
+  (diff (keys acha.achievement-static/table)
+    (keys (into {} (concat 
+      all-commit-info-scanners all-timeline-scanners all-meta-achievements)))))

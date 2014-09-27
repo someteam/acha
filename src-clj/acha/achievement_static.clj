@@ -125,7 +125,7 @@
        {:name ""
         :description "do an empty commit"
         :picture "..."}
-    :get
+    :time-get
        {:name "Get"
         :description "commit exactly at 00:00"
         :picture "..."}
@@ -165,7 +165,7 @@
        {:name "Good boy"
         :description "Create 'test[s]' or 'doc[s]' directory (not on first commit)"
         :picture "..."}
-    gitignore:
+    :gitignore
        {:name "Gitignore"
         :description ".gitignore"
         :picture "..."}
@@ -384,4 +384,4 @@
     :never-probably
        {:name "Never, probably"
         :description "use word “later”"
-        :picture "..."})
+        :picture "..."}})
