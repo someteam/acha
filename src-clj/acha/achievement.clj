@@ -150,7 +150,7 @@
 (def eraser
   (make-loc-scanner
     [:eraser
-    (fn [loc] (nil? (:added loc 0)))]))
+    (fn [loc] (= 0 (:added loc 0)))]))
 
 (def massive
   (make-loc-scanner
