@@ -34,7 +34,8 @@
 (def handler-dev (reload/wrap-reload handler ["src-clj"]))
 
 (defn -main [& opts]
-  (print (achievement/all-unused-achievements))
+  (print "Not implemented/over implemented achievement lists:")
+  (print achievement/all-unused-achievements)
   (db/create-db)
   (db/add-fake-data)
   (jetty/run-jetty handler {:port 8080}))
