@@ -4,7 +4,7 @@
 (def db
   {:classname   "org.sqlite.JDBC"
    :subprotocol "sqlite"
-   :subname     "sqlite/acha.db"
+   :subname     "resources/acha.db"
    })
 
 (defn create-db []
@@ -24,15 +24,16 @@
                                          [:id "integer primary key autoincrement"]
                                          [:type :text]
                                          [:level :integer]
-                                         [:user-id :integer]
-                                         [:repo-id :integer]))
+                                         [:userid :integer]
+                                         [:repoid :integer]))
        (catch Exception e (println e))))
+
+(create-db)
 
 ;(def testdata
 ;  {:name "test",
 ;   :email "t@email.com"})
 
-;(create-db)
 ;(insert! db :users testdata)
 
 (defn get-all-users []

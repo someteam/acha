@@ -1,6 +1,7 @@
 (ns acha.server
   (:require
     [acha.git-parser :as git-parser]
+    [acha.db :as db]
     [clojure.tools.logging :as logging]
     [ring.adapter.jetty :as jetty]
     [ring.middleware.reload :as reload]
