@@ -9,7 +9,10 @@
 
     [ring "1.3.0"]
     [compojure "1.1.8"]
-    [hiccup "1.0.5"]]
+    [hiccup "1.0.5"]
+
+    [clj-jgit "0.7.6"]
+  ]
 
   :plugins [
     [lein-ring "0.8.11"]

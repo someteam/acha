@@ -1,5 +1,6 @@
 (ns acha.core
   (:require
+    [acha.git-parser :as git-parser]
     [clojure.tools.logging :as logging]
     [ring.adapter.jetty :as jetty]
     [ring.middleware.reload :as reload]
