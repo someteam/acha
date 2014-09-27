@@ -173,8 +173,8 @@
                ; line number absolute difference is 1
                (= 1 (Math/abs (- (last (first diff)) (last (last diff)))))))]
        (when (some two-line-swapped? diffs)
-         [{:username author
-           :time time}])))])
+         {:username author
+          :time time})))])
 
 ; TODO date achievements
 (def professional-pride
