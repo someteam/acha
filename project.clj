@@ -14,8 +14,10 @@
   :plugins [
     [lein-ring "0.8.11"]
     [lein-cljsbuild "1.0.3"]]
+
+  :main acha.core
   :profiles {
     :dev {
-      :ring { :handler acha.core/handler }
+      :ring { :handler acha.core/handler-dev }
     }
   })
