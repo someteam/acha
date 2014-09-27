@@ -4,6 +4,9 @@
     [clojure.string :as str])
   (:import [java.util Calendar]))
 
+; FIXME: All commit-info scanners return commit's time and author.
+;        That's a lot of boilerplate.
+
 (def example-achievement
   {:username "Bender"
    :level 3
@@ -32,18 +35,21 @@
          {:username (:author commit-info)
           :time time})))])
 
-(defn make-language-scanner [achievement-id extensions]
+(defn make-filename-scanner [achievement-id filename-pred]
   [achievement-id
    (fn [{:keys [changed-files author time]}]
      (let [added-files (->> changed-files
                             (filter #(= (first %) :add))
-                            (map (comp :path last)))
-           dot-extensions (map #(str "." %) extensions)
-           has-interesting-extension?
-             (fn [file] (some #(.endsWith file %) extensions))]
-       (when (some has-interesting-extension? added-files)
+                            (map (comp :path last)))]
+       (when (some filename-pred added-files)
          {:username author
           :time time})))])
+
+(defn make-language-scanner [achievement-id extensions]
+  (let [dot-extensions (map #(str "." %) extensions)
+        has-interesting-extension?
+        (fn [file] (some #(.endsWith file %) dot-extensions))]
+    (make-filename-scanner achievement-id has-interesting-extension?)))
 
 (def bad-motherfucker
   [:bad-motherfucker
@@ -67,6 +73,34 @@
            :username author
            :time time}])))])
 
+(def leo-tolstoy
+  [:leo-tolstoy
+   (fn [{:keys [message author time]}]
+     (when (>= (count (str/split-lines message)) 10)
+       {:username author
+        :time time}))])
+
+(def man-of-few-words
+  [:man-of-few-words
+   (fn [{:keys [message author time]}]
+     (when (< (count message) 4)
+       {:username author
+        :time time}))])
+
+(def no-more-letters
+  [:no-more-letters
+   (fn [{:keys [message author time]}]
+     (when-not (some #(Character/isLetter (.charValue %)) message)
+       {:username author
+        :time time}))])
+
+(def narcissist
+  [:narcissist
+   (fn [{:keys [message author time]}]
+       (when (.contains message author)
+         {:username author
+          :time time}))])
+
 ; TODO commit-info achievements
 (def borat
   [:borat
@@ -80,24 +114,8 @@
   [:eraser
    (fn [commit-info]
      nil)])
-(def leo-tolstoy
-  [:leo-tolstoy
-   (fn [commit-info]
-     nil)])
-(def man-of-few-words
-  [:man-of-few-words
-   (fn [commit-info]
-     nil)])
 (def massive
   [:massive
-   (fn [commit-info]
-     nil)])
-(def never-probably
-  [:never-probably
-   (fn [commit-info]
-     nil)])
-(def no-more-letters
-  [:no-more-letters
    (fn [commit-info]
      nil)])
 (def professional-pride
@@ -106,10 +124,6 @@
      nil)])
 (def turkey-day
   [:turkey-day
-   (fn [commit-info]
-     nil)])
-(def scribbler
-  [:scribbler
    (fn [commit-info]
      nil)])
 (def owl
@@ -130,10 +144,6 @@
      nil)])
 (def world-balance
   [:world-balance
-   (fn [commit-info]
-     nil)])
-(def narcissist
-  [:narcissist
    (fn [commit-info]
      nil)])
 (def blamer
@@ -194,10 +204,6 @@
      nil)])
 (def alzheimers
   [:alzheimers
-   (fn [commit-info]
-     nil)])
-(def nothing-to-hide
-  [:nothing-to-hide
    (fn [commit-info]
      nil)])
 
@@ -293,6 +299,7 @@
    [:hack "hack"]
    [:impossible "impossible"]
    [:magic "magic"]
+   [:never-probably "later"]
    [:secure "secure"]
    [:sorry "sorry"]
    [:wow "wow"]])
@@ -324,9 +331,15 @@
    [:windows-language ["bat" "btm" "cmd" "ps1" "csproj" "vbproj" "vcproj" "wdproj" "wixproj" "xaml"]]
    [:xml ["xml" "xsl" "xslt" "xsd" "dtd"]]])
 
+(def filename-table
+  [[:nothing-to-hide #(= % "id_rsa")]
+   [:scribbler #(.startsWith (str/lower-case %) "readme")]
+   ])
+
 ; Scanner is 2-tuple of name and scanning function
 (def all-commit-info-scanners
   (concat
+    (map make-filename-scanner filename-table)
     (map make-language-scanner language-table)
     (map make-date-scanner date-table)
     (map make-substring-scanner substring-table)
@@ -338,11 +351,9 @@
      leo-tolstoy
      man-of-few-words
      massive
-     never-probably
      no-more-letters
      professional-pride
      turkey-day
-     scribbler
      owl
      easy-fix
      multilingual
@@ -361,10 +372,8 @@
      empty-commit
      time-get
      for-stallman
-     change-of-mind
      wrecking-ball
      alzheimers
-     nothing-to-hide
      ]))
 
 (def all-timeline-scanners
