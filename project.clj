@@ -18,7 +18,7 @@
 
     [ring "1.3.1"]
     [compojure "1.1.9"]
-    [clj-json "0.5.3"]
+    [com.cognitect/transit-clj "0.8.259"]
 
     [clj-jgit "0.7.6"]
 
@@ -27,10 +27,11 @@
     
     [org.clojure/clojurescript "0.0-2356"]
     [org.clojure/core.async "0.1.338.0-5c5012-alpha"]
+    [com.cognitect/transit-cljs "0.8.188"]
+
     [datascript "0.4.1"]
     [sablono "0.2.22"]
     [com.facebook/react "0.11.2"]
-    [secretary "1.2.1"]
   ]
 
   :plugins [

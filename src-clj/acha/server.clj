@@ -8,27 +8,56 @@
     [ring.adapter.jetty :as jetty]
     [ring.middleware.reload :as reload]
     [ring.middleware.params :as params]
+    [cognitect.transit :as transit]
     [ring.util.response :as response]
-    [clj-json.core :as json]
     [compojure core route])
+  (:import
+    [java.io ByteArrayOutputStream ByteArrayInputStream])
   (:gen-class))
 
-(defn json-response [data & [status]]
-  {:status (or status 200)
-   :headers {"Content-Type" "application/json"}
-   :body (json/generate-string data)})
+(defn write-transit [x t opts]
+  (let [baos (ByteArrayOutputStream.)
+        w    (transit/writer baos t opts)]
+    (transit/write w x)
+    (ByteArrayInputStream. (.toByteArray baos))))
+
+(defn wrap-transit-response [handler]
+  (fn [request]
+    (-> (handler request)
+       (update-in [:headers] assoc "Content-Type" "application/transit+json; charset=utf-8")
+       (update-in [:body] write-transit :json {}))))
 
 (defn add-repo [url]
   (if-let [repo (db/get-repo-by-url url)]
-    {:status "exists"
+    {:repo/status :exists
      :repo   repo}
     (let [repo (db/get-or-insert-repo url)]
       (logging/info "Added repo:" repo)
       (future
         (dispatcher/analyze (:url repo))
-        (logging/info "Analyze done" (:url repo)))
-      {:status "added"
+        (logging/info "Analysis finished:" (:url repo)))
+      {:repo/status :added
        :repo   repo})))
+
+(def api-handler
+  (->
+    (compojure.core/routes
+      (compojure.core/GET "/repos/" []
+        (db/get-repo-list))
+      (compojure.core/GET ["/repos/:id", :id #"[0-9]+"] [id]
+        (db/get-repo-ach id))
+      (compojure.core/GET "/users/" []
+        (db/get-user-list))
+      (compojure.core/GET ["/users/:id", :id #"[0-9]+"] [id]
+        (db/get-user-ach id))
+      (compojure.core/GET "/ach/" []
+        (db/get-ach-list))
+      (compojure.core/GET "/ach-dir/" []
+        {:body acha.achievement-static/table})
+      (compojure.core/POST "/add-repo/" [:as req]
+        {:body (add-repo (get-in req [:params "url"]))}))
+   wrap-transit-response
+   params/wrap-params))
 
 (def handler
   (->
@@ -36,21 +65,10 @@
       (compojure.route/resources "/")
       (compojure.core/GET "/" []
         (response/content-type (response/resource-response "public/index.html") "text/html"))
-      (compojure.core/GET "/api/repos/" []
-        (json-response (db/get-repo-list)))
-      (compojure.core/GET ["/api/repos/:id", :id #"[0-9]+"] [id]
-        (json-response (db/get-repo-ach id)))
-      (compojure.core/GET "/api/users/" []
-        (json-response (db/get-user-list)))
-      (compojure.core/GET ["/api/users/:id", :id #"[0-9]+"] [id]
-        (json-response (db/get-user-ach id)))
-      (compojure.core/GET "/api/ach/" []
-        (json-response (db/get-ach-list)))
-      (compojure.core/POST "/api/add-repo/" [:as req]
-        (let [url (get-in req [:params "url"])]
-          (json-response (add-repo url))))
+      (compojure.core/context "/api" []
+        api-handler)
       (compojure.route/not-found "Page not found"))
-    (params/wrap-params)))
+    ))
 
 (def handler-dev (reload/wrap-reload handler ["src-clj"]))
 

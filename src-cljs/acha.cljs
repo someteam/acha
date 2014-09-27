@@ -6,7 +6,8 @@
     [goog.history.EventType :as EventType]
     [datascript :as d]
     [acha.util :as u]
-    [clojure.string :as str])
+    [clojure.string :as str]
+    [cognitect.transit :as transit])
   (:import
     goog.history.Html5History
     goog.net.XhrIo))
@@ -27,8 +28,9 @@
     (fn [reply]
       (-> (.-target reply)
           (.getResponseText)
-          (->> (.parse js/JSON))
-          (js->clj :keywordize-keys true)
+;;           (->> (.parse js/JSON))
+;;           (js->clj :keywordize-keys true)
+          (->> (transit/read (transit/reader :json)))
           (callback)))
     (or method "GET")))
 
@@ -68,7 +70,7 @@
       [:.repo__name
         (:repo/name repo)
         [:span.id (:repo/id repo)]
-        (when (= :added (:repo/status repo)) [:.tag.repo__added "Added"])]
+        (when (= :added (:repo/status repo)) [:span {:className "tag repo__added"} "Added"])]
       [:.repo__url (:repo/url repo)]     
       ]))
 
@@ -78,7 +80,7 @@
     (when-not (str/blank? url)
       (ajax (str "/api/add-repo/?url=" (js/encodeURIComponent url))
         (fn [data]
-          (if (= "added" (:status data))
+          (if (= :added (:repo/status data))
             (d/transact! conn [{:repo/id     (get-in data [:repo :id])
                                 :repo/url    (get-in data [:repo :url])
                                 :repo/name   (repo-name (get-in data [:repo :url]))
