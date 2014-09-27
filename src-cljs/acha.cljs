@@ -71,18 +71,20 @@
 (r/defc header []
   [:#header
     [:h1.a {:on-click (fn [_] (go! "")) } "Acha-acha"]
-    [:h2 "Enterprise Git Achievement provider. Web scale. In the cloud "]])
+    [:h2 "Enterprise Git Achievement solution. Web scale. In the cloud"]])
 
 (r/defc repo-pane [repos]
   [:.repo_pane
-    [:h1 "Repositories"]
+    [:h1 "Repos"]
     [:ul
       (map (fn [r]
-             [:li.a
-               {:on-click (fn [_] (go! "/repos/" (:id r)))}
-               (repo-name r)
-               [:span.id (:id r)]])
-           repos)]])
+             [:li
+               [:.repo.a
+                 {:on-click (fn [_] (go! "/repos/" (:id r)))}
+                 (repo-name r)
+                 [:span.id (:id r)]]])
+           repos)]
+    [:div.add_repo.a]])
 
 ;; (def silhouette "https%3A%2F%2Fdl.dropboxusercontent.com%2Fu%2F561580%2Fsilhouette.png")
 
@@ -104,8 +106,8 @@
 (r/defc index-page []
   [:#window
     (header)
-    (repo-pane (vals @repos))
     (users-pane (vals @users))
+    (repo-pane (vals @repos))   
    ])
 
 (r/defc repo-page [id]

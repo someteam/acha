@@ -20,15 +20,25 @@
 }
 
 html, textarea, button {
-  font: 12px/20px Consolas, 'PragmataPro', 'Envy Code R', 'Consolas', 'Menlo', monospace;
+  font: 12px/20px Consolas, 'Menlo', monospace;
 }
 
 html {}
 td { vertical-align: top; }
-ul { list-style-type: none; }
-h1 { font-family: "PressStart2P"; }
+ul { list-style-type: none; padding: 0; }
+#header > h1 { font-family: "PressStart2P"; }
+#header > h1:hover { color: #7E5DA3; }
 .a { cursor: pointer; }
 .id:before { content: " ["; } .id:after { content: "]"; }
+
+#window { padding: 40px 80px; vertical-align: top; }
+#header { border-bottom: 3px solid #7E5DA3; }
+.users_pane, .repo_pane { float: left; width: 400px; margin: 20px 0 0 0; }
+
+.repo { font-size: 16px; line-height: 20px; margin: 0 0 12px 0; display: inline-block; border-bottom: 2px solid transparent; }
+.repo:hover { color: #7E5DA3; }
+.add_repo { display: inline-block; width: 60px; height: 26px; background:url(i/add.png); background-size: 100% 200%; }
+.add_repo:hover { background-position-y: 26px; }
 
 .user { position: relative; width: 300px; height: 79px; padding: 5px 5px 5px 77px; margin: 0 0 16px 0; line-height: 18px; overflow: hidden; }
 .user__avatar { position: absolute; left: 5px; top: 5px; width: 57px; height: 57px;  }
