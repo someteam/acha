@@ -125,7 +125,7 @@
     (s/html
       [:.window
         (header)
-        (users-pane (u/qes-by db :user/id))
+        (users-pane (->> (u/qes-by db :user/id) (sort-by :user/ach) reverse))
         (repo-pane  (u/qes-by db :repo/name))])))
 
 (r/defc repo-page [db id]
