@@ -19,6 +19,7 @@
     [lein-cljsbuild "1.0.3"]]
 
   :main acha.core
+  :aot [acha.core]
   :profiles {
     :dev {
       :ring { :handler acha.core/handler-dev }
