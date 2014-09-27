@@ -11,17 +11,13 @@
            [org.eclipse.jgit.lib ObjectReader]
            [org.eclipse.jgit.api Git]
            [org.eclipse.jgit.revwalk RevWalk RevCommit RevTree]
-           [org.eclipse.jgit.treewalk EmptyTreeIterator CanonicalTreeParser AbstractTreeIterator]
-           )
-  (:gen-class)
-  )
-
+           [org.eclipse.jgit.treewalk EmptyTreeIterator CanonicalTreeParser AbstractTreeIterator]))
 
 (defn- data-dir [url]
   (let [repo-name (last (string/split url #"/"))]
     (str "./remotes/" repo-name "_" (util/md5 url))))
 
-(defn- load-repo [url]
+(defn load-repo [url]
   (let [path (str (data-dir url) "/repo")]
     (if (.exists (io/as-file path))
       ;; todo fetch and hard reset too
@@ -33,7 +29,7 @@
   :methods [[calculateDiffs [java.util.List] clojure.lang.APersistentMap]
             [treeIterator [org.eclipse.jgit.revwalk.RevCommit] org.eclipse.jgit.treewalk.AbstractTreeIterator ]])
 
-(defn- diff-formatter
+(defn diff-formatter
   [^Git repo]
   (let [stats (atom {})
         stream (ByteArrayOutputStream.)
@@ -96,7 +92,7 @@
       :delete [change-kind old-file nil]
       :else   [change-kind old-file new-file])))
 
-(defn- commit-info [^Git repo ^RevCommit rev-commit ^DiffFormatter df]
+(defn commit-info [^Git repo ^RevCommit rev-commit ^DiffFormatter df]
   (let [parent-tree (.treeIterator df (first (.getParents rev-commit)))
         commit-tree (.treeIterator df rev-commit)
         diffs (.scan df parent-tree commit-tree)
@@ -111,6 +107,8 @@
             :changed-files (mapv parse-diff-entry diffs)
             :merge (> (.getParentCount rev-commit) 1)}
            (.calculateDiffs df diffs))))
+
+(def commit-list jgit.q/rev-list)
 
 (defn- repo-info [url]
   (let [repo (load-repo url)
