@@ -61,7 +61,7 @@
   ([db attr]
     (map #(ent db (.-e %)) (d/datoms db :aevt attr)))
   ([db attr value]
-    (map #(ent db (.-e %)) (d/datoms db :aevt attr value))))
+    (map #(ent db (.-e %)) (d/datoms db :avet attr value))))
 
 (defn qmap
   "Convert returned 2-tuples to a map"
