@@ -6,6 +6,10 @@
 
 (def ^:dynamic *debug-q* false)
 
+(defn ent [db eid]
+  (when eid
+    (d/entity db eid)))
+
 (defn -q [q & args]
   (if *debug-q*
     (let [key (str q)
@@ -23,9 +27,9 @@
 (defn q1-by
   "Return single entity id by attribute existence or attribute value"
   ([db attr]
-    (->> (-q '[:find ?e :in $ ?a :where [?e ?a]] db attr) ffirst))
+    (-> (d/datoms db :aevt attr) first :e))
   ([db attr value]
-    (->> (-q '[:find ?e :in $ ?a ?v :where [?e ?a ?v]] db attr value) ffirst)))
+    (-> (d/datoms db :avet attr value) first :e)))
 
 (defn q1s
   "Return seq of first elements of each tuple"
@@ -37,27 +41,27 @@
   [q db & sources]
   (->> (apply -q q db sources)
        ffirst
-       (d/entity db)))
+       (ent db)))
 
 (defn qes
   "If queried entity ids, return all entities of result"
   [q db & sources]
   (->> (apply -q q db sources)
-       (map #(d/entity db (first %)))))
+       (map #(ent db (first %)))))
 
 (defn qe-by
   "Return single entity by attribute existence or specific value"
   ([db attr]
-    (qe '[:find ?e :in $ ?a :where [?e ?a]] db attr))
+    (ent db(q1-by db attr)))
   ([db attr value]
-    (qe '[:find ?e :in $ ?a ?v :where [?e ?a ?v]] db attr value)))
+    (ent db (q1-by db attr value))))
 
 (defn qes-by
   "Return all entities by attribute existence or specific value"
   ([db attr]
-    (qes '[:find ?e :in $ ?a :where [?e ?a]] db attr))
+    (map #(ent db (.-e %)) (d/datoms db :aevt attr)))
   ([db attr value]
-    (qes '[:find ?e :in $ ?a ?v :where [?e ?a ?v]] db attr value)))
+    (map #(ent db (.-e %)) (d/datoms db :aevt attr value))))
 
 (defn qmap
   "Convert returned 2-tuples to a map"

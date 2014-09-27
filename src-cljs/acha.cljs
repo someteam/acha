@@ -153,7 +153,6 @@
     (.setPathPrefix "#")
     (.setEnabled true))
   
-  
   (ajax "/api/users/"
     (fn [us]
       (d/transact! conn
