@@ -113,7 +113,48 @@
          {:username author
           :time time})))])
 
-; TODO date achievement
+; sha achievements
+(defn make-sha-scanner [achievement-id sha-predicate]
+  [achievement-id
+   (fn [{:keys [id author time]}]
+     (when (sha-predicate id)
+       {:username author
+        :time time}))])
+
+(def lucky
+  (make-sha-scanner
+    :lucky
+    #(.contains % "777")))
+
+(def mark-of-the-beast
+  (make-sha-scanner
+    :mark-of-the-beast
+    #(.contains sha "666")))
+
+; LOC achievements
+(defn make-loc-scanner [achievement-id loc-predicate]
+  [achievement-id
+   (fn [{:keys [loc author time]}]
+     (when (loc-predicate loc)
+       {:username author
+        :time time}))])
+
+(def world-balance
+  (make-loc-scanner
+    :world-balance
+    (fn [loc] (= (:added loc) (:deleted loc)))))
+
+(def eraser
+  (make-loc-scanner
+    :eraser
+    (fn [loc] (nil? (:added loc)))))
+
+(def massive
+  (make-loc-scanner
+    :massive
+    (fn [loc] (>= (:added loc) 1000))))
+
+; TODO date achievements
 (def professional-pride
   [:professional-pride
    (fn [commit-info]
@@ -136,14 +177,6 @@
      nil)])
 
 ; TODO diff achievements
-(def eraser
-  [:eraser
-   (fn [commit-info]
-     nil)])
-(def massive
-  [:massive
-   (fn [commit-info]
-     nil)])
 (def easy-fix
   [:easy-fix
    (fn [commit-info]
@@ -152,24 +185,7 @@
   [:mover
    (fn [commit-info]
      nil)])
-(def world-balance
-  [:world-balance
-   (fn [commit-info]
-     nil)])
 
-; TODO sha achievements
-(def lucky
-  [:lucky
-   (fn [commit-info]
-     nil)])
-(def mark-of-the-beast
-  [:mark-of-the-beast
-   (fn [commit-info]
-     nil)])
-(def commit-get
-  [:commit-get
-   (fn [timeline]
-     nil)])
 
 ; TODO commit-info achievements
 (def borat
@@ -288,6 +304,10 @@
      nil)])
 (def goodboy
   [:goodboy
+   (fn [timeline]
+     nil)])
+(def commit-get
+  [:commit-get
    (fn [timeline]
      nil)])
 
