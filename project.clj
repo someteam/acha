@@ -12,6 +12,9 @@
     [hiccup "1.0.5"]
 
     [clj-jgit "0.7.6"]
+
+    [org.clojure/java.jdbc "0.3.5"]
+    [org.xerial/sqlite-jdbc "3.7.2"]
   ]
 
   :plugins [
