@@ -182,7 +182,7 @@
      (let [time (:time commit-info)
            cal (Calendar/getInstance)
            _ (.setTime cal time)
-           _ (.setTimeZone cal (:time commit-info))
+           _ (.setTimeZone cal (:timezone commit-info))
            commit-day (.get cal Calendar/DAY_OF_YEAR)]
        (when (= 1024 commit-day)
          {:username (:author commit-info)
@@ -194,7 +194,7 @@
      (let [time (:time commit-info)
            cal (Calendar/getInstance)
            _ (.setTime cal time)
-           _ (.setTimeZone cal (:time commit-info))
+           _ (.setTimeZone cal (:timezone commit-info))
            commit-day (.get cal Calendar/DAY_OF_WEEK)
            commit-month (.get cal Calendar/MONTH)
            commit-month-day (.get cal Calendar/DAY_OF_MONTH)]
