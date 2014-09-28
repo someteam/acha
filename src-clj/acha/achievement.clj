@@ -266,7 +266,7 @@
         :time time}))])
 
 (def cool-kid
-  [:cool-kid
+  [:emoji
    (fn [{:keys [message author time]}]
      (when (re-find #"[\uD83C-\uDBFF\uDC00-\uDFFF]+" message)
          {:username author

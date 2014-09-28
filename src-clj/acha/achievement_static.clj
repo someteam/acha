@@ -276,7 +276,7 @@
     :no-more-letters
        {:name "No more letters"
         :description "Write commit message without any letters"}
-    :c00l-kid
+    :emoji
        {:name "C00l kid"
         :description "Use emoji in a commit message"}
     :beggar

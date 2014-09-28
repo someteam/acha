@@ -76,7 +76,7 @@
       [:div.logo {:class    (when-not index? "a")
                   :title    "Acha-acha"
                   :on-click (fn [_] (go! "")) }
-        [:h2 "Enterprise Git Achievement solution." [:br] "Web scale. In the cloud"]]]))
+        [:h2 "Enterprise Git Achievement solution" [:br] "Web scale. In the cloud"]]]))
 
 (r/defc repo [repo]
   (s/html
