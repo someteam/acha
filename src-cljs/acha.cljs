@@ -151,7 +151,7 @@
       [:.ach__name (:achent/name achent)
         (let [max-lvl (reduce max 0 (map #(:ach/level % 0) aches))]
           (when (pos? max-lvl)
-            [:.ach__level max-lvl]))
+            [:.ach__level {:title (:achent/level-desc achent)} max-lvl]))
         ]
       [:.ach__desc (:achent/desc achent)]
       (for [ach  aches
@@ -282,7 +282,8 @@
             (map (fn [[k a]]
                    { :achent/id k
                      :achent/name (:name a)
-                     :achent/desc (:description a) })
+                     :achent/desc (:description a)
+                     :achent/level-desc (:level-description a)})
                  as)))
         (println "Loaded :achent," (count (:eavt @conn)) "datoms")
         (async/put! ch :achent)))
