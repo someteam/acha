@@ -90,9 +90,11 @@
       ]))
 
 (defn add-repo []
-  (let [el  (.getElementById js/document "add_repo__input")
-        url (str/trim (.-value el))]
-    (when-not (str/blank? url)
+  (let [el (.getElementById js/document "add_repo__input")]
+    (doseq [url (str/split (.-value el) #"\s")
+            :let [url (str/trim url)]
+            :when (not (str/blank? url))]
+      (println "Adding" url)
       (ajax (str "/api/add-repo/?url=" (js/encodeURIComponent url))
         (fn [data]
           (if (= :added (:repo/status data))
@@ -101,9 +103,9 @@
                                 :repo/name   (repo-name (get-in data [:repo :url]))
                                 :repo/status :added}])
             (println "Repo already exist" data)))
-        "POST")
-      (set! (.-value el) "")
-      (.focus el))))
+        "POST"))
+    (set! (.-value el) "")
+    (.focus el)))
 
 (r/defc repo-pane [repos]
   (s/html
