@@ -3,6 +3,7 @@
             [clj-jgit.porcelain :as jgit.p]
             [clj-jgit.querying :as jgit.q]
             [clojure.java.io :as io]
+            [clojure.tools.logging :as logging]
             [clojure.string :as string])
   (:import [java.security MessageDigest]
            [java.io ByteArrayOutputStream]
@@ -11,17 +12,27 @@
            [org.eclipse.jgit.lib ObjectReader]
            [org.eclipse.jgit.api Git]
            [org.eclipse.jgit.revwalk RevWalk RevCommit RevTree]
+           [org.eclipse.jgit.transport FetchResult]
            [org.eclipse.jgit.treewalk EmptyTreeIterator CanonicalTreeParser AbstractTreeIterator]))
 
 (defn- data-dir [url]
   (let [repo-name (last (string/split url #"/"))]
     (str "./remotes/" repo-name "_" (util/md5 url))))
 
+(defn safely-force-pull [repo]
+  (try
+    (let [fetch-result ^FetchResult (jgit.p/git-fetch repo)]
+      (when-let [current (first (.getAdvertisedRefs fetch-result))]
+        (jgit.p/git-reset repo (.getName (.getObjectId current)) :hard)))
+    (catch Exception e
+      (logging/error e "Error occured during force pull"))))
+
 (defn load-repo [url]
   (let [path (str (data-dir url) "/repo")]
     (if (.exists (io/as-file path))
-      ;; todo fetch and hard reset too
-      (jgit.p/load-repo path)
+      (let [repo (jgit.p/load-repo path)]
+        (safely-force-pull repo)
+        repo)
       (jgit.p/git-clone url path))))
 
 (gen-interface
@@ -117,5 +128,3 @@
 
 (defn setup []
  (repo-info "https://github.com/tonsky/datascript.git"))
-;  (spit "test_rails" (prn-str (repo-info "https://github.com/rails/rails.git"))))
-
