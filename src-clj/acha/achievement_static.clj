@@ -259,11 +259,11 @@
     :bad-motherfucker
        {:name "Bad motherfucker"
         :description "Swear in a commit message"
-        :level-description "Number of swear words used"}
+        :level-description "One level for each swear word in a message"}
     :hello-linus
        {:name "Hello, Linus"
         :description "10+ swear words in a commit message"
-        :level-description "Number of swear words used"}
+        :level-description "One level for each 10 swear words in a message"}
     :man-of-few-words
        {:name "A man of few words"
         :description "Commit message with 3 letters or less"}
@@ -285,7 +285,7 @@
     :borat
        {:name "Borat"
         :description "Misspell a word in a commit message"
-        :level-description "Maximum number of misspellings"}
+        :level-description "One level for each misspelled word in a message"}
     :hack
        {:name "Real Hacker"
         :description "Use word “hack” in a commit message"}
