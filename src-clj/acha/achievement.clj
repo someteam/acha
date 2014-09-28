@@ -273,6 +273,13 @@
          {:username author
           :time time}))])
 
+(def alzheimers
+  [:alzheimers
+   (fn [{:keys [author time between-time]}]
+     (when (>= between-time (* 60 60 24 30))
+         {:username author
+          :time time}))])
+
 ; TODO commit-info achievements
 (def commenter
   [:commenter
@@ -296,10 +303,6 @@
      nil)])
 (def for-stallman
   [:for-stallman
-   (fn [commit-info]
-     nil)])
-(def alzheimers
-  [:alzheimers
    (fn [commit-info]
      nil)])
 
