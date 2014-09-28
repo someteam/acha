@@ -3,19 +3,35 @@
     [clojure.java.io :as io]
     [clojure.java.jdbc :refer :all]
     [clojure.tools.logging :as logging]
-    [acha.util :as util]))
+    [acha.util :as util])
+  (:import com.mchange.v2.c3p0.ComboPooledDataSource))
 
-(def ^:dynamic db
+(def db-spec
   {:classname   "org.sqlite.JDBC"
    :subprotocol "sqlite"
-   :subname     "acha-sqlite.db"
-   })
+   :subname     "acha-sqlite.db"})
+
+(defn pool
+  [spec]
+  (let [cpds (doto (ComboPooledDataSource.)
+               (.setDriverClass (:classname spec)) 
+               (.setJdbcUrl (str "jdbc:" (:subprotocol spec) ":" (:subname spec)))
+               (.setUser (:user spec))
+               (.setPassword (:password spec))
+               ;; expire excess connections after 30 minutes of inactivity:
+               (.setMaxIdleTimeExcessConnections (* 30 60))
+               ;; expire connections after 3 hours of inactivity:
+               (.setMaxIdleTime (* 3 60 60)))] 
+    {:datasource cpds}))
+
+(def pooled-db (delay (pool db-spec)))
+(defn db-conn [] @pooled-db)
 
 (defn create-db []
-  (when-not (.exists (io/as-file (:subname db)))
+  (when-not (.exists (io/as-file (:subname db-spec)))
     (try
-      (logging/info "Creating DB" (:subname db))
-      (db-do-commands db
+      (logging/info "Creating DB" (:subname db-spec))
+      (db-do-commands (db-conn)
         (create-table-ddl :user
                           [:id "integer primary key autoincrement"]
                           [:name :text]
@@ -44,68 +60,68 @@
         (logging/error e "Failed to initialize DB")))))
 
 (defn add-fake-data []
-  (insert! db :repo {:url "git@github.com:tonsky/datascript.git"})
-  (insert! db :repo {:url "git@github.com:tonsky/41-socks.git"})
-  (insert! db :repo {:url "git@github.com:tonsky/datascript-chat.git"})
-  (insert! db :repo {:url "git@github.com:tonsky/net.async.git"})
-  (insert! db :user {:name "Anders Hovmöller" :email "boxed@killingar.net"})
-  (insert! db :user {:name "Bobby Calderwood" :email "bobby_calderwood@mac.com"})
-  (insert! db :user {:name "Kevin J. Lynagh"  :email "kevin@keminglabs.com"})
-  (insert! db :user {:name "Nikita Prokopov"  :email "prokopov@gmail.com"})
-  (insert! db :user {:name "montyxcantsin"    :email "montyxcantsin@gmail.com"})
-  (insert! db :user {:name "thegeez"          :email "thegeez@users.noreply.github.com"})
+  (insert! (db-conn) :repo {:url "git@github.com:tonsky/datascript.git"})
+  (insert! (db-conn) :repo {:url "git@github.com:tonsky/41-socks.git"})
+  (insert! (db-conn) :repo {:url "git@github.com:tonsky/datascript-chat.git"})
+  (insert! (db-conn) :repo {:url "git@github.com:tonsky/net.async.git"})
+  (insert! (db-conn) :user {:name "Anders Hovmöller" :email "boxed@killingar.net"})
+  (insert! (db-conn) :user {:name "Bobby Calderwood" :email "bobby_calderwood@mac.com"})
+  (insert! (db-conn) :user {:name "Kevin J. Lynagh"  :email "kevin@keminglabs.com"})
+  (insert! (db-conn) :user {:name "Nikita Prokopov"  :email "prokopov@gmail.com"})
+  (insert! (db-conn) :user {:name "montyxcantsin"    :email "montyxcantsin@gmail.com"})
+  (insert! (db-conn) :user {:name "thegeez"          :email "thegeez@users.noreply.github.com"})
   )
 
 (defn get-repo-list []
-  (query db "SELECT r.*, count(a.id) AS achievements FROM repo r
+  (query (db-conn) "SELECT r.*, count(a.id) AS achievements FROM repo r
     LEFT JOIN achievement a ON r.id=a.repoid GROUP BY r.id"))
 
 (defn get-user-list []
-  (query db "SELECT u.*, count(a.id) AS achievements FROM user u 
+  (query (db-conn) "SELECT u.*, count(a.id) AS achievements FROM user u 
     LEFT JOIN achievement a ON u.id=a.userid GROUP BY u.id"))
 
 (defn get-ach-list []
-  (query db "SELECT * FROM achievement"))
+  (query (db-conn) "SELECT * FROM achievement"))
 
 (defn get-user-ach [id]
-  (query db (str "SELECT * FROM achievement WHERE userid=" id)))
+  (query (db-conn) (str "SELECT * FROM achievement WHERE userid=" id)))
 
 (defn get-repo-ach [id]
-  (query db (str "SELECT * FROM achievement WHERE repoid=" id)))
+  (query (db-conn) (str "SELECT * FROM achievement WHERE repoid=" id)))
 
 (defn get-repo-by-url [url] 
-  (first (query db ["select * from repo where url = ?" url])))
+  (first (query (db-conn) ["select * from repo where url = ?" url])))
 
 (defn get-or-insert-repo [url]
   (let [url (util/normalize-str url)]
     (if-let [repo (get-repo-by-url url)]
       repo
       (do
-        (insert! db :repo {:url url :state "new"})
+        (insert! (db-conn) :repo {:url url :state "new"})
         (get-repo-by-url url)))))
 
 (defn get-user-by-email [email] 
-  (first (query db ["select * from user where email = ?" email])))
+  (first (query (db-conn) ["select * from user where email = ?" email])))
 
 (defn get-or-insert-user [email name]
   (let [email (util/normalize-str email)]
     (if-let [user (get-user-by-email email)]
       user
       (do
-        (insert! db :user {:email email :name name})
+        (insert! (db-conn) :user {:email email :name name})
         (get-user-by-email email)))))
 
 (defn get-achievements-by-repo [id]
-  (query db ["select achievement.*, user.* from achievement
+  (query (db-conn) ["select achievement.*, user.* from achievement
              left join user on user.id = achievement.userid
              where repoid= ?" id]))
 
 (defn get-next-repo []
-  (first (query db ["select * from repo where (timestamp < ?)
+  (first (query (db-conn) ["select * from repo where (timestamp < ?)
       order by timestamp asc limit 1" (- (quot (System/currentTimeMillis) 1000) (* 15 60))])))
 
 (defn- try-to-update [repo]
-  (update! db :repo {:timestamp (quot (System/currentTimeMillis) 1000)}
+  (update! (db-conn) :repo {:timestamp (quot (System/currentTimeMillis) 1000)}
     ["id = ? and timestamp = ?" (:id repo) (:timestamp repo)]))
 
 (defn get-next-repo-to-process []
@@ -113,18 +129,13 @@
     (if (try-to-update repo) repo [])))
 
 (defn insert-achievement [body]
-  (insert! db :achievement body))
+  (insert! (db-conn) :achievement body))
 
 (defn update-repo-sha1 [repo-id sha1]
-  (update! db :repo {:sha1 sha1 :state "ok"} ["id = ?" repo-id]))
+  (update! (db-conn) :repo {:sha1 sha1 :state "ok"} ["id = ?" repo-id]))
 
 (defn update-repo-state [repo-id state]
-  (update! db :repo {:state state} ["id = ?" repo-id]))
+  (update! (db-conn) :repo {:state state} ["id = ?" repo-id]))
 
 (defn count-new-repos []
-  (count (query db "select * from repo where state = \"new\"")))
-
-(defmacro with-connection [& body]
-  `(with-db-connection [con# db]
-      (binding [db con#]
-        ~@body)))
+  (count (query (db-conn) "select * from repo where state = \"new\"")))
