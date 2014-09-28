@@ -70,9 +70,9 @@
   [:hello-linus 
   (fn [commit-info]
     (when-let [bad-acha ((second bad-motherfucker) commit-info)]
-    (when (>= (:level bad-acha) 10))
-    {:username (:author commit-info)
-          :time (:time commit-info)}))])
+      (when (>= (:level bad-acha) 10)
+        {:username (:author commit-info)
+         :time     (:time commit-info)})))])
 
 (def borat
   (make-word-counting-scanner [:borat spellings/table]))
