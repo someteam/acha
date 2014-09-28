@@ -378,8 +378,8 @@
 (def multilingual
   [:multilingual
    (fn [commit-info]
-     (when (>= (+ (map #(if (% commit-info) 1 0) 
-      (vals (map make-language-scanner language-table)))) 5) 
+     (when (>= (reduce + (map #(if (% commit-info) 1 0) 
+      (map second (map make-language-scanner language-table)))) 5) 
        {:username (:author commit-info)
         :time (:time commit-info)}))])
 
