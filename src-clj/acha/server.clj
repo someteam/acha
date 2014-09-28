@@ -29,12 +29,14 @@
        (update-in [:body] write-transit :json {}))))
 
 (defn add-repo [url]
-  (let [url (util/normalize-str url)]
-    (if-let [repo (db/get-repo-by-url url)]
-      {:repo/status :exists, :repo   repo}
-      (let [repo (db/get-or-insert-repo url)]
-        (logging/info "Added repo:" repo)
-        {:repo/status :added, :repo   repo}))))
+  (let [url (util/normalize-str url)
+        repo (db/get-repo-by-url url)]
+    (cond
+      (< 4 (db/count-new-repos)) {:repo/status :error, :message "Too many unprocessed repos in queue"}
+      repo                      {:repo/status :exists, :repo repo}
+      :else                     (let [repo (db/get-or-insert-repo url)]
+                                  (logging/info "Added repo:" repo)
+                                  {:repo/status :added, :repo repo}))))
 
 (def api-handler
   (->

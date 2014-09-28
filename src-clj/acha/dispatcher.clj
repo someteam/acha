@@ -81,11 +81,13 @@
     (try
       (when-let [repo (db/get-next-repo-to-process)]
         (logging/info "Worker #" worker-id " has started processing" (:url repo))
-        (analyze repo))
+        (analyze repo)
+        (logging/info "Worker #" worker-id " has finished processing" (:url repo)))
       (Thread/sleep 1000)
       (catch InterruptedException e (throw e))
       (catch Exception e
-        (logging/error e "Catch exception during repo analysing")))))
+        (logging/error e "Catch exception during repo analysing")))
+    (recur)))
 
 (defn run-workers []
   (doseq [id (range 4)]

@@ -100,10 +100,9 @@
              left join user on user.id = achievement.userid
              where repoid= ?" id]))
 
-(defn- get-next-repo []
-  (first (query db ["select * from repo 
-    where ? - timestamp > 4*60*60
-    order by timestamp asc limit 1" (quot (System/currentTimeMillis) 1000)])))
+(defn get-next-repo []
+  (first (query db ["select * from repo where (timestamp < ?)
+      order by timestamp asc limit 1" (- (quot (System/currentTimeMillis) 1000) (* 15 60))])))
 
 (defn- try-to-update [repo]
   (update! db :repo {:timestamp (quot (System/currentTimeMillis) 1000)}
@@ -121,6 +120,9 @@
 
 (defn update-repo-state [repo-id state]
   (update! db :repo {:state state} ["id = ?" repo-id]))
+
+(defn count-new-repos []
+  (count (query db "select * from repo where state = \"new\"")))
 
 (defmacro with-connection [& body]
   `(with-db-connection [con# db]
