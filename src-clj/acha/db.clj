@@ -28,7 +28,7 @@
                           [:state :text]
                           [:sha1 :text]
                           [:reason :text]
-                          [:timestamp :text])
+                          [:timestamp "integer not null default 0"])
         "CREATE UNIQUE INDEX `url_unique` ON `repo` (`url` ASC)"
         (create-table-ddl :achievement
                           [:id "integer primary key autoincrement"]
@@ -44,10 +44,10 @@
         (logging/error e "Failed to initialize DB")))))
 
 (defn add-fake-data []
-  (insert! db :repo {:url "git@github.com:tonsky/datascript"})
-  (insert! db :repo {:url "git@github.com:tonsky/41-socks"})
-  (insert! db :repo {:url "git@github.com:tonsky/datascript-chat"})
-  (insert! db :repo {:url "git@github.com:tonsky/net.async"})
+  (insert! db :repo {:url "git@github.com:tonsky/datascript.git"})
+  (insert! db :repo {:url "git@github.com:tonsky/41-socks.git"})
+  (insert! db :repo {:url "git@github.com:tonsky/datascript-chat.git"})
+  (insert! db :repo {:url "git@github.com:tonsky/net.async.git"})
   (insert! db :user {:name "Anders Hovmöller" :email "boxed@killingar.net"})
   (insert! db :user {:name "Bobby Calderwood" :email "bobby_calderwood@mac.com"})
   (insert! db :user {:name "Kevin J. Lynagh"  :email "kevin@keminglabs.com"})
@@ -101,11 +101,11 @@
 
 (defn- get-next-repo []
   (first (query db ["select * from repo 
-    where strftime('%s','now') - strftime('%s', timestamp) > 4*60*60 or timestamp is null
-    order by timestamp asc limit 1"])))
+    where ? - timestamp > 4*60*60
+    order by timestamp asc limit 1" (quot (System/currentTimeMillis) 1000)])))
 
 (defn- try-to-update [repo]
-  (update! db :repo {:timestamp (.toLocaleString (java.util.Date.))} 
+  (update! db :repo {:timestamp (quot (System/currentTimeMillis) 1000)}
     ["id = ? and timestamp = ?" (:id repo) (:timestamp repo)]))
 
 (defn get-next-repo-to-process []
