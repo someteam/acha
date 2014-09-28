@@ -58,18 +58,17 @@
 (defn make-word-counting-scanner [[achievement-id words]]
   [achievement-id
    (fn [{:keys [message author time]}]
-     (let [count-word (fn [word] (util/count-substring-occurrences message word))
-           word-count (reduce + (map count-word words))]
+     (let [word-count (->> (clojure.string/split message #"\b") (filter words) (count))]
        (when (pos? word-count)
          {:level word-count
           :username author
           :time time})))])
 
 (def bad-motherfucker
-  (make-word-counting-scanner [:bad-motherfucker ["fuck"]]))
+  (make-word-counting-scanner [:bad-motherfucker #{"fuck"}]))
 
 (def swear-words
-  ["fuck" "shit" "damn" "sucks"])
+  #{"fuck" "shit" "damn" "sucks"})
 
 (def hello-linus
   (make-word-counting-scanner [:hello-linus swear-words]))

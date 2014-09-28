@@ -1,7 +1,7 @@
 (ns acha.spellings)
 
 ; origin http://en.wikipedia.org/wiki/Wikipedia:Lists_of_common_misspellings/For_machines
-(def table ["abandonned" "aberation" "abilties" "abilty" "abondon" "abbout" "abotu" "abouta" 
+(def table #{"abandonned" "aberation" "abilties" "abilty" "abondon" "abbout" "abotu" "abouta" 
 "aboutit" "aboutthe" "abscence" "abondoned" "abondoning" "abondons" "aborigene" "accesories" 
 "accidant" "abortificant" "abreviate" "abreviated" "abreviation" "abritrary" "absail" "absailing" 
 "absense" "absolutly" "absorbsion" "absorbtion" "abudance" "abundacies" "abundancies" "abundunt" 
@@ -533,4 +533,4 @@
 "wresters" "wriet" "writen" "wroet" "wrok" "wroking" "wtih" "wupport" 
 "xenophoby" "yaching" "yaer" "yaerly" "yaers" "yatch" "yearm" "yeasr" 
 "yeild" "yeilding" "Yementite" "yera" "yrea" "yeras" "yersa" "yotube" 
-"youseff" "youself" "ytou" "yuo" "zeebra"])
+"youseff" "youself" "ytou" "yuo" "zeebra"})
