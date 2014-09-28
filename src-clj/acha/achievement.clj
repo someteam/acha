@@ -20,7 +20,7 @@
 (defn make-subword-scanner [[achievement-id words]]
   [achievement-id
    (fn [{:keys [message author time]}]
-     (when (->> (clojure.string/split message #"\b") (filter words) (count))
+     (when (pos? (->> (clojure.string/split message #"\b") (filter words) (count)))
          {:username author
           :time time}))])
 
