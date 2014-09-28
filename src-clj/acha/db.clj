@@ -75,21 +75,13 @@
   )
 
 (defn get-repo-list []
-  (query (db-conn) "SELECT r.*, count(a.id) AS achievements FROM repo r
-    LEFT JOIN achievement a ON r.id=a.repoid GROUP BY r.id"))
+  (query (db-conn) "SELECT r.* FROM repo r"))
 
 (defn get-user-list []
-  (query (db-conn) "SELECT u.*, count(a.id) AS achievements FROM user u 
-    LEFT JOIN achievement a ON u.id=a.userid GROUP BY u.id"))
+  (query (db-conn) "SELECT u.* FROM user u"))
 
 (defn get-ach-list []
   (query (db-conn) "SELECT * FROM achievement"))
-
-(defn get-user-ach [id]
-  (query (db-conn) (str "SELECT * FROM achievement WHERE userid=" id)))
-
-(defn get-repo-ach [id]
-  (query (db-conn) (str "SELECT * FROM achievement WHERE repoid=" id)))
 
 (defn get-repo-by-url [url] 
   (first (query (db-conn) ["select * from repo where url = ?" url])))

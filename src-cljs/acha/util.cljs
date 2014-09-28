@@ -1,6 +1,9 @@
 (ns acha.util
   (:require
-    [datascript :as d]))
+    [datascript :as d])
+  (:require-macros
+    [acha :refer [profile]]))
+
 
 ;; DATASCRIPT
 
@@ -67,3 +70,19 @@
   "Convert returned 2-tuples to a map"
   [q & sources]
   (into {} (apply -q q sources)))
+
+;; (defn- -transact-async! [conn datoms]
+;;   (if (empty? datoms)
+;;     (do
+;;       (.timeEnd js/console "transact-async!")
+;;       (.log js/console (str (count (:eavt @conn)) " datoms")))
+;;     (let [[h t] (split-at 50 datoms)]
+;;       (profile "  -transact-async!"
+;;         (d/transact! conn h))
+;;       (js/setTimeout #(-transact-async! conn t) 16))))
+
+;; (defn transact-async! [conn datoms]
+;;   (.time js/console "transact-async!")
+;;   (.log js/console (str "Adding " (count datoms) " entities"))
+;;   (-transact-async! conn datoms))
+

@@ -80,7 +80,8 @@
 
 (r/defc repo [repo]
   (s/html
-    [:.repo.a {:on-click (fn [_] (go! "/repos/" (:repo/id repo)))}
+    [:.repo.a {:key (:db/id repo)
+               :on-click (fn [_] (go! "/repos/" (:repo/id repo)))}
       [:.repo__name
         (:repo/name repo)
         [:.id (:repo/id repo)]
@@ -118,22 +119,27 @@
 
 ;; (def silhouette "https%3A%2F%2Fdl.dropboxusercontent.com%2Fu%2F561580%2Fsilhouette.png")
 
-(r/defc user [user]
+(r/defc user [user ach-cnt]
   (let [email-hash (when-let [email (:user/email user)] (js/md5 email))]
     (s/html
-      [:.user.a {:on-click (fn [_] (go! "/users/" (:user/id user)))}
+      [:.user.a {:key (:db/id user)
+                 :on-click (fn [_] (go! "/users/" (:user/id user)))}
         [:.user__avatar
           [:img {:src (str "http://www.gravatar.com/avatar/" email-hash "?d=retro")}]]
         [:.user__name (:user/name user) [:.id (:user/id user)]]
         [:.user__email (:user/email user)]
-        [:.user__ach (:user/ach user)]])))
+        (when ach-cnt [:.user__ach ach-cnt])])))
 
-(r/defc users-pane [users]
-  (s/html
-    [:.users_pane.pane
-      [:h1 "Users"]
-      [:ul
-        (map (fn [u] [:li (user u)]) users)]]))
+(r/defc users-pane [db users]
+  (let [ach-cnt (u/qmap '[:find  ?u (count ?a)
+                          :where [?e :ach/achent ?a]
+                                 [?e :ach/user ?u]] db)
+        users (->> users (sort-by #(ach-cnt (:db/id %) -1)) reverse)]
+    (s/html
+      [:.users_pane.pane
+        [:h1 "Users"]
+        [:ul
+          (map (fn [u] [:li (user u (ach-cnt (:db/id u)))]) users)]])))
 
 (defn- sha1-url [url sha1]
   (let [path (condp re-matches url
@@ -145,7 +151,7 @@
 
 (r/defc ach [achent aches]
   (s/html
-    [:.ach
+    [:.ach { :key (:db/id achent) }
       [:.ach__logo
         [:img {:src (str "aches/" (name (:achent/id achent)) "@6x.png")}]]
       [:.ach__name (:achent/name achent)
@@ -183,7 +189,7 @@
     (s/html
       [:.window
         (header true)
-        (users-pane (->> (u/qes-by db :user/id) (sort-by :user/ach) reverse))
+        (users-pane db (u/qes-by db :user/id))
         (repo-pane  (u/qes-by db :repo/name))])))
 
 (r/defc repo-page [db id]
@@ -203,7 +209,7 @@
     (s/html
       [:.window
         (header false)
-        (users-pane [user])
+        (users-pane db [user])
         (ach-pane aches)])))
 
 (r/defc application [db]
@@ -296,8 +302,8 @@
           (fn [as]
             (let [db @conn
                   aches (u/qmap '[:find ?id ?eid :where [?eid :achent/id ?id]] db)
-                  users (u/qmap '[:find ?id ?eid :where [?eid :user/id ?id]]    db)
-                  repos (u/qmap '[:find ?id ?eid :where [?eid :repo/id ?id]]    db)]
+                  users (u/qmap '[:find ?id ?eid :where [?eid :user/id ?id]]   db)
+                  repos (u/qmap '[:find ?id ?eid :where [?eid :repo/id ?id]]   db)]
               (profile "transact :ach"
                 (d/transact! conn
                   (->> as
