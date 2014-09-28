@@ -44,11 +44,16 @@
 (defn map-by [f xs]
   (reduce (fn [acc x] (assoc acc (f x) x)) {} xs))
 
+(defn trimr [s suffix]
+  (let [pos (- (count s) (count suffix))]
+    (if (and (>= (count s) (count suffix))
+             (= (subs s pos) suffix))
+      (subs s 0 pos)
+      s)))
+
 (defn repo-name [url]
-  (let [[_ m] (re-matches #".*/([^/]+)" url)]
-    (if (and m (re-matches #".*\.git" m))
-      (subs m 0 (- (count m) 4))
-      m)))
+  (let [[_ m] (re-matches #".*/([^/]+)/?" url)]
+    (trimr m ".git")))
 
 ;; Navigation
 
@@ -132,11 +137,11 @@
 
 (defn- sha1-url [url sha1]
   (let [path (condp re-matches url
-               #"(?i)(?:https?://)?(?:www\.)?github.com/([\-_\w0-9\.\/]+/?)\.git" :>> second
-               #"(?i)git\@github\.com\:([\-_\w0-9\.\/]+)\.git" :>> second
+               #"(?i)(?:https?://)?(?:www\.)?github.com/(.+)" :>> second
+               #"(?i)git\@github\.com\:(.+)" :>> second
                nil)]
     (when path
-      (str "https://github.com/" path "/commit/" sha1))))
+      (str "https://github.com/" (trimr path ".git") "/commit/" sha1))))
 
 (r/defc ach [achent aches]
   (s/html
