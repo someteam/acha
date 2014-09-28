@@ -81,6 +81,14 @@
                   :on-click (fn [_] (go! "")) }
         [:h2 "Enterprise Git Achievement solution" [:br] "Web scale. In the cloud"]]]))
 
+(r/defc footer []
+  (s/html
+    [:.footer
+      [:.footer__copy   "© Copyright 2014 " [:a {:href "https://clojurecup.com/?#/apps/acha"} "Team Acha-acha"]]
+      [:.footer__author [:img {:src "aches/wow@6x.png"}] "Nikita Prokopov"]
+      [:.footer__author [:img {:src "aches/programmers-day@6x.png"}] "Andrey Vasenin"]
+      [:.footer__author [:img {:src "aches/owl@6x.png"}] "Renat Idrisov"]
+      [:.footer__author [:img {:src "aches/haskell@6x.png"}] "Dmitry Ivanov"]]))
 
 ;; (def silhouette "https%3A%2F%2Fdl.dropboxusercontent.com%2Fu%2F561580%2Fsilhouette.png")
 
@@ -285,7 +293,8 @@
       [:.window
         (header true)
         (users-pane db (u/qes-by db :user/id))
-        (repo-pane  db)])))
+        (repo-pane  db)
+        (footer)])))
 
 (r/defc repo-page [db id]
   (let [repo  (u/qe-by db :repo/id id)
@@ -296,7 +305,8 @@
       [:.window
         (header false)
         (ach-pane aches repo-achent)
-        (repo-profile repo aches)])))
+        (repo-profile repo aches)
+        (footer)])))
 
 (r/defc user-page [db id]
   (let [user  (u/qe-by  db :user/id id)
@@ -308,7 +318,7 @@
         (header false)
         (ach-pane aches user-achent)
         (user-profile user aches)
-        ])))
+        (footer)])))
 
 (r/defc application [db]
   (let [path      (u/q1 '[:find ?p :where [0 :path ?p]] db)
