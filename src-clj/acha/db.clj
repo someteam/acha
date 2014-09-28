@@ -105,11 +105,11 @@
     order by timestamp asc limit 1"])))
 
 (defn- try-to-update [repo]
-  (update! db :repo {:timestamp "datetime('now')"} 
+  (update! db :repo {:timestamp (.toLocaleString (java.util.Date.))} 
     ["id = ? and timestamp = ?" (:id repo) (:timestamp repo)]))
 
 (defn get-next-repo-to-process []
-  (let [repo (get-next-repo)]
+  (when-let [repo (get-next-repo)]
     (if (try-to-update repo) repo [])))
 
 (defn insert-achievement [body]
