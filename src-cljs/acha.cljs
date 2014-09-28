@@ -121,16 +121,36 @@
 
 ;; (def silhouette "https%3A%2F%2Fdl.dropboxusercontent.com%2Fu%2F561580%2Fsilhouette.png")
 
+(defn avatar [email & [w]]
+  (when email
+    (str "http://www.gravatar.com/avatar/" (js/md5 email) "?&d=retro" (when w (str "&s=" w)))))
+
+(defn achent-img [achent]
+  (when achent
+    (str "aches/" (name (:achent/id achent)) "@6x.png")))
+
 (r/defc user [user ach-cnt]
-  (let [email-hash (when-let [email (:user/email user)] (js/md5 email))]
-    (s/html
-      [:.user.a {:key (:db/id user)
-                 :on-click (fn [_] (go! "/users/" (:user/id user)))}
-        [:.user__avatar
-          [:img {:src (str "http://www.gravatar.com/avatar/" email-hash "?d=retro")}]]
-        [:.user__name (:user/name user) [:.id (:user/id user)]]
-        [:.user__email (:user/email user)]
-        (when ach-cnt [:.user__ach ach-cnt])])))
+  (s/html
+    [:.user.a {:key (:db/id user)
+               :on-click (fn [_] (go! "/users/" (:user/id user)))}
+      [:.user__avatar
+        [:img {:src (avatar (:user/email user) 114)}]]
+      [:.user__name (:user/name user) [:.id (:user/id user)]]
+      [:.user__email (:user/email user)]
+      (when ach-cnt [:.user__ach ach-cnt])]))
+
+(r/defc user-profile [user aches]
+  (s/html
+    [:.up.pane
+      [:.up__avatar
+        [:img {:src (avatar (:user/email user) 228)}]]
+      [:.up__name (:user/name user) [:.id (:user/id user)]]
+      [:.up__email (:user/email user)]
+      [:.up__hr]
+      [:.up__achs
+        (for [[achent _] aches]
+          [:img.up__ach {:src   (achent-img achent)
+                         :title (str (:achent/name achent) ":\n\n" (:achent/desc achent)) }])]]))
 
 (r/defc users-pane [db users]
   (let [ach-cnt (u/qmap '[:find  ?u (count ?a)
@@ -155,7 +175,7 @@
   (s/html
     [:.ach { :key (:db/id achent) }
       [:.ach__logo
-        [:img {:src (str "aches/" (name (:achent/id achent)) "@6x.png")}]]
+        [:img {:src (achent-img achent)}]]
       [:.ach__name (:achent/name achent)
         (let [max-lvl (reduce max 0 (map #(:ach/level % 0) aches))]
           (when (pos? max-lvl)
@@ -165,14 +185,17 @@
       (for [ach  aches
             :let [sha1     (:ach/sha1 ach)
                   repo-url (get-in ach [:ach/repo :repo/url])
-                  text     (str (subs sha1 0 7) " @ " (repo-name repo-url))]]
-        [:div
+                  text     (str (repo-name repo-url) "/" (subs sha1 0 7))
+                  title    (str "Date: " (:ach/ts ach)
+                                "\nSHA-1: " sha1
+                                "\nRepository: " repo-url)]]
+        [:div.ach__links
           (if-let [commit-url (sha1-url repo-url sha1)]
-            [:a.ach__link { :target "_blank"
+            [:a.ach__text { :target "_blank"
                             :href  commit-url
-                            :title sha1 }
+                            :title title }
              text]
-            [:.ach__sha1 text])
+            [:.ach__text {:title title} text])
          [:.id (:ach/id ach)]])
      ]))
 
@@ -181,9 +204,14 @@
     [:.ach_pane.pane
       [:h1 "Achievements"]
       [:ul
-        (->> aches
-             (group-by :ach/achent)
-             (map (fn [[achent aches]] [:li (ach achent aches)])))]]))
+        (map (fn [[achent aches]] [:li (ach achent aches)]) aches)]]))
+
+(defn group-aches [aches]
+  (->> aches
+    (group-by :ach/achent)
+    (sort-by (fn [[achent aches]] (list (reduce max 0 (map :ach/ts aches))
+                                        (:achent/id achent))))
+    reverse))
 
 (r/defc index-page [db]
   (do
@@ -205,14 +233,14 @@
 (r/defc user-page [db id]
   (let [user  (u/qe-by  db :user/id id)
         aches (->> (u/qes-by db :ach/user (:db/id user))
-                   (sort-by :ach/ts)
-                   reverse)]
+                   group-aches)]
     (set-title! (:user/name user))
     (s/html
       [:.window
         (header false)
-        (users-pane db [user])
-        (ach-pane aches)])))
+        (ach-pane aches)
+        (user-profile user aches)
+        ])))
 
 (r/defc application [db]
   (let [path      (u/q1 '[:find ?p :where [0 :path ?p]] db)
@@ -317,7 +345,7 @@
                                  :ach/user   (users (:userid a))
                                  :ach/achent achent
                                  :ach/sha1   (:sha1 a)
-                                 :ach/ts     (.parse js/Date (:timestamp a)) }
+                                 :ach/ts     (js/Date. (.parse js/Date (:timestamp a))) }
                                (:level a)
                                  (assoc :ach/level (:level a))))))
                     (remove nil?)

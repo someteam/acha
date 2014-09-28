@@ -11,7 +11,7 @@ html, textarea, button {
 
 html {}
 td { vertical-align: top; }
-ul { list-style-type: none; padding: 0; }
+ul { list-style-type: none; padding: 0; margin-top: 30px; }
 .a { cursor: pointer; }
 a { color: #7E5DA3; }
 a:hover { color: #489125; }
@@ -19,7 +19,7 @@ a:hover { color: #489125; }
 .id { display: none; }
 .id:before { content: " ["; } .id:after { content: "]"; }
 
-.window { padding: 40px 80px; vertical-align: top; }
+.window { padding: 40px 0px; margin: 0 auto; width: 900px; vertical-align: top; }
 
 .header { border-bottom: 3px solid #7E5DA3; }
 
@@ -30,7 +30,7 @@ a:hover { color: #489125; }
 .logo.a > h2 { color: #7E5DA3; }
 .logo.a:hover > h2 { color: #489125; }
 
-.pane { float: left; width: 400px; margin: 20px 0 0 0; }
+.pane { float: left; width: 450px; margin: 20px 0 0 0; }
 
 .repo { font-size: 16px; line-height: 20px; margin: 0 0 12px 0; display: inline-block; border-bottom: 2px solid transparent; }
 .repo.a:hover { color: #7E5DA3; }
@@ -58,17 +58,24 @@ a:hover { color: #489125; }
 .user__ach { line-height: 25px; display: inline; color: #F0434D; font-weight: bold; background-image: url(i/medal.png); background-size: 10px 8px; background-repeat: no-repeat; background-position: 100% 3px; border: 2px solid #F0434D; padding: 2px 12px 0 2px; border-radius: 3px; }
 
 
+.up { position: relative; padding: 10px 5px 5px 138px; font-size: 24px; line-height: 32px; }
+.up__avatar { position: absolute; left: 5px; top: 13px; width: 114px; height: 114px; }
+.up__avatar > img { width: 100%; height: 100%; -webkit-mask-box-image: url('i/avatar_mask.png'); }
+.up__name { font-weight: bold; } 
+.up__email { }
+.up__hr { width: 200px; margin: 10px 0; border-bottom: 3px solid #7E5DA3; }
+.up__ach  { width: 38px; height: 38px; margin: 5px; }
+.up__achs { position: absolute; top: 150px; left: 0; width: 450px; line-height: 0px; }
 
-
-
-
-.ach { position: relative; width: 400px; height: 79px; padding: 5px 5px 5px 77px; margin: 0 0 16px 0; line-height: 18px; overflow: hidden; }
+.ach { position: relative; width: 400px; height: 79px; padding: 0 0 0 72px; margin: 0 0 16px 0; line-height: 18px; overflow: hidden; }
 /* .ach { border: 6px solid transparent; border-image:url(i/border.png) 12 12 repeat; } */
-.ach:hover { background: #f7f7f7; }
-.ach__logo { position: absolute; left: 5px; top: 5px; width: 57px; height: 57px;  }
+/* .ach:hover { background: #f7f7f7; } */
+.ach__logo { position: absolute; left: 0; top: 0; width: 57px; height: 57px;  }
 .ach__logo > img { width: 100%; height: 100%;  }
 
 .ach__name { font-weight: bold; }
 .ach__desc { color: #999; }
 .ach__level:before { content: " lvl "; }
 .ach__level { display: inline; position: relative; top: -5px; font-size: 10px; }
+.ach__text { color: #999; text-decoration: none; border-bottom: 1px solid #eee; }
+.ach__links { margin-top: 5px; }
