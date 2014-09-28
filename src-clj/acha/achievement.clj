@@ -16,14 +16,12 @@
    :level 3
    :time #inst "2014-04-16T17:43:20.000-00:00"})
 
-(defn make-substring-scanner [[achievement-id needle]]
+(defn make-subword-scanner [[achievement-id words]]
   [achievement-id
-   (fn [commit-info]
-     (let [l-needle (str/lower-case needle)
-           l-msg    (str/lower-case (:message commit-info))]
-       (when (.contains l-msg l-needle)
-         {:username (:author commit-info)
-          :time (:time commit-info)})))])
+   (fn [{:keys [message author time]}]
+     (when (->> (clojure.string/split message #"\b") (filter words) (count))
+         {:username author
+          :time time}))])
 
 ; months are zero-based because java
 (defn make-date-scanner [[achievement-id month day]]
@@ -391,18 +389,18 @@
    [:valentine 1 14]])
 
 (def substring-table
-  [[:beggar "achievement"]
-   [:citation-needed "www.stackoverflow.com"]
-   [:fix "fix"]
-   [:forgot "forgot"]
-   [:google "google"]
-   [:hack "hack"]
-   [:impossible "impossible"]
-   [:magic "magic"]
-   [:never-probably "later"]
-   [:secure "secure"]
-   [:sorry "sorry"]
-   [:wow "wow"]])
+  [[:beggar #{"achievement"}]
+   [:citation-needed #{"stackoverflow"}]
+   [:fix #{"fix"}]
+   [:forgot #{"forgot"}]
+   [:google #{"google"}]
+   [:hack #{"hack"}]
+   [:impossible #{"impossible"}]
+   [:magic #{"magic"}]
+   [:never-probably #{"later"}]
+   [:secure #{"secure"}]
+   [:sorry #{"sorry"}]
+   [:wow #{"wow"}]])
 
 (def language-table
   [[:basic ["bas" "vb" "vbs" "vba"]]
@@ -450,7 +448,7 @@
     (map make-filename-scanner filename-table)
     (map make-language-scanner language-table)
     (map make-date-scanner date-table)
-    (map make-substring-scanner substring-table)
+    (map make-subword-scanner substring-table)
     [bad-motherfucker
      borat
      cool-kid
