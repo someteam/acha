@@ -67,7 +67,7 @@ a:hover { color: #489125; }
 .up__ach  { width: 38px; height: 38px; margin: 5px; }
 .up__achs { position: absolute; top: 150px; left: 0; width: 450px; line-height: 0px; }
 
-.ach { position: relative; width: 400px; height: 79px; padding: 0 0 0 72px; margin: 0 0 16px 0; line-height: 18px; overflow: hidden; }
+.ach { position: relative; width: 400px; padding: 0 0 0 72px; margin: 0 0 32px 0; line-height: 18px; overflow: hidden; }
 /* .ach { border: 6px solid transparent; border-image:url(i/border.png) 12 12 repeat; } */
 /* .ach:hover { background: #f7f7f7; } */
 .ach__logo { position: absolute; left: 0; top: 0; width: 57px; height: 57px;  }
