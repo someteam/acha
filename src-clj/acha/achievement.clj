@@ -230,12 +230,19 @@
          {:username (:author commit-info)
           :time time})))])
 
-; TODO date achievements
-
 (def time-get
   [:time-get
    (fn [commit-info]
-     nil)])
+     (let [time (:time commit-info)
+           timezone (:timezone commit-info)
+           cal (Calendar/getInstance)
+           _ (.setTime cal time)
+           _ (.setTimeZone cal timezone)
+           commit-minute (.get cal Calendar/MINUTE)
+           commit-hour (.get cal Calendar/HOUR_OF_DAY)]
+       (when (and (= commit-hour 0) (= commit-minute 0))
+         {:username (:author commit-info)
+          :time time})))])
 
 (def mover
   [:mover
