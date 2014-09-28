@@ -72,3 +72,6 @@
     
     ))
 
+(defn start-next []
+  (if-let [repo (db/get-next-repo-to-process)]
+    (analyze (:url repo))))

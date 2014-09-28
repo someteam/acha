@@ -97,6 +97,19 @@
              left join user on user.id = achievement.userid
              where repoid= ?" id]))
 
+(defn- get-next-repo []
+  (query db ["select * from repo 
+    where strftime('%s','now') - strftime('%s', timestamp) > 4*60*60 or timestamp is null
+    order by timestamp asc limit 1"]))
+
+(defn- try-to-update [repo]
+  (query db ["update repo set timestamp = now() 
+    where id = ? and timestamp = ?" (:id repo) (:timestamp repo)]))
+
+(defn get-next-repo-to-process []
+  (let [repo (get-next-repo)]
+    (if (try-to-update repo) repo [])))
+
 (defn insert-achievement [body]
   (insert! db :achievement body))
 
