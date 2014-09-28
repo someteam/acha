@@ -255,14 +255,14 @@
 (def empty-commit
   [:empty-commit
    (fn [{:keys [changed-files author time]}]
-     (when (= changed-files 0)
+     (when (= (count changed-files) 0)
        {:username author
         :time time}))])
 
 (def wrecking-ball
   [:wrecking-ball
    (fn [{:keys [changed-files author time]}]
-     (when (>= changed-files 100)
+     (when (>= (count changed-files) 100)
        {:username author
         :time time}))])
 
