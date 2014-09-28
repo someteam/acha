@@ -29,6 +29,7 @@
     [org.clojure/core.async "0.1.338.0-5c5012-alpha"]
     [com.cognitect/transit-cljs "0.8.188"]
 
+    [com.mchange/c3p0 "0.9.2.1"]
     [datascript "0.4.1"]
     [sablono "0.2.22"]
     [com.facebook/react "0.11.2"]
