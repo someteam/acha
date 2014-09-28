@@ -115,7 +115,7 @@
       order by timestamp asc limit 1" (- (quot (System/currentTimeMillis) 1000) (* 15 60))])))
 
 (defn- try-to-update [repo]
-  (pos? (update! (db-conn) :repo {:timestamp (quot (System/currentTimeMillis) 1000)}
+  (count (update! (db-conn) :repo {:timestamp (quot (System/currentTimeMillis) 1000)}
     ["id = ? and timestamp = ?" (:id repo) (:timestamp repo)])))
 
 (defn get-next-repo-to-process []
