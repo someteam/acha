@@ -16,14 +16,15 @@
 (defn- analyze-commit [repo commit df]
   (try
     (let [commit-info (git-parser/commit-info repo commit df)]
-      (->> (for [[code scanner] achievement/all-commit-info-scanners
+      (when (not (:merge commit-info))
+        (->> (for [[code scanner] achievement/all-commit-info-scanners
                  :let [report (scan-achievement scanner commit-info)]
                  :when report]
              [[(:email commit-info) code] (-> report
                                             (assoc-in [:author :email] (:email commit-info))
                                             (assoc-in [:author :name]  (:author commit-info))
                                             (assoc-in [:sha1] (:id commit-info)))])
-           (into {})))
+           (into {}))))
     (catch Exception e
       (logging/error e "Error occured during commit-info parsing" (.getName commit)))
     (finally )))
