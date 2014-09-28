@@ -255,10 +255,12 @@
         :description "Make 10+ commits with the same message"}
     :bad-motherfucker
        {:name "Bad motherfucker"
-        :description "Swear in a commit message"}
+        :description "Swear in a commit message"
+        :level-description "Number of swear words used"}
     :hello-linus
        {:name "Hello, Linus"
-        :description "10+ swear words in a commit message"}
+        :description "10+ swear words in a commit message"
+        :level-description "Number of swear words used"}
     :man-of-few-words
        {:name "A man of few words"
         :description "Commit message with 3 letters or less"}
@@ -279,7 +281,8 @@
         :description "Ask for an achievement in a commit message"}
     :borat
        {:name "Borat"
-        :description "Misspell a word in a commit message"}
+        :description "Misspell a word in a commit message"
+        :level-description "Maximum number of misspellings"}
     :hack
        {:name "Real Hacker"
         :description "Use word “hack” in a commit message"}
