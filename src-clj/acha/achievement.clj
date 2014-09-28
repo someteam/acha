@@ -258,6 +258,13 @@
        {:username author
         :time time}))])
 
+(def wrecking-ball
+  [:wrecking-ball
+   (fn [{:keys [changed-files author time]}]
+     (when (>= changed-files 100)
+       {:username author
+        :time time}))])
+
 ; TODO commit-info achievements
 (def cool-kid
   [:cool-kid
@@ -285,10 +292,6 @@
      nil)])
 (def for-stallman
   [:for-stallman
-   (fn [commit-info]
-     nil)])
-(def wrecking-ball
-  [:wrecking-ball
    (fn [commit-info]
      nil)])
 (def alzheimers
