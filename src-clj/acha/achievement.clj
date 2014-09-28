@@ -358,6 +358,7 @@
 (def date-table
   [[:christmas 11 25]
    [:halloween 9 31]
+   [:fools-day 3 1]
    [:leap-day 1 29]
    [:new-year 0 1]
    [:russia-day 5 12]

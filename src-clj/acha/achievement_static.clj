@@ -229,6 +229,9 @@
     :thanksgiving
        {:name "Turkey code"
         :description "Commit at Thanksgiving"}
+    :fools-day
+       {:name "Fool’s code"
+        :description "Commit at Apr 1"}
     :impossible
        {:name "Mission impossible"
         :description "Use word “impossible” in a commit message"}
