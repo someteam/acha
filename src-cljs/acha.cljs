@@ -149,8 +149,7 @@
       [:.up__hr]
       [:.up__achs
         (for [[achent _] aches]
-          [:img.up__ach {:src (achent-img achent)
-                         :style {:cursor "help"}
+          [:img.up__ach {:src   (achent-img achent)
                          :title (str (:achent/name achent) ":\n\n" (:achent/desc achent)) }])]]))
 
 (r/defc users-pane [db users]
