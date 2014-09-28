@@ -257,7 +257,7 @@
        {:name "Catchphrase"
         :description "Make 10+ commits with the same message"}
     :bad-motherfucker
-       {:name "Bad Motherfucker"
+       {:name "Bad Motherf*cker"
         :description "Swear in a commit message"
         :level-description "One level for each swear word in a message"}
     :hello-linus
