@@ -12,8 +12,10 @@
            [org.eclipse.jgit.lib ObjectReader]
            [org.eclipse.jgit.api Git]
            [org.eclipse.jgit.revwalk RevWalk RevCommit RevTree]
-           [org.eclipse.jgit.transport FetchResult]
            [org.eclipse.jgit.lib Constants]
+           [com.jcraft.jsch Session JSch]
+           [org.eclipse.jgit.transport FetchResult JschConfigSessionFactory OpenSshConfig$Host SshSessionFactory]
+           [org.eclipse.jgit.util FS]
            [org.eclipse.jgit.treewalk EmptyTreeIterator CanonicalTreeParser AbstractTreeIterator]))
 
 (defn- data-dir [url]
@@ -27,6 +29,13 @@
         (jgit.p/git-reset repo (.getName (.getObjectId current)) :hard)))
     (catch Exception e
       (logging/error e "Error occured during force pull"))))
+
+
+(def jsch-factory (proxy [JschConfigSessionFactory] []
+  (configure [^OpenSshConfig$Host hc ^Session session]
+    (.getJSch ^JschConfigSessionFactory this hc FS/DETECTED))))
+
+(SshSessionFactory/setInstance jsch-factory)
 
 (defn load-repo [url]
   (let [path (str (data-dir url) "/repo")]
