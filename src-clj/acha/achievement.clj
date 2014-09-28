@@ -143,9 +143,12 @@
         :time time}))])
 
 (def world-balance
-  (make-loc-scanner
-    [:world-balance
-    (fn [loc] (= (:added loc 0) (:deleted loc 0)))]))
+  [:world-balance
+   (fn [{:keys [loc author time changed-files]}]
+     (when (and ((fn [loc] (= (:added loc 0) (:deleted loc 0))) loc) 
+          (> changed-files 0))
+       {:username author
+        :time time}))])
 
 (def eraser
   (make-loc-scanner
