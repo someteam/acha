@@ -3,6 +3,7 @@
   (:require
     [acha.util :as util]
     [acha.achievement-static]
+    [acha.spellings :as spellings]
     [clojure.string :as str])
   (:import
     [java.util Calendar]))
@@ -54,27 +55,27 @@
         (fn [file] (some #(.endsWith file %) dot-extensions))]
     (make-filename-scanner [achievement-id has-interesting-extension?])))
 
-(def bad-motherfucker
-  [:bad-motherfucker
+(defn make-word-counting-scanner [[achievement-id words]]
+  [achievement-id
    (fn [{:keys [message author time]}]
-     (let [fuck-count (util/count-substring-occurrences message "fuck")]
-       (when (pos? fuck-count)
-         {:level fuck-count
+     (let [count-word (fn [word] (util/count-substring-occurrences message word))
+           word-count (reduce + (map count-word words))]
+       (when (pos? word-count)
+         {:level word-count
           :username author
           :time time})))])
+
+(def bad-motherfucker
+  (make-word-counting-scanner [:bad-motherfucker ["fuck"]]))
 
 (def swear-words
   ["fuck" "shit" "damn" "sucks"])
 
 (def hello-linus
-  [:hello-linus
-   (fn [{:keys [message author time]}]
-     (let [count-word (fn [word] (util/count-substring-occurrences message word))
-           swear-count (reduce + (map count-word swear-words))]
-       (when (pos? swear-count)
-         {:level swear-count
-          :username author
-          :time time})))])
+  (make-word-counting-scanner [:hello-linus swear-words]))
+
+(def borat
+  (make-word-counting-scanner [:borat spellings/table]))
 
 (defn make-message-scanner [[achievement-id message-predicate]]
   [achievement-id
@@ -205,21 +206,10 @@
      nil)])
 
 ; TODO commit-info achievements
-(def borat
-  [:borat
-   (fn [commit-info]
-     nil)])
 (def cool-kid
   [:cool-kid
    (fn [commit-info]
      nil)])
-(def multilingual
-  [:multilingual
-   (fn [commit-info]
-     (when (>= (+ (map #(if (% commit-info) 1 0) 
-      (vals (map make-language-scanner language-table)))) 5) 
-       {:username (:author commit-info)
-        :time (:time commit-info)}))])
 (def commenter
   [:commenter
    (fn [commit-info]
@@ -384,6 +374,14 @@
    [:swift ["swift"]]
    [:windows-language ["bat" "btm" "cmd" "ps1" "csproj" "vbproj" "vcproj" "wdproj" "wixproj" "xaml"]]
    [:xml ["xml" "xsl" "xslt" "xsd" "dtd"]]])
+
+(def multilingual
+  [:multilingual
+   (fn [commit-info]
+     (when (>= (+ (map #(if (% commit-info) 1 0) 
+      (vals (map make-language-scanner language-table)))) 5) 
+       {:username (:author commit-info)
+        :time (:time commit-info)}))])
 
 (def filename-table
   [[:nothing-to-hide #(= % "id_rsa")]
