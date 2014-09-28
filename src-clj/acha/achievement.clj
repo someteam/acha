@@ -216,12 +216,22 @@
          {:username (:author commit-info)
           :time time})))])
 
-; TODO date achievements
-
 (def dangerous-game
   [:dangerous-game
    (fn [commit-info]
-     nil)])
+     (let [time (:time commit-info)
+           timezone (:timezone commit-info)
+           cal (Calendar/getInstance)
+           _ (.setTime cal time)
+           _ (.setTimeZone cal timezone)
+           commit-wday (.get cal Calendar/DAY_OF_WEEK)
+           commit-hour (.get cal Calendar/HOUR_OF_DAY)]
+       (when (and (>= commit-hour 18) (= commit-wday 4))
+         {:username (:author commit-info)
+          :time time})))])
+
+; TODO date achievements
+
 (def time-get
   [:time-get
    (fn [commit-info]
