@@ -203,11 +203,21 @@
          {:username (:author commit-info)
           :time time})))])
 
-; TODO date achievements
 (def owl
   [:owl
    (fn [commit-info]
-     nil)])
+     (let [time (:time commit-info)
+           timezone (:timezone commit-info)
+           cal (Calendar/getInstance)
+           _ (.setTime cal time)
+           _ (.setTimeZone cal timezone)
+           commit-hour (.get cal Calendar/HOUR_OF_DAY)]
+       (when (and (>= commit-hour 4) (<= commit-hour 7))
+         {:username (:author commit-info)
+          :time time})))])
+
+; TODO date achievements
+
 (def dangerous-game
   [:dangerous-game
    (fn [commit-info]

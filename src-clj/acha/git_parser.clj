@@ -127,6 +127,7 @@
             :author (.getName ident)
             :email (.getEmailAddress ident)
             :time time
+            :timezone (.getTimeZone ident)
             :message message
             :changed-files (mapv parse-diff-entry diffs)
             :merge (> (.getParentCount rev-commit) 1)}
