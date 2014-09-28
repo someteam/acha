@@ -265,11 +265,14 @@
        {:username author
         :time time}))])
 
-; TODO commit-info achievements
 (def cool-kid
   [:cool-kid
-   (fn [commit-info]
-     nil)])
+   (fn [{:keys [message author time]}]
+     (when (re-find #"[\uD83C-\uDBFF\uDC00-\uDFFF]+" message)
+         {:username author
+          :time time}))])
+
+; TODO commit-info achievements
 (def commenter
   [:commenter
    (fn [commit-info]
