@@ -3,385 +3,289 @@
 (def table
   {:eraser
        {:name "Eraser"
-        :description "make a commit with no lines added, only deletions"
-        :picture "..."}
+        :description "Make a commit with no lines added, only deletions"}
     :massive
        {:name "Massive"
-        :description "added more than a 1000 lines in a single commit"
-        :picture "..."}
+        :description "Added more than a 1000 lines in a single commit"}
     :scribbler
        {:name "Scribbler"
-        :description "created a README"
-        :picture "..."}
+        :description "Created a README"}
     :owl
        {:name "Owl"
-        :description "commit at 4am local time"
-        :picture "..."}
+        :description "Commit between 4am and 7am local time"}
     :flash
        {:name "Flash"
-        :description "two different commits within 1 minute"
-        :picture "..."}
+        :description "Two different commits within 1 minute"}
     :waste
        {:name "Waste"
-        :description "Your commit was reverted completely by someone else"
-        :picture "..."}
+        :description "Your commit was reverted completely by someone else"}
     :loneliness
        {:name "Loneliness"
-        :description "Being the only commiter for a week"
-        :picture "..."}
+        :description "Being the only commiter for a week"}
     :easy-fix
        {:name "Easy fix"
-        :description "swap two lines"
-        :picture "..."}
+        :description "Swap two lines"}
     :multilingua
        {:name "Multilingua"
-        :description "edit files in 5 different languages in a single commit"
-        :picture "..."}
+        :description "Add/edit files in 5 different languages in a single commit"}
     :necromancer
        {:name "Necromancer"
-        :description "make a commit to a repo that wasn’t touched for 1 month or more"
-        :picture "..."}
+        :description "Make a commit to a repo that wasn’t touched for 1 month or more"}
     :mover
        {:name "Mover"
-        :description "move file from one place to another without changing it"
-        :picture "..."}
+        :description "Move file from one place to another without changing it"}
     :world-balance
        {:name "World balance"
-        :description "Number of lines added == number of lines deleted"
-        :picture "..."}
+        :description "Number of lines added == number of lines deleted"}
     :get
        {:name "Get"
-        :description "do commit # 1000, or 1111, or 1234 (counting from beginning, chronologically sorted)"
-        :picture "..."}
+        :description "Do commit #1000, or #1111, or #1234"}
     :narcissist
        {:name "Narcissist"
-        :description "use your own name in a commit message"
-        :picture "..."}
+        :description "Use your own name in a commit message"}
     :blamer
        {:name "Blamer"
-        :description "use someone else’s name in a commit message"
-        :picture "..."}
+        :description "Use someone else’s name in a commit message"}
     :collision
        {:name "Collision"
-        :description "publish the first commit with the same N first chars of SHA-1 as existing commit (Collision lvl 7 is pretty rare)"
-        :picture "..."}
+        :description "Publish commit with the same N first chars of SHA-1 as existing commit"}
     :lucky
        {:name "Lucky"
-        :description "Consecutive 777 in SHA-1"
-        :picture "..."}
+        :description "Consecutive 777 in SHA-1"}
     :mark-of-the-beast
        {:name "Mark of the Beast"
-        :description "Consecutive 666 in SHA-1"
-        :picture "..."}
+        :description "Consecutive 666 in SHA-1"}
     :hydra
        {:name "Hydra"
-        :description "Make a commit with 3+ parents"
-        :picture "..."}
+        :description "Make a commit with 3+ parents"}
     :commenter
        {:name "Commenter"
-        :description "only add a comment"
-        :picture "..."}
+        :description "Only add a comment"}
     :peacemaker
        {:name "Peacemaker"
-        :description "resolve 100 conflicts"
-        :picture "..."}
+        :description "Resolve 100 conflicts"}
     :ocd
        {:name "OCD"
-        :description "commit with trailing spaces removed"
-        :picture "..."}
+        :description "Commit with just trailing spaces removed"}
     :holy-war
        {:name "Holy war"
-        :description "changed tabs to spaces or vice versa"
-        :picture "..."}
+        :description "Changed tabs to spaces or vice versa"}
     :combo
        {:name "Combo"
-        :description "N commits in a row, N > 10"
-        :picture "..."}
+        :description "10+ commits in a row"}
     :combo-breaker
        {:name "Combo breaker"
-        :description "make a commit after someone has N commits in a row"
-        :picture "..."}
+        :description "Make a commit after someone had N commits in a row"}
     :worker-bee
        {:name "Worker bee"
-        :description "make 100 non-merge commits"
-        :picture "..."}
+        :description "Make 100+ non-merge commits"}
     :fat-ass
        {:name "Fat Ass"
-        :description "commit 2 Mb file or bigger"
-        :picture "..."}
+        :description "Commit 2 Mb file or bigger"}
     :ooops
        {:name "Ooops"
-        :description "commit and revert commit within 1 minute"
-        :picture "..."}
+        :description "Commit and revert commit within 1 minute"}
     :deal-with-it
        {:name "Deal with it"
-        :description "update master branch with force mode"
-        :picture "..."}
+        :description "Update master branch with force mode"}
     :dangerous-game
        {:name "Dangerous game"
-        :description "commit after 6PM friday"
-        :picture "..."}
+        :description "Commit after 6PM friday"}
     :empty-commit
-       {:name ""
-        :description "do an empty commit"
-        :picture "..."}
+       {:name "<empty title>"
+        :description "Do an empty commit"}
     :time-get
        {:name "Get"
-        :description "commit exactly at 00:00"
-        :picture "..."}
+        :description "Commit exactly at 00:00"}
     :what-happened-here
        {:name "What happened here?"
-        :description "edit a file that hasn’t been touched for a year"
-        :picture "..."}
+        :description "Edit a file that hasn’t been touched for a year"}
     :all-things-die
        {:name "All things die"
-        :description "delete a file that has been added in initial commit (and at least a year has passed)"
-        :picture "..."}
+        :description "Delete a file that has been added in initial commit (and at least a year has passed)"}
     :for-stallman
        {:name "For Stallman!"
-        :description "add GPL license file to the repo"
-        :picture "..."}
+        :description "Add GPL license file to the repo"}
     :change-of-mind
        {:name "Change of mind"
-        :description "change license type / edit license file"
-        :picture "..."}
+        :description "Change license type / edit license file"}
     :munchkin
        {:name "Munchkin"
-        :description "Get 5 achivements with 1 commit"
-        :picture "..."}
+        :description "Get 5 achivements with 1 commit"}
     :wrecking-ball
        {:name "Wrecking ball"
-        :description "Change more than 100 files in one commit"
-        :picture "..."}
+        :description "Change more than 100 files in one commit"}
     :alzheimers
        {:name "Alzheimer's"
-        :description "Commit time overdue author time for 1 month or more"
-        :picture "..."}
+        :description "Commit time overdue author time for 1 month or more"}
     :unpretending
        {:name "Unpretending"
-        :description "zero achivments after 100 your own commits"
-        :picture "..."}
+        :description "Zero achivments after 100 your own commits"}
     :good-boy
        {:name "Good boy"
-        :description "Create 'test[s]' or 'doc[s]' directory (not on first commit)"
-        :picture "..."}
+        :description "Create 'test' or 'doc' directory (not on first commit)"}
     :gitignore
        {:name "Gitignore"
-        :description ".gitignore"
-        :picture "..."}
+        :description "Add .gitignore"}
     :nothing-to-hide
        {:name "Nothing to hide"
-        :description "commit id_rsa"
-        :picture "..."}
+        :description "Commit id_rsa file"}
     :quest-complete
        {:name "Quest complete"
-        :description "get all achievements"
-        :picture "..."}
+        :description "Get all achievements"}
     :haskell
        {:name "Ivory tower"
-        :description "Being first to commit Haskell file to a repo"
-        :picture "..."}
+        :description "First to commit Haskell file to a repo"}
     :perl
        {:name "Chmod 200"
-        :description "same for Perl"
-        :picture "..."}
+        :description "First to commit Perl file to a repo"}
     :ruby
        {:name "Back on the rails"
-        :description "same for Ruby"
-        :picture "..."}
+        :description "First to commit Ruby file to a repo"}
     :clojure
        {:name "Even lispers hate Lisp"
-        :description "Clojure"
-        :picture "..."}
+        :description "First to commit Clojure file to a repo"}
     :clojurescript
        {:name "Even lispers hate Lisp (in a browser)"
-        :description "ClojureScript"
-        :picture "..."}
+        :description "First to commit ClojureScript file to a repo"}
     :javascript
        {:name "Happily never after"
-        :description "JavaScript"
-        :picture "..."}
+        :description "First to commit JS file to a repo"}
     :python
        {:name "Why not Ruby?"
-        :description "Python"
-        :picture "..."}
+        :description "First to commit Python file to a repo"}
     :java
        {:name "Write once. Run. Anywhere"
-        :description "Java"
-        :picture "..."}
+        :description "First to commit Java file to a repo"}
     :cxx
        {:name "Troubles++14"
-        :description "C++"
-        :picture "..."}
+        :description "First to commit C++ file to a repo"}
     :c-sharp
        {:name "It's dangerous to go alone, take LINQ"
-        :description "C#"
-        :picture "..."}
+        :description "First to commit C# file to a repo"}
     :objective-c
        {:name "NSVeryDescriptiveAchievementNameWithParame..."
-        :description "Objective C"
-        :picture "..."}
+        :description "First to commit Objective-C file to a repo"}
     :swift
        {:name "I need to sort complex objects fast!"
-        :description "Swift"
-        :picture "..."}
+        :description "First to commit Swift file to a repo"}
     :sql
        {:name "Not a Web Scale"
-        :description "SQL"
-        :picture "..."}
+        :description "First to commit SQL file to a repo"}
     :erlang
        {:name "It’s like ObjC, but for Ericsson phones"
-        :description "Erlang"
-        :picture "..."}
+        :description "First to commit Erlang file to a repo"}
     :shell
        {:name "We’ll rewrite that later"
-        :description "Bash"
-        :picture "..."}
+        :description "First to commit Bash file to a repo"}
     :php
        {:name "New Facebook is born"
-        :description "PHP"
-        :picture "..."}
+        :description "First to commit PHP file to a repo"}
     :pascal
        {:name "Really?"
-        :description "Pascal"
-        :picture "..."}
+        :description "First to commit Pascal file to a repo"}
     :scala
        {:name "Well typed, bro"
-        :description "Scala"
-        :picture "..."}
+        :description "First to commit Scala file to a repo"}
     :xml
        {:name "Zed’s dead, baby"
-        :description "XML"
-        :picture "..."}
+        :description "First to commit XML file to a repo"}
     :css
        {:name "You designer now?"
-        :description "CSS"
-        :picture "..."}
+        :description "First to commit CSS file to a repo"}
     :dart
        {:name "You work in Google?"
-        :description "Dart"
-        :picture "..."}
+        :description "First to commit Dart file to a repo"}
     :windows-language
        {:name "You can't program on Windows, can you?"
-        :description "Windows shell"
-        :picture "..."}
+        :description "First to commit Windows Shell file to a repo"}
     :basic
        {:name "Cradle of civilization"
-        :description "Basic"
-        :picture "..."}
+        :description "First to commit Basic file to a repo"}
     :programmers-day
        {:name "Professional pride"
-        :description "make a commit at Programmer’s day"
-        :picture "..."}
+        :description "Commit at Programmer’s day"}
     :christmas
        {:name "Ruined christmas"
-        :description "commit something at Dec 25"
-        :picture "..."}
+        :description "Commit at Dec 25"}
     :halloween
        {:name "This code looks scary"
-        :description "Halloween"
-        :picture "..."}
+        :description "Commit at Oct 31"}
     :new-year
        {:name "New year, new bugs"
-        :description "New Year"
-        :picture "..."}
+        :description "Commit at Jan 1"}
     :anniversary
        {:name "Anniversary"
-        :description "Commit at project’s birthday"
-        :picture "..."}
+        :description "Commit at project’s birthday"}
     :valentine
        {:name "In love with work"
-        :description "Feb 14"
-        :picture "..."}
+        :description "Commit at Feb 14"}
     :leap-day
        {:name "Rare occasion"
-        :description "Feb 29"
-        :picture "..."}
+        :description "Commit at Feb 29"}
     :russia-day
        {:name "From Russia with love"
-        :description "Russia Day"
-        :picture "..."}
+        :description "Commit at Russia Day"}
     :thanksgiving
        {:name "Turkey code"
-        :description "Thanksgiving day"
-        :picture "..."}
+        :description "Commit at Thanksgiving"}
     :impossible
        {:name "Mission impossible"
-        :description "use word “impossible” in a message"
-        :picture "..."}
+        :description "Use word “impossible” in a commit message"}
     :magic
        {:name "The Colour of Magic"
-        :description "use word “magic” in a message"
-        :picture "..."}
+        :description "Use word “magic” in a commit message"}
     :sorry
        {:name "Salvation"
-        :description "use word “sorry” in a message"
-        :picture "..."}
+        :description "Use word “sorry” in a commit message"}
     :google
        {:name "I can sort it out myself"
-        :description "use word “google” in a message"
-        :picture "..."}
+        :description "Use word “google” in a commit message"}
     :forgot
        {:name "Second thoughts"
-        :description "forget something (use word “forgot”)"
-        :picture "..."}
+        :description "Use word “forgot” in a commit message"}
     :fix
        {:name "Save the day"
-        :description "use word “fix”"
-        :picture "..."}
+        :description "Use word “fix” in a commit message"}
     :secure
        {:name "We’re safe now"
-        :description "use word “secure”"
-        :picture "..."}
+        :description "Use word “secure” in a commit message"}
     :catchphrase
        {:name "Catchphrase"
-        :description "10 commits with the same message"
-        :picture "..."}
+        :description "Make 10+ commits with the same message"}
     :bad-motherfucker
        {:name "Bad motherfucker"
-        :description "swear in a commit message"
-        :picture "..."}
+        :description "Swear in a commit message"}
     :hello-linus
        {:name "Hello, Linus"
-        :description "10+ swear words in a message"
-        :picture "..."}
+        :description "10+ swear words in a commit message"}
     :man-of-few-words
        {:name "A man of few words"
-        :description "commit with 3-letter message or less"
-        :picture "..."}
+        :description "Commit message with 3 letters or less"}
     :leo-tolstoy
        {:name "Leo Tolstoy"
-        :description "more than 10 lines in a commit message"
-        :picture "..."}
+        :description "More than 10 lines in a commit message"}
     :citation-needed
        {:name "Citation needed"
-        :description "StackOverflow url in commit body or message"
-        :picture "..."}
+        :description "StackOverflow URL in a commit body or message"}
     :no-more-letters
        {:name "No more letters"
-        :description "commit message without letters"
-        :picture "..."}
+        :description "Write commit message without any letters"}
     :c00l-kid
        {:name "C00l kid"
-        :description "use emoji in commit message"
-        :picture "..."}
+        :description "Use emoji in a commit message"}
     :beggar
        {:name "Beggar"
-        :description "ask for an achievment in commit message"
-        :picture "..."}
+        :description "Ask for an achievement in a commit message"}
     :borat
        {:name "Borat"
-        :description "Misspell word"
-        :picture "..."}
+        :description "Misspell a word in a commit message"}
     :hack
        {:name "Real Hacker"
-        :description "use word “hack”"
-        :picture "..."}
+        :description "Use word “hack” in a commit message"}
     :wow
        {:name "Wow"
-        :description "use word “wow”"
-        :picture "..."}
+        :description "Use word “wow” in a commit message"}
     :never-probably
        {:name "Never, probably"
-        :description "use word “later”"
-        :picture "..."}})
+        :description "Use word “later” in a commit message"}})
