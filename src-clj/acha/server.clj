@@ -43,12 +43,8 @@
     (compojure.core/routes
       (compojure.core/GET "/repos/" []
         (db/get-repo-list))
-      (compojure.core/GET ["/repos/:id", :id #"[0-9]+"] [id]
-        (db/get-repo-ach id))
       (compojure.core/GET "/users/" []
         (db/get-user-list))
-      (compojure.core/GET ["/users/:id", :id #"[0-9]+"] [id]
-        (db/get-user-ach id))
       (compojure.core/GET "/ach/" []
         (db/get-ach-list))
       (compojure.core/GET "/ach-dir/" []
