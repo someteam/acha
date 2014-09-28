@@ -278,10 +278,10 @@
   [:commenter
    (fn [commit-info]
      nil)])
-(def ocd
-  [:ocd
-   (fn [commit-info]
-     nil)])
+;; (def ocd
+;;   [:ocd
+;;    (fn [commit-info]
+;;      nil)])
 (def holy-war
   [:holy-war
    (fn [commit-info]
@@ -392,9 +392,9 @@
    [:valentine 1 14]])
 
 (def substring-table
-  [[:beggar #{"achievement"}]
+  [[:beggar #{"achievement" "achievements"}]
    [:citation-needed #{"stackoverflow"}]
-   [:fix #{"fix"}]
+   [:fix #{"fix" "fixes" "fixed" "fixing"}]
    [:forgot #{"forgot"}]
    [:google #{"google"}]
    [:hack #{"hack"}]
@@ -402,7 +402,7 @@
    [:magic #{"magic"}]
    [:never-probably #{"later"}]
    [:secure #{"secure"}]
-   [:sorry #{"sorry"}]
+;;    [:sorry #{"sorry"}]
    [:wow #{"wow"}]])
 
 (def language-table
@@ -472,7 +472,7 @@
      lucky
      mark-of-the-beast
      commenter
-     ocd
+;;      ocd
      holy-war
      fat-ass
      deal-with-it
