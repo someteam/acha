@@ -148,12 +148,17 @@
 (def world-balance
   (make-loc-scanner
     [:world-balance
-    (fn [loc] (and (= (:added loc 0) (:deleted loc 0)) (> (:added loc 0) 0)))]))
+    (fn [loc]
+      (and (= (:added loc 0) (:deleted loc 0))
+           (pos? (:added loc 0))))]))
 
 (def eraser
   (make-loc-scanner
     [:eraser
-    (fn [loc] (= 0 (:added loc 0)))]))
+    (fn [loc]
+      (and
+        (= 0 (:added loc 0))
+        (pos? (:deleted loc 0))))]))
 
 (def massive
   (make-loc-scanner
