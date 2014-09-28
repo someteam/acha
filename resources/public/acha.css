@@ -79,3 +79,7 @@ a:hover { color: #489125; }
 .ach__level { display: inline; position: relative; top: -5px; font-size: 10px; }
 .ach__text { color: #999; text-decoration: none; border-bottom: 1px solid #eee; }
 .ach__links { margin-top: 5px; }
+
+
+.vote { width: 300px; height: 80px; background:url(i/vote@2x.png); background-size: 100% 200%; position: absolute; top: 0; right: 0; }
+.vote:hover { background-position-y: -80px; }

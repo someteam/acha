@@ -73,6 +73,8 @@
 (r/defc header [index?]
   (s/html
     [:.header
+      [:a.vote {:href "https://clojurecup.com/?#/apps/acha"
+                :target "_blank"}]
       [:div.logo {:class    (when-not index? "a")
                   :title    "Acha-acha"
                   :on-click (fn [_] (go! "")) }
