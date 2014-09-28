@@ -216,7 +216,8 @@
 (def multilingual
   [:multilingual
    (fn [commit-info]
-     nil)])
+     (>= (+ (map #(if (% commit-info) 1 0) 
+      (vals (map make-language-scanner language-table)))) 5))])
 (def commenter
   [:commenter
    (fn [commit-info]
