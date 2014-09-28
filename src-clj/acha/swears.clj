@@ -30,7 +30,7 @@
 "shyty" "skanck" "skank" "skankee" "skankey" "skanks" "skanky" "slut" 
 "sluts" "slutty" "slutz" "son-of-a-bitch" "tit" "turd" "va1jina" "vag1na" 
 "vagiina" "vagina" "vaj1na" "vajina" "vullva" "vulva" "w0p" "wh00r" 
-"wh0re" "whore" "xrated" "xxx" "b!+ch" "blowjob"
+"wh0re" "whore" "xrated" "b!+ch" "blowjob"
 "arschloch" "b!tch" "b17ch" "b1tch" 
 "bi+ch" "boiolas" "buceta" "chink" "cipa" 
 "clits" "dirsa" "ejakulate" "fatass" 

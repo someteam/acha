@@ -210,10 +210,10 @@
         :description "Commit on Dec 25"}
     :halloween
        {:name "This Code Looks Scary"
-        :description "Commit at Oct 31"}
+        :description "Commit on Oct 31"}
     :new-year
        {:name "New Year, New Bugs"
-        :description "Commit at Jan 1"}
+        :description "Commit on Jan 1"}
     :anniversary
        {:name "Anniversary"
         :description "Commit on the project’s birthday"}
@@ -257,7 +257,7 @@
        {:name "Catchphrase"
         :description "Make 10+ commits with the same message"}
     :bad-motherfucker
-       {:name "Bad Motherfucker"
+       {:name "Bad Motherf*cker"
         :description "Swear in a commit message"
         :level-description "One level for each swear word in a message"}
     :hello-linus

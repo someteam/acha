@@ -118,7 +118,7 @@
         commit-tree (.treeIterator df rev-commit)
         diffs (.scan df parent-tree commit-tree)
         ident (.getAuthorIdent rev-commit)
-        time (-> (.getTime (.getWhen ident)) (* 1000) java.util.Date.)
+        time  (.getWhen ident)
         message (-> (.getFullMessage rev-commit) str string/trim)]
     (merge {:id (.getName rev-commit)
             :author (.getName ident)

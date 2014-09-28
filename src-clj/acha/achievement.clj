@@ -70,9 +70,9 @@
   [:hello-linus 
   (fn [commit-info]
     (when-let [bad-acha ((second bad-motherfucker) commit-info)]
-    (when (>= (:level bad-acha) 10))
-    {:username (:author commit-info)
-          :time (:time commit-info)}))])
+      (when (>= (:level bad-acha) 10)
+        {:username (:author commit-info)
+         :time     (:time commit-info)})))])
 
 (def borat
   (make-word-counting-scanner [:borat spellings/table]))
@@ -177,80 +177,69 @@
          {:username author
           :time time})))])
 
-(def professional-pride
-  [:professional-pride
-   (fn [commit-info]
-     (let [time (:time commit-info)
-           cal (Calendar/getInstance)
-           _ (.setTime cal time)
-           _ (.setTimeZone cal (:timezone commit-info))
-           commit-day (.get cal Calendar/DAY_OF_YEAR)]
-       (when (= 1024 commit-day)
-         {:username (:author commit-info)
-          :time time})))])
+(defn commit-info-cal [commit-info]
+  (doto
+    (Calendar/getInstance (:timezone commit-info))
+    (.setTime (:time commit-info))))
 
-(def turkey-day
-  [:turkey-day
+(def programmers-day
+  [:programmers-day
    (fn [commit-info]
-     (let [time (:time commit-info)
-           cal (Calendar/getInstance)
-           _ (.setTime cal time)
-           _ (.setTimeZone cal (:timezone commit-info))
-           commit-day (.get cal Calendar/DAY_OF_WEEK)
-           commit-month (.get cal Calendar/MONTH)
-           commit-month-day (.get cal Calendar/DAY_OF_MONTH)]
-       (when (and (= [10 3] [commit-month commit-day]) 
-             (and (>= commit-month-day 22) (<= commit-month-day 28)))
+     (let [cal        (commit-info-cal commit-info)
+           commit-day (.get cal Calendar/DAY_OF_YEAR)]
+       (when (= 256 commit-day)
          {:username (:author commit-info)
-          :time time})))])
+          :time     (.getTime cal)})))])
+
+(def thanksgiving
+  [:thanksgiving
+   (fn [commit-info]
+     (let [cal (commit-info-cal commit-info)
+           commit-day       (.get cal Calendar/DAY_OF_WEEK)
+           commit-month     (.get cal Calendar/MONTH)
+           commit-month-day (.get cal Calendar/DAY_OF_MONTH)]
+       (when (and (= 10 commit-month) ;; November
+                  (= 5 commit-day) ;; Thursday
+                  (<= 22 commit-month-day 28)) ;; 4th Thursday
+         {:username (:author commit-info)
+          :time     (.getTime cal)})))])
 
 (def owl
   [:owl
    (fn [commit-info]
-     (let [time (:time commit-info)
-           timezone (:timezone commit-info)
-           cal (Calendar/getInstance)
-           _ (.setTime cal time)
-           _ (.setTimeZone cal timezone)
+     (let [cal (commit-info-cal commit-info)
            commit-hour (.get cal Calendar/HOUR_OF_DAY)]
-       (when (and (>= commit-hour 4) (<= commit-hour 7))
+       (when (<= 4 commit-hour 7) ;; between 4am and 7am
          {:username (:author commit-info)
-          :time time})))])
+          :time     (.getTime cal)})))])
 
 (def dangerous-game
   [:dangerous-game
    (fn [commit-info]
-     (let [time (:time commit-info)
-           timezone (:timezone commit-info)
-           cal (Calendar/getInstance)
-           _ (.setTime cal time)
-           _ (.setTimeZone cal timezone)
+     (let [cal (commit-info-cal commit-info)
            commit-wday (.get cal Calendar/DAY_OF_WEEK)
            commit-hour (.get cal Calendar/HOUR_OF_DAY)]
-       (when (and (>= commit-hour 18) (= commit-wday 4))
+       (when (and (>= commit-hour 18) ;; after 18PM
+                  (= commit-wday 6))  ;; friday
          {:username (:author commit-info)
-          :time time})))])
+          :time     (.getTime cal)})))])
 
 (def time-get
   [:time-get
    (fn [commit-info]
-     (let [time (:time commit-info)
-           timezone (:timezone commit-info)
-           cal (Calendar/getInstance)
-           _ (.setTime cal time)
-           _ (.setTimeZone cal timezone)
+     (let [cal (commit-info-cal commit-info)
            commit-minute (.get cal Calendar/MINUTE)
            commit-hour (.get cal Calendar/HOUR_OF_DAY)]
        (when (and (= commit-hour 0) (= commit-minute 0))
          {:username (:author commit-info)
-          :time time})))])
+          :time     (.getTime cal)})))])
 
 (def mover
   [:mover
    (fn [commit-info]
      (when (some #(= (first %) :copy) (:diffs commit-info))
        {:username (:author commit-info)
-        :time (:time commit-info)}))])
+        :time     (:time commit-info)}))])
 
 (def empty-commit
   [:empty-commit
@@ -464,8 +453,8 @@
      man-of-few-words
      massive
      no-more-letters
-     professional-pride
-     turkey-day
+     programmers-day
+     thanksgiving
      owl
      easy-fix
      multilingual
