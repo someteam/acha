@@ -69,13 +69,24 @@
   (let [sha1 (git-parser/head-sha1 repo)]
     (db/update-repo-sha1 (:id repo-info) sha1)))
 
-(defn analyze [url]
-  (let [repo-info (db/get-or-insert-repo url)
-        repo (git-parser/load-repo url)
+(defn analyze [repo-info]
+  (let [repo (git-parser/load-repo (:url repo-info))
         new-achievements (find-achievements repo-info repo)]
     (sync-achievements repo-info new-achievements)
     (sync-repo-sha1 repo-info repo)))
 
-(defn start-next []
-  (if-let [repo (db/get-next-repo-to-process)]
-    (analyze (:url repo))))
+(defn- worker [worker-id]
+  (logging/info "Worker #" worker-id " is ready")
+  (loop []
+    (try
+      (when-let [repo (db/get-next-repo-to-process)]
+        (logging/info "Worker #" worker-id " has started processing" (:url repo))
+        (analyze repo))
+      (Thread/sleep 1000)
+      (catch InterruptedException e (throw e))
+      (catch Exception e
+        (logging/error e "Catch exception during repo analysing")))))
+
+(defn run-workers []
+  (doseq [id (range 4)]
+    (future (worker id))))

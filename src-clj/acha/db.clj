@@ -77,11 +77,12 @@
   (first (query db ["select * from repo where url = ?" url])))
 
 (defn get-or-insert-repo [url]
-  (if-let [repo (get-repo-by-url url)]
-    repo
-    (do
-      (insert! db :repo {:url url})
-      (get-repo-by-url url))))
+  (let [url (util/normalize-str url)]
+    (if-let [repo (get-repo-by-url url)]
+      repo
+      (do
+        (insert! db :repo {:url url :state "new"})
+        (get-repo-by-url url)))))
 
 (defn get-user-by-email [email] 
   (first (query db ["select * from user where email = ?" email])))
@@ -116,7 +117,10 @@
   (insert! db :achievement body))
 
 (defn update-repo-sha1 [repo-id sha1]
-  (update! db :repo {:sha1 sha1} ["id = ?" repo-id]))
+  (update! db :repo {:sha1 sha1 :state "ok"} ["id = ?" repo-id]))
+
+(defn update-repo-state [repo-id state]
+  (update! db :repo {:state state} ["id = ?" repo-id]))
 
 (defmacro with-connection [& body]
   `(with-db-connection [con# db]
