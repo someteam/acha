@@ -77,11 +77,12 @@
   (first (query db ["select * from repo where url = ?" url])))
 
 (defn get-or-insert-repo [url]
-  (if-let [repo (get-repo-by-url url)]
-    repo
-    (do
-      (insert! db :repo {:url url})
-      (get-repo-by-url url))))
+  (let [url (util/normalize-str url)]
+    (if-let [repo (get-repo-by-url url)]
+      repo
+      (do
+        (insert! db :repo {:url url :state "new"})
+        (get-repo-by-url url)))))
 
 (defn get-user-by-email [email] 
   (first (query db ["select * from user where email = ?" email])))
@@ -99,10 +100,9 @@
              left join user on user.id = achievement.userid
              where repoid= ?" id]))
 
-(defn- get-next-repo []
-  (first (query db ["select * from repo 
-    where ? - timestamp > 4*60*60
-    order by timestamp asc limit 1" (quot (System/currentTimeMillis) 1000)])))
+(defn get-next-repo []
+  (first (query db ["select * from repo where (timestamp < ?)
+      order by timestamp asc limit 1" (- (quot (System/currentTimeMillis) 1000) (* 15 60))])))
 
 (defn- try-to-update [repo]
   (update! db :repo {:timestamp (quot (System/currentTimeMillis) 1000)}
@@ -116,7 +116,13 @@
   (insert! db :achievement body))
 
 (defn update-repo-sha1 [repo-id sha1]
-  (update! db :repo {:sha1 sha1} ["id = ?" repo-id]))
+  (update! db :repo {:sha1 sha1 :state "ok"} ["id = ?" repo-id]))
+
+(defn update-repo-state [repo-id state]
+  (update! db :repo {:state state} ["id = ?" repo-id]))
+
+(defn count-new-repos []
+  (count (query db "select * from repo where state = \"new\"")))
 
 (defmacro with-connection [& body]
   `(with-db-connection [con# db]

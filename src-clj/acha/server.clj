@@ -3,6 +3,7 @@
     [acha.git-parser :as git-parser]
     [acha.achievement :as achievement]
     [acha.dispatcher :as dispatcher]
+    [acha.util :as util]
     [acha.db :as db]
     [clojure.tools.logging :as logging]
     [ring.adapter.jetty :as jetty]
@@ -28,16 +29,14 @@
        (update-in [:body] write-transit :json {}))))
 
 (defn add-repo [url]
-  (if-let [repo (db/get-repo-by-url url)]
-    {:repo/status :exists
-     :repo   repo}
-    (let [repo (db/get-or-insert-repo url)]
-      (logging/info "Added repo:" repo)
-      (future
-        (dispatcher/analyze (:url repo))
-        (logging/info "Analysis finished:" (:url repo)))
-      {:repo/status :added
-       :repo   repo})))
+  (let [url (util/normalize-str url)
+        repo (db/get-repo-by-url url)]
+    (cond
+      (< 4 (db/count-new-repos)) {:repo/status :error, :message "Too many unprocessed repos in queue"}
+      repo                      {:repo/status :exists, :repo repo}
+      :else                     (let [repo (db/get-or-insert-repo url)]
+                                  (logging/info "Added repo:" repo)
+                                  {:repo/status :added, :repo repo}))))
 
 (def api-handler
   (->
@@ -77,4 +76,5 @@
 ;  (print achievement/all-unused-achievements)
   (db/create-db)
 ;  (db/add-fake-data)
+  (dispatcher/run-workers)
   (jetty/run-jetty handler {:port 8080}))
