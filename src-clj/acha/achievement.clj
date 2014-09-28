@@ -217,11 +217,12 @@
    (fn [commit-info]
      nil)])
 
-; TODO diff achievements
 (def mover
   [:mover
    (fn [commit-info]
-     nil)])
+     (when (some #(= (first %) :copy) (:diffs commit-info))
+       {:username (:author commit-info)
+        :time (:time commit-info)}))])
 
 ; TODO commit-info achievements
 (def cool-kid

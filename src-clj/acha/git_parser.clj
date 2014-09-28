@@ -22,13 +22,10 @@
   (let [repo-name (last (string/split url #"/"))]
     (str "./remotes/" repo-name "_" (util/md5 url))))
 
-(defn safely-force-pull [repo]
-  (try
-    (let [fetch-result ^FetchResult (jgit.p/git-fetch repo)]
-      (when-let [current (first (.getAdvertisedRefs fetch-result))]
-        (jgit.p/git-reset repo (.getName (.getObjectId current)) :hard)))
-    (catch Exception e
-      (logging/error e "Error occured during force pull"))))
+(defn force-pull [repo]
+  (let [fetch-result ^FetchResult (jgit.p/git-fetch repo)]
+    (when-let [current (first (.getAdvertisedRefs fetch-result))]
+      (jgit.p/git-reset repo (.getName (.getObjectId current)) :hard))))
 
 
 (def jsch-factory (proxy [JschConfigSessionFactory] []
@@ -41,7 +38,7 @@
   (let [path (str (data-dir url) "/repo")]
     (if (.exists (io/as-file path))
       (let [repo (jgit.p/load-repo path)]
-        (safely-force-pull repo)
+        (force-pull repo)
         repo)
       (jgit.p/git-clone url path))))
 

@@ -38,7 +38,7 @@
 (defn- find-achievements [repo-info repo]
   (logging/info "Scanning new commits for achievements " (:url repo-info))
   (let [df (git-parser/diff-formatter repo)]
-     (->> (for [commit (git-parser/commit-list repo)
+     (->> (for [commit (take 2000 (git-parser/commit-list repo))
                 :while (or (nil? (:sha1 repo-info))
                            (not= (.getName commit) (:sha1 repo-info)))]
             (analyze-commit repo commit df))
@@ -84,10 +84,10 @@
   (loop []
     (try
       (when-let [repo (db/get-next-repo-to-process)]
-        (logging/info "Worker #" worker-id " has started processing" (:url repo))
+        (logging/info "Worker #" worker-id " has started processing" repo)
         (analyze repo)
-        (logging/info "Worker #" worker-id " has finished processing" (:url repo)))
-      (Thread/sleep 1000)
+        (logging/info "Worker #" worker-id " has finished processing" repo))
+      (Thread/sleep (rand-int 2000))
       (catch InterruptedException e (throw e))
       (catch Exception e
         (logging/error e "Catch exception during repo analysing")))
