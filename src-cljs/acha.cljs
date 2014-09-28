@@ -14,10 +14,8 @@
     goog.history.Html5History
     goog.net.XhrIo)
   (:require-macros
+    [acha :refer [profile]]
     [cljs.core.async.macros :refer [go go-loop]]))
-
-
-
 
 (enable-console-print!)
 
@@ -32,15 +30,15 @@
 
 ;; Utils
 
+(defn read-transit [s]
+  (transit/read (transit/reader :json) s))
+
 (defn- ajax [url callback & [method]]
   (.send goog.net.XhrIo url
     (fn [reply]
-      (-> (.-target reply)
-          (.getResponseText)
-;;           (->> (.parse js/JSON))
-;;           (js->clj :keywordize-keys true)
-          (->> (transit/read (transit/reader :json)))
-          (callback)))
+      (let [res (.getResponseText (.-target reply))
+            res (profile (str "read-transit " url " (" (count res) " bytes)") (read-transit res))]
+        (js/setTimeout #(callback res) 0)))
     (or method "GET")))
 
 (defn map-by [f xs]
@@ -80,7 +78,7 @@
     [:.repo.a {:on-click (fn [_] (go! "/repos/" (:repo/id repo)))}
       [:.repo__name
         (:repo/name repo)
-        [:span.id (:repo/id repo)]
+        [:.id (:repo/id repo)]
         (when (= :added (:repo/status repo)) [:span {:class "tag repo__added"} "Added"])]
       [:.repo__url (:repo/url repo)]     
       ]))
@@ -121,7 +119,7 @@
       [:.user.a {:on-click (fn [_] (go! "/users/" (:user/id user)))}
         [:.user__avatar
           [:img {:src (str "http://www.gravatar.com/avatar/" email-hash "?d=retro")}]]
-        [:.user__name (:user/name user) [:span.id (:user/id user)]]
+        [:.user__name (:user/name user) [:.id (:user/id user)]]
         [:.user__email (:user/email user)]
         [:.user__ach (:user/ach user)]])))
 
@@ -140,28 +138,39 @@
     (when path
       (str "https://github.com/" path "/commit/" sha1))))
 
-(r/defc ach [ach]
-  (let [achent (:ach/achent ach)
-        repo-url (get-in ach [:ach/repo :repo/url])
-        sha1 (:ach/sha1 ach)]
-    (println (sha1-url repo-url sha1))
-    (s/html
-      [:.ach
-        [:.ach__logo
-          [:img {:src (str "aches/" (name (:achent/id achent)) "@6x.png")}]]
-        [:.ach__name (:achent/name achent)
-          (when-let [lvl (:ach/level ach 0)]
-            [:.ach__level lvl])
-          [:span.id (:ach/id ach)]]
-        [:.ach__desc (:achent/desc achent)]
-        [:.ach__repo repo-url]])))
+(r/defc ach [achent aches]
+  (s/html
+    [:.ach
+      [:.ach__logo
+        [:img {:src (str "aches/" (name (:achent/id achent)) "@6x.png")}]]
+      [:.ach__name (:achent/name achent)
+        (let [max-lvl (reduce max 0 (map #(:ach/level % 0) aches))]
+          (when (pos? max-lvl)
+            [:.ach__level max-lvl]))
+        ]
+      [:.ach__desc (:achent/desc achent)]
+      (for [ach  aches
+            :let [sha1     (:ach/sha1 ach)
+                  repo-url (get-in ach [:ach/repo :repo/url])
+                  text     (str (subs sha1 0 7) " @ " (repo-name repo-url))]]
+        [:div
+          (if-let [commit-url (sha1-url repo-url sha1)]
+            [:a.ach__link { :target "__blank"
+                            :href  commit-url
+                            :title sha1 }
+             text]
+            [:.ach__sha1 text])
+         [:.id (:ach/id ach)]])
+     ]))
 
 (r/defc ach-pane [aches]
   (s/html
     [:.ach_pane.pane
       [:h1 "Achievements"]
       [:ul
-        (map (fn [a] [:li (ach a)]) aches)]]))
+        (->> aches
+             (group-by :ach/achent)
+             (map (fn [[achent aches]] [:li (ach achent aches)])))]]))
 
 (r/defc index-page [db]
   (do
@@ -240,34 +249,37 @@
     
     (ajax "/api/users/"
       (fn [us]
-        (d/transact! conn
-          (map (fn [u] {:user/id    (:id u)
-                        :user/name  (:name u)
-                        :user/email (:email u)
-                        :user/ach   (:achievements u)})
-                 us))
-        (println "Loaded :users")
+        (profile "transact :users"
+          (d/transact! conn
+            (map (fn [u] {:user/id    (:id u)
+                          :user/name  (:name u)
+                          :user/email (:email u)
+                          :user/ach   (:achievements u)})
+                   us)))
+        (println "Loaded :users," (count (:eavt @conn)) "datoms")
         (async/put! ch :users)))
 
     (ajax "/api/repos/"
       (fn [rs]
-        (d/transact! conn
-          (map (fn [r] {:repo/id   (:id r)
-                        :repo/url  (:url r)
-                        :repo/name (repo-name (:url r)) })
-               rs))
-        (println "Loaded :repos")
+        (profile "transact :repos"
+          (d/transact! conn
+            (map (fn [r] {:repo/id   (:id r)
+                          :repo/url  (:url r)
+                          :repo/name (repo-name (:url r)) })
+                 rs)))
+        (println "Loaded :repos," (count (:eavt @conn)) "datoms")
         (async/put! ch :repos)))
 
     (ajax "/api/ach-dir/"
       (fn [as]
-        (d/transact! conn
-          (map (fn [[k a]]
-                 { :achent/id k
-                   :achent/name (:name a)
-                   :achent/desc (:description a) })
-               as))
-        (println "Loaded :achent")
+        (profile "transact :achent"
+          (d/transact! conn
+            (map (fn [[k a]]
+                   { :achent/id k
+                     :achent/name (:name a)
+                     :achent/desc (:description a) })
+                 as)))
+        (println "Loaded :achent," (count (:eavt @conn)) "datoms")
         (async/put! ch :achent)))
   
     (go-loop [i 3]
@@ -276,36 +288,27 @@
 
         (ajax "/api/ach/"
           (fn [as]
-
-              
             (let [db @conn
                   aches (u/qmap '[:find ?id ?eid :where [?eid :achent/id ?id]] db)
                   users (u/qmap '[:find ?id ?eid :where [?eid :user/id ?id]]    db)
                   repos (u/qmap '[:find ?id ?eid :where [?eid :repo/id ?id]]    db)]
-              
-            (let [real (set (map keyword (map :type as)))
-                  dict (set (keys aches))]
-              
-              (println "Missing" (clojure.set/difference real dict))
-              (println "Shared"  (clojure.set/intersection dict real)))
-              
-              (d/transact! conn
-                (->> as
-                  (map (fn [a]
-                         (when-let [achent (aches (keyword (:type a)))]
-;;                            (println achent (:userid a) (:type a))
-                           (cond->
-                             { :ach/id     (:id a)
-                               :ach/repo   (repos (:repoid a))
-                               :ach/user   (users (:userid a))
-                               :ach/achent achent
-                               :ach/sha1   (:sha1 a)
-                               :ach/ts     (.parse js/Date (:timestamp a)) }
-                             (:level a)
-                               (assoc :ach/level (:level a))))))
-                  (remove nil?)
-                  check-tx)))
-            (println "Loaded :ach")))
+              (profile "transact :ach"
+                (d/transact! conn
+                  (->> as
+                    (map (fn [a]
+                           (when-let [achent (aches (keyword (:type a)))]
+                             (cond->
+                               { :ach/id     (:id a)
+                                 :ach/repo   (repos (:repoid a))
+                                 :ach/user   (users (:userid a))
+                                 :ach/achent achent
+                                 :ach/sha1   (:sha1 a)
+                                 :ach/ts     (.parse js/Date (:timestamp a)) }
+                               (:level a)
+                                 (assoc :ach/level (:level a))))))
+                    (remove nil?)
+                    check-tx))))
+            (println "Loaded :ach," (count (:eavt @conn)) "datoms")))
         )))
   )
 

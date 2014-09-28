@@ -13,6 +13,10 @@ html {}
 td { vertical-align: top; }
 ul { list-style-type: none; padding: 0; }
 .a { cursor: pointer; }
+a { color: #7E5DA3; }
+a:hover { color: #489125; }
+
+.id { display: none; }
 .id:before { content: " ["; } .id:after { content: "]"; }
 
 .window { padding: 40px 80px; vertical-align: top; }
@@ -22,8 +26,9 @@ ul { list-style-type: none; padding: 0; }
 .logo { width: 500px; height: 120px; background-image: url(i/logo@6x.png); background-size: 165px 240px; position: relative; background-repeat: no-repeat; margin-left: -13px; }
 .logo.a { background-position-y: -120px; }
 .logo.a:hover { background-position-y: 0; }
-.logo > h2 { position: absolute; left: 95px; bottom: 4px; margin: 0;  }
-.logo.a:hover > h2 { color: #7E5DA3; }
+.logo > h2 { position: absolute; left: 95px; bottom: 4px; margin: 0; }
+.logo.a > h2 { color: #7E5DA3; }
+.logo.a:hover > h2 { color: #489125; }
 
 .pane { float: left; width: 400px; margin: 20px 0 0 0; }
 
@@ -44,7 +49,7 @@ ul { list-style-type: none; padding: 0; }
 .user__avatar { position: absolute; left: 5px; top: 5px; width: 57px; height: 57px;  }
 .user__avatar > img { width: 100%; height: 100%; -webkit-mask-box-image: url('i/avatar_mask.png'); }
 
-.user__name, .user__email { display: block; }
+.user__name, .user__email { display: block; white-space: nowrap; }
 .user__name { font-weight: bold; }
 .user__email { color: #999; }
 .user { border: 6px solid transparent; border-image:url(i/border.png) 12 12 repeat; }
