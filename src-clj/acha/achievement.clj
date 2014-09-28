@@ -97,7 +97,7 @@
   (make-message-scanner
     [:no-more-letters
     (fn [message]
-      (some #(Character/isLetter (.charValue %)) message))]))
+      (not (some #(Character/isLetter (.charValue %)) message)))]))
 
 (def narcissist
   [:narcissist
