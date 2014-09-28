@@ -36,7 +36,8 @@
                           [:timestamp :text]
                           [:level :integer]
                           [:userid :integer]
-                          [:repoid :integer])
+                          [:repoid :integer]
+                          [:sha1 :text])
         "CREATE INDEX `userid_index` ON `achievement` (`userid` ASC)"
         "CREATE INDEX `repoid_index` ON `achievement` (`repoid` ASC)")
       (catch Exception e

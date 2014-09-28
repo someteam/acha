@@ -19,10 +19,10 @@
       (->> (for [[code scanner] achievement/all-commit-info-scanners
                  :let [report (scan-achievement scanner commit-info)]
                  :when report]
-             [[(:email commit-info) code] (assoc report
-                                                  :author-email (:email commit-info)
-                                                  :author-name (:author commit-info)
-                                                  )])
+             [[(:email commit-info) code] (-> report
+                                            (assoc-in [:author :email] (:email commit-info))
+                                            (assoc-in [:author :name]  (:author commit-info))
+                                            (assoc-in [:sha1] (:id commit-info)))])
            (into {})))
     (catch Exception e
       (logging/error e "Error occured during commit-info parsing" (.getName commit)))
@@ -57,11 +57,12 @@
   (let [current-achs (current-achievements (:id repo-info))]
     (db/with-connection
       (doseq [[[email code level] data] (intersect-achievements new-achs current-achs)]
-        (let [user (db/get-or-insert-user email (:author-name data))]
-          (db/insert-achievement {:type (name code),
-                                  :level level,
-                                  :userid (:id user),
-                                  :repoid (:id repo-info),
+        (let [user (db/get-or-insert-user email (get-in data [:author :name]))]
+          (db/insert-achievement {:type (name code)
+                                  :level level
+                                  :userid (:id user)
+                                  :repoid (:id repo-info)
+                                  :sha1 (:sha1 data)
                                   :timestamp (util/format-date (:time data))}))))))
 
 (defn- sync-repo-sha1 [repo-info repo]
