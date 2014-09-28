@@ -67,11 +67,13 @@
 
 ;; Rendering
 
-(r/defc header []
+(r/defc header [index?]
   (s/html
     [:.header
-      [:h1.a {:on-click (fn [_] (go! "")) } "Acha-acha"]
-      [:h2 "Enterprise Git Achievement solution. Web scale. In the cloud"]]))
+      [:div.logo {:class    (when-not index? "a")
+                  :title    "Acha-acha"
+                  :on-click (fn [_] (go! "")) }
+        [:h2 "Enterprise Git Achievement solution." [:br] "Web scale. In the cloud"]]]))
 
 (r/defc repo [repo]
   (s/html
@@ -79,7 +81,7 @@
       [:.repo__name
         (:repo/name repo)
         [:span.id (:repo/id repo)]
-        (when (= :added (:repo/status repo)) [:span {:className "tag repo__added"} "Added"])]
+        (when (= :added (:repo/status repo)) [:span {:class "tag repo__added"} "Added"])]
       [:.repo__url (:repo/url repo)]     
       ]))
 
@@ -166,7 +168,7 @@
     (set-title! nil)
     (s/html
       [:.window
-        (header)
+        (header true)
         (users-pane (->> (u/qes-by db :user/id) (sort-by :user/ach) reverse))
         (repo-pane  (u/qes-by db :repo/name))])))
 
@@ -175,7 +177,7 @@
     (set-title! (:repo/name repo))
     (s/html
       [:.window
-        (header)
+        (header false)
         (repo-pane [repo])])))
 
 (r/defc user-page [db id]
@@ -186,7 +188,7 @@
     (set-title! (:user/name user))
     (s/html
       [:.window
-        (header)
+        (header false)
         (users-pane [user])
         (ach-pane aches)])))
 

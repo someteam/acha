@@ -1,17 +1,3 @@
-/* fonts */
-
-@font-face {
-    font-family: 'PressStart2P';
-    src: url('fonts/pressstart2p-webfont.eot');
-    src: url('fonts/pressstart2p-webfont.eot?#iefix') format('embedded-opentype'),
-         url('fonts/pressstart2p-webfont.woff') format('woff'),
-         url('fonts/pressstart2p-webfont.ttf') format('truetype');
-    font-weight: normal;
-    font-style: normal;
-}
-
-/* styles */
-
 * {
   box-sizing: border-box;
   -moz-box-sizing: border-box;
@@ -31,9 +17,13 @@ ul { list-style-type: none; padding: 0; }
 
 .window { padding: 40px 80px; vertical-align: top; }
 
-.header > h1 { font-family: "PressStart2P"; }
-.header > h1:hover { color: #7E5DA3; }
 .header { border-bottom: 3px solid #7E5DA3; }
+
+.logo { width: 500px; height: 120px; background-image: url(i/logo@6x.png); background-size: 165px 240px; position: relative; background-repeat: no-repeat; margin-left: -13px; }
+.logo.a { background-position-y: -120px; }
+.logo.a:hover { background-position-y: 0; }
+.logo > h2 { position: absolute; left: 95px; bottom: 4px; margin: 0;  }
+.logo.a:hover > h2 { color: #7E5DA3; }
 
 .pane { float: left; width: 400px; margin: 20px 0 0 0; }
 
