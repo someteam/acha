@@ -1,10 +1,12 @@
 (ns acha.achievement
   (:use clojure.data)
   (:require
+    [clojure.set :as set]
     [acha.util :as util]
     [acha.achievement-static]
     [acha.spellings :as spellings]
     [acha.swears :as swears]
+    [acha.emoji :as emoji]
     [clojure.string :as str])
   (:import
     [java.util Calendar]))
@@ -258,7 +260,9 @@
 (def cool-kid
   [:emoji
    (fn [{:keys [message author time]}]
-     (when (re-find #"[\u20a0-\u32ff\ud83c\udc00-\ud83d\udeff\udbb9\udce5-\udbb9\udcee]" message)
+     (when (or (re-find #"[\u20a0-\u32ff\ud83c\udc00-\ud83d\udeff\udbb9\udce5-\udbb9\udcee]" message)
+               (let [candidates (set (re-seq #"\:[\w0-9]+\:" message))]
+                 (not-empty (set/intersection candidates emoji/all))))
          {:username author
           :time time}))])
 
