@@ -251,6 +251,13 @@
        {:username (:author commit-info)
         :time (:time commit-info)}))])
 
+(def empty-commit
+  [:empty-commit
+   (fn [{:keys [changed-files author time]}]
+     (when (= changed-files 0)
+       {:username author
+        :time time}))])
+
 ; TODO commit-info achievements
 (def cool-kid
   [:cool-kid
@@ -274,10 +281,6 @@
      nil)])
 (def deal-with-it
   [:deal-with-it
-   (fn [commit-info]
-     nil)])
-(def empty-commit
-  [:empty-commit
    (fn [commit-info]
      nil)])
 (def for-stallman
