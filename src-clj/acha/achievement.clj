@@ -30,9 +30,9 @@
   [achievement-id
    (fn [commit-info]
      (let [time (:time commit-info)
-           ; TODO Correct timezone
            cal (Calendar/getInstance)
            _ (.setTime cal time)
+           _ (.setTimeZone cal timezone)           
            commit-day (.get cal Calendar/DAY_OF_MONTH)
            commit-month (.get cal Calendar/MONTH)]
        (when (= [month day] [commit-month commit-day])
@@ -180,9 +180,9 @@
   [:professional-pride
    (fn [commit-info]
      (let [time (:time commit-info)
-           ; TODO Correct timezone
            cal (Calendar/getInstance)
            _ (.setTime cal time)
+           _ (.setTimeZone cal timezone)
            commit-day (.get cal Calendar/DAY_OF_YEAR)]
        (when (= 1024 commit-day)
          {:username (:author commit-info)
@@ -192,9 +192,9 @@
   [:turkey-day
    (fn [commit-info]
      (let [time (:time commit-info)
-           ; TODO Correct timezone
            cal (Calendar/getInstance)
            _ (.setTime cal time)
+           _ (.setTimeZone cal timezone)
            commit-day (.get cal Calendar/DAY_OF_WEEK)
            commit-month (.get cal Calendar/MONTH)
            commit-month-day (.get cal Calendar/DAY_OF_MONTH)]
