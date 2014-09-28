@@ -88,3 +88,14 @@ a:hover { color: #489125; }
 
 .vote { width: 300px; height: 80px; background:url(i/vote@2x.png); background-size: 100% 200%; position: absolute; top: 0; right: 0; }
 .vote:hover { background-position-y: -80px; }
+
+.lach { position: relative; height: 160px; }
+.lach__user, .lach__ach { position: absolute; border: 6px solid transparent; border-image:url(i/border.png) 12 12 repeat; padding: 5px 5px 5px 77px; width: 400px; }
+.lach__user { left: 0; top: 0; height: 79px; background: #eee; }
+.lach__user:hover { background: #e0e0e0; }
+.lach__ach  { left: 10px; top: 50px; height: 79px; background: white; }
+
+.lach__user__img, .lach__ach__img { width: 57px; height: 57px; position: absolute; left: 5px; top: 5px; }
+.lach__user__name, .lach__ach__name { font-weight: bold; }
+
+.lach div { white-space: nowrap; overflow: hidden; }

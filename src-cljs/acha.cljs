@@ -122,17 +122,69 @@
     (set! (.-value el) "")
     (.focus el)))
 
-(r/defc repo-pane [repos]
-  (s/html
-    [:.repo_pane.pane
-      [:h1 "Repos"]
-      [:ul
-        (map (fn [r] [:li (repo r)]) repos)]
-      [:form.add_repo {:on-submit (fn [e] (add-repo) (.preventDefault e))}
-        [:input {:id "add_repo__input" :type :text :placeholder "Clone URL"}]
-;;         [:button]
-       ]
-    ]))
+(defn- sha1-url [url sha1]
+  (let [path (condp re-matches url
+               #"(?i)(?:https?://)?(?:www\.)?github.com/(.+)" :>> second
+               #"(?i)git\@github\.com\:(.+)" :>> second
+               nil)]
+    (when path
+      (str "https://github.com/" (trimr path ".git") "/commit/" sha1))))
+
+(defn ach-details [ach]
+  (str (get-in ach [:ach/user :user/name])
+  " <" (get-in ach [:ach/user :user/email]) ">"
+  "\n" (:ach/ts ach)
+  "\n" (:ach/sha1 ach)
+  "\n" (get-in ach [:ach/repo :repo/url])))
+
+(r/defc ach-link [ach]
+  (let [sha1     (:ach/sha1 ach)
+        repo-url (get-in ach [:ach/repo :repo/url])
+        text     (str (repo-name repo-url) "/" (subs sha1 0 7))
+        title    (ach-details ach)]
+    (if-let [commit-url (sha1-url repo-url sha1)]
+      (s/html
+        [:a.ach__text { :target "_blank"
+                        :href   commit-url
+                        :title  title }
+         text])
+      (s/html
+        [:.ach__text {:title title} text]))))
+
+(r/defc last-ach [ach]
+  (let [achent (:ach/achent ach)
+        user   (:ach/user   ach)]
+    (s/html
+      [:.lach
+        [:.lach__user.a {:on-click (fn [_] (go! (str "/users/" (:user/id user)))) }
+          [:img.lach__user__img {:src (avatar (:user/email user) 114)}]
+          [:.lach__user__name (:user/name user)]
+          [:.lach__user__email (:user/email user)]]
+        [:.lach__ach
+          [:img.lach__ach__img {:src (achent-img achent)}]
+          [:.lach__ach__name (:achent/name achent)]
+          [:.lach__ach__desc (:achent/desc achent)]
+          [:.lach__ach__links
+            (ach-link ach)]
+          ]])))
+    
+
+(r/defc repo-pane [db]
+  (let [repos      (u/qes-by db :repo/name)
+        last-aches (->> (d/datoms db :avet :ach/ts) (take-last 10) (map #(d/entity db (.-e %))))]
+    (s/html
+      [:.repo_pane.pane
+        [:h1 "Repos"]
+        [:ul
+          (map (fn [r] [:li (repo r)]) repos)]
+        [:form.add_repo {:on-submit (fn [e] (add-repo) (.preventDefault e))}
+          [:input {:id "add_repo__input" :type :text :placeholder "Clone URL"}]
+         ]
+        [:h1 {:style {:margin-top 100 :margin-bottom 40}} "Last 10 achievements"]
+        [:.laches
+          (for [ach last-aches]
+            (last-ach ach))]
+    ])))
 
 (r/defc repo-profile [repo aches]
   (s/html
@@ -181,20 +233,6 @@
         [:ul
           (map (fn [u] [:li (user u (ach-cnt (:db/id u)))]) users)]])))
 
-(defn- sha1-url [url sha1]
-  (let [path (condp re-matches url
-               #"(?i)(?:https?://)?(?:www\.)?github.com/(.+)" :>> second
-               #"(?i)git\@github\.com\:(.+)" :>> second
-               nil)]
-    (when path
-      (str "https://github.com/" (trimr path ".git") "/commit/" sha1))))
-
-(defn ach-details [ach]
-  (str (get-in ach [:ach/user :user/name])
-  " <" (get-in ach [:ach/user :user/email]) ">"
-  "\n" (:ach/ts ach)
-  "\n" (:ach/sha1 ach)
-  "\n" (get-in ach [:ach/repo :repo/url])))
 
 (r/defc user-achent [achent aches]
   (s/html
@@ -207,20 +245,9 @@
             [:.ach__level {:title (:achent/level-desc achent)} max-lvl]))
         ]
       [:.ach__desc (:achent/desc achent)]
-      (for [ach  aches
-            :let [sha1     (:ach/sha1 ach)
-                  repo-url (get-in ach [:ach/repo :repo/url])
-                  text     (str (repo-name repo-url) "/" (subs sha1 0 7))
-                  title    (ach-details ach)]]
-        [:div.ach__links
-          (if-let [commit-url (sha1-url repo-url sha1)]
-            [:a.ach__text { :target "_blank"
-                            :href  commit-url
-                            :title title }
-             text]
-            [:.ach__text {:title title} text])
-         [:.id (:ach/id ach)]])
-     ]))
+      [:div.ach__links
+        (for [ach aches]
+          (ach-link ach))]]))
 
 (r/defc repo-achent [achent aches]
   (s/html
@@ -258,7 +285,7 @@
       [:.window
         (header true)
         (users-pane db (u/qes-by db :user/id))
-        (repo-pane  (u/qes-by db :repo/name))])))
+        (repo-pane  db)])))
 
 (r/defc repo-page [db id]
   (let [repo  (u/qe-by db :repo/id id)

@@ -155,19 +155,19 @@
        {:name "Why not Ruby?"
         :description "First to commit Python file to a repo"}
     :java
-       {:name "Write once. Run. Anywhere"
+       {:name "Write Once. Run. Anywhere"
         :description "First to commit Java file to a repo"}
     :cxx
        {:name "Troubles++14"
         :description "First to commit C++ file to a repo"}
     :c-sharp
-       {:name "It's dangerous to go alone, take LINQ"
+       {:name "It's Dangerous to Go Alone, Take LINQ"
         :description "First to commit C# file to a repo"}
     :objective-c
        {:name "NSVeryDescriptiveAchievementNameWithParame..."
         :description "First to commit Objective-C file to a repo"}
     :swift
-       {:name "I need to sort complex objects fast!"
+       {:name "I Need to Sort Complex Objects Fast!"
         :description "First to commit Swift file to a repo"}
     :sql
        {:name "Not a Web Scale"
@@ -179,25 +179,25 @@
        {:name "We’ll Rewrite that Later"
         :description "First to commit Bash file to a repo"}
     :php
-       {:name "New Facebook is born"
+       {:name "New Facebook is Born"
         :description "First to commit PHP file to a repo"}
     :pascal
        {:name "Really?"
         :description "First to commit Pascal file to a repo"}
     :scala
-       {:name "Well typed, bro"
+       {:name "Well Typed, Bro"
         :description "First to commit Scala file to a repo"}
     :xml
-       {:name "Zed’s dead, baby"
+       {:name "Zed’s Dead, Baby"
         :description "First to commit XML file to a repo"}
     :css
-       {:name "You are a designer now?"
+       {:name "You Are a Designer Now?"
         :description "First to commit CSS file to a repo"}
     :dart
-       {:name "You work in Google?"
+       {:name "You Work in Google?"
         :description "First to commit Dart file to a repo"}
     :windows-language
-       {:name "You can't program on Windows, can you?"
+       {:name "You Can't Program on Windows, Can You?"
         :description "First to commit Windows Shell file to a repo"}
     :basic
        {:name "Cradle of Civilization"
@@ -242,7 +242,7 @@
        {:name "Salvation"
         :description "Use word “sorry” in a commit message"}
     :google
-       {:name "I can sort it out myself"
+       {:name "I Can Sort It out Myself"
         :description "Use word “google” in a commit message"}
     :forgot
        {:name "Second Thoughts"
