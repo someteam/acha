@@ -177,11 +177,19 @@
          {:username author
           :time time})))])
 
-; TODO date achievements
 (def professional-pride
   [:professional-pride
    (fn [commit-info]
-     nil)])
+     (let [time (:time commit-info)
+           ; TODO Correct timezone
+           cal (Calendar/getInstance)
+           _ (.setTime cal time)
+           commit-day (.get cal Calendar/DAY_OF_YEAR)]
+       (when (= [1024] [commit-day])
+         {:username (:author commit-info)
+          :time time})))])
+
+; TODO date achievements
 (def turkey-day
   [:turkey-day
    (fn [commit-info]
