@@ -130,8 +130,19 @@
       [:ul
         (map (fn [u] [:li (user u)]) users)]]))
 
+(defn- sha1-url [url sha1]
+  (let [path (condp re-matches url
+               #"(?i)(?:https?://)?(?:www\.)?github.com/([\-_\w0-9\.\/]+/?)\.git" :>> second
+               #"(?i)git\@github\.com\:([\-_\w0-9\.\/]+)\.git" :>> second
+               nil)]
+    (when path
+      (str "https://github.com/" path "/commit/" sha1))))
+
 (r/defc ach [ach]
-  (let [achent (:ach/achent ach)]
+  (let [achent (:ach/achent ach)
+        repo-url (get-in ach [:ach/repo :repo/url])
+        sha1 (:ach/sha1 ach)]
+    (println (sha1-url repo-url sha1))
     (s/html
       [:.ach
         [:.ach__logo
@@ -141,7 +152,7 @@
             [:.ach__level lvl])
           [:span.id (:ach/id ach)]]
         [:.ach__desc (:achent/desc achent)]
-        [:.ach__repo (get-in ach [:ach/repo :repo/url])]])))
+        [:.ach__repo repo-url]])))
 
 (r/defc ach-pane [aches]
   (s/html
@@ -286,6 +297,7 @@
                                :ach/repo   (repos (:repoid a))
                                :ach/user   (users (:userid a))
                                :ach/achent achent
+                               :ach/sha1   (:sha1 a)
                                :ach/ts     (.parse js/Date (:timestamp a)) }
                              (:level a)
                                (assoc :ach/level (:level a))))))
