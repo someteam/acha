@@ -269,7 +269,7 @@
 (def cool-kid
   [:emoji
    (fn [{:keys [message author time]}]
-     (when (re-find #"[\uD83C-\uDBFF\uDC00-\uDFFF]+" message)
+     (when (re-find #"[\u20a0-\u32ff\ud83c\udc00-\ud83d\udeff\udbb9\udce5-\udbb9\udcee]" message)
          {:username author
           :time time}))])
 
