@@ -135,73 +135,73 @@
         :description "Get all achievements"}
     :haskell
        {:name "Ivory Tower"
-        :description "First to commit Haskell file to a repo"}
+        :description "Add Haskell file to a repo"}
     :perl
        {:name "Chmod 200"
-        :description "First to commit Perl file to a repo"}
+        :description "Add Perl file to a repo"}
     :ruby
        {:name "Back on the Rails"
-        :description "First to commit Ruby file to a repo"}
+        :description "Add Ruby file to a repo"}
     :clojure
        {:name "Even Lispers Hate Lisp"
-        :description "First to commit Clojure file to a repo"}
+        :description "Add Clojure file to a repo"}
     :clojurescript
        {:name "Even Lispers Hate Lisp (in a browser)"
-        :description "First to commit ClojureScript file to a repo"}
+        :description "Add ClojureScript file to a repo"}
     :javascript
        {:name "Happily Never After"
-        :description "First to commit JS file to a repo"}
+        :description "Add JS file to a repo"}
     :python
        {:name "Why not Ruby?"
-        :description "First to commit Python file to a repo"}
+        :description "Add Python file to a repo"}
     :java
        {:name "Write Once. Run. Anywhere"
-        :description "First to commit Java file to a repo"}
+        :description "Add Java file to a repo"}
     :cxx
        {:name "Troubles++14"
-        :description "First to commit C++ file to a repo"}
+        :description "Add C++ file to a repo"}
     :c-sharp
        {:name "It's Dangerous to Go Alone, Take LINQ"
-        :description "First to commit C# file to a repo"}
+        :description "Add C# file to a repo"}
     :objective-c
        {:name "NSVeryDescriptiveAchievementNameWithParame..."
-        :description "First to commit Objective-C file to a repo"}
+        :description "Add Objective-C file to a repo"}
     :swift
        {:name "I Need to Sort Complex Objects Fast!"
-        :description "First to commit Swift file to a repo"}
+        :description "Add Swift file to a repo"}
     :sql
        {:name "Not a Web Scale"
-        :description "First to commit SQL file to a repo"}
+        :description "Add SQL file to a repo"}
     :erlang
        {:name "It’s like ObjC, but for Ericsson phones"
-        :description "First to commit Erlang file to a repo"}
+        :description "Add Erlang file to a repo"}
     :shell
        {:name "We’ll Rewrite that Later"
-        :description "First to commit Bash file to a repo"}
+        :description "Add Bash file to a repo"}
     :php
        {:name "New Facebook is Born"
-        :description "First to commit PHP file to a repo"}
+        :description "Add PHP file to a repo"}
     :pascal
        {:name "Really?"
-        :description "First to commit Pascal file to a repo"}
+        :description "Add Pascal file to a repo"}
     :scala
        {:name "Well Typed, Bro"
-        :description "First to commit Scala file to a repo"}
+        :description "Add Scala file to a repo"}
     :xml
        {:name "Zed’s Dead, Baby"
-        :description "First to commit XML file to a repo"}
+        :description "Add XML file to a repo"}
     :css
        {:name "You Are a Designer Now?"
-        :description "First to commit CSS file to a repo"}
+        :description "Add CSS file to a repo"}
     :dart
        {:name "You Work in Google?"
-        :description "First to commit Dart file to a repo"}
+        :description "Add Dart file to a repo"}
     :windows-language
        {:name "You Can't Program on Windows, Can You?"
-        :description "First to commit Windows Shell file to a repo"}
+        :description "Add Windows Shell file to a repo"}
     :basic
        {:name "Cradle of Civilization"
-        :description "First to commit Basic file to a repo"}
+        :description "Add Basic file to a repo"}
     :programmers-day
        {:name "Professional Pride"
         :description "Commit on Programmers' Day"}
