@@ -13,6 +13,7 @@
            [org.eclipse.jgit.api Git]
            [org.eclipse.jgit.revwalk RevWalk RevCommit RevTree]
            [org.eclipse.jgit.transport FetchResult]
+           [org.eclipse.jgit.lib Constants]
            [org.eclipse.jgit.treewalk EmptyTreeIterator CanonicalTreeParser AbstractTreeIterator]))
 
 (defn- data-dir [url]
@@ -34,6 +35,9 @@
         (safely-force-pull repo)
         repo)
       (jgit.p/git-clone url path))))
+
+(defn head-sha1 [repo]
+ (.. repo getRepository (resolve Constants/HEAD) getName))
 
 (gen-interface
   :name achievement.git.IDiffStatsProvider

@@ -26,6 +26,7 @@
                           [:id "integer primary key autoincrement"]
                           [:url :text]
                           [:state :text]
+                          [:sha1 :text]
                           [:reason :text]
                           [:timestamp :text])
         "CREATE UNIQUE INDEX `url_unique` ON `repo` (`url` ASC)"
@@ -99,6 +100,9 @@
 
 (defn insert-achievement [body]
   (insert! db :achievement body))
+
+(defn update-repo-sha1 [repo-id sha1]
+  (update! db :repo {:sha1 sha1} ["id = ?" repo-id]))
 
 (defmacro with-connection [& body]
   `(with-db-connection [con# db]
