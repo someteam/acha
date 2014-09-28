@@ -172,7 +172,7 @@
                (= ((first diff) 1) ((last diff) 1))
                ; line number absolute difference is 1
                (= 1 (Math/abs (- (last (first diff)) (last (last diff)))))))]
-       (when (some two-line-swapped? diffs)
+       (when (and (= (count diffs) 1) (some two-line-swapped? diffs))
          {:username author
           :time time})))])
 
