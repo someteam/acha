@@ -58,19 +58,22 @@ a:hover { color: #489125; }
 .user__ach { line-height: 25px; display: inline; color: #F0434D; font-weight: bold; background-image: url(i/medal.png); background-size: 10px 8px; background-repeat: no-repeat; background-position: 100% 3px; border: 2px solid #F0434D; padding: 2px 12px 0 2px; border-radius: 3px; }
 
 
-.up { position: relative; padding: 10px 5px 5px 138px; font-size: 24px; line-height: 32px; }
+.up, .rp { position: relative; padding: 10px 5px 5px 138px; font-size: 24px; line-height: 32px; }
 .up__avatar { position: absolute; left: 5px; top: 13px; width: 114px; height: 114px; }
 .up__avatar > img { width: 100%; height: 100%; -webkit-mask-box-image: url('i/avatar_mask.png'); }
-.up__name { font-weight: bold; } 
-.up__email { }
-.up__hr { width: 200px; margin: 10px 0; border-bottom: 3px solid #7E5DA3; }
-.up__ach  { width: 38px; height: 38px; margin: 5px; }
-.up__achs { position: absolute; top: 150px; left: 0; width: 450px; line-height: 0px; }
+.up__name, .rp__name { font-weight: bold; } 
+.up__hr, .rp__hr { width: 200px; margin: 10px 0; border-bottom: 3px solid #7E5DA3; }
+.up__ach, .rp__ach  { width: 38px; height: 38px; margin: 3px; }
+.up__achs { position: absolute; top: 150px; left: 0; width: 450px; line-height: 0px; margin: 0 -3px; }
 
-.ach { position: relative; width: 400px; padding: 0 0 0 72px; margin: 0 0 32px 0; line-height: 18px; overflow: hidden; }
+.rp { padding-left: 0; }
+.rp__email { font-size: 12px; }
+.rp__achs  { margin-top: 20px; line-height: 0; width: 450px; margin: 0 -3px; }
+
+.ach { position: relative; width: 400px; min-height: 57px; padding: 0 0 0 72px; margin: 32px 0; line-height: 18px; overflow: hidden; }
 /* .ach { border: 6px solid transparent; border-image:url(i/border.png) 12 12 repeat; } */
 /* .ach:hover { background: #f7f7f7; } */
-.ach__logo { position: absolute; left: 0; top: 0; width: 57px; height: 57px;  }
+.ach__logo { position: absolute; left: 0; top: 3px; width: 57px; height: 57px;  }
 .ach__logo > img { width: 100%; height: 100%;  }
 
 .ach__name { font-weight: bold; }
@@ -80,6 +83,8 @@ a:hover { color: #489125; }
 .ach__text { color: #999; text-decoration: none; border-bottom: 1px solid #eee; }
 .ach__links { margin-top: 5px; }
 
+.ach__users { line-height: 0; margin: 0 -3px; }
+.ach__user { width: 38px; height: 38px; margin: 3px;  -webkit-mask-box-image: url('i/avatar_mask.png'); }
 
 .vote { width: 300px; height: 80px; background:url(i/vote@2x.png); background-size: 100% 200%; position: absolute; top: 0; right: 0; }
 .vote:hover { background-position-y: -80px; }

@@ -52,8 +52,9 @@
       s)))
 
 (defn repo-name [url]
-  (let [[_ m] (re-matches #".*/([^/]+)/?" url)]
-    (trimr m ".git")))
+  (when url
+    (let [[_ m] (re-matches #".*/([^/]+)/?" url)]
+      (trimr m ".git"))))
 
 ;; Navigation
 
@@ -79,6 +80,18 @@
                   :title    "Acha-acha"
                   :on-click (fn [_] (go! "")) }
         [:h2 "Enterprise Git Achievement solution" [:br] "Web scale. In the cloud"]]]))
+
+
+;; (def silhouette "https%3A%2F%2Fdl.dropboxusercontent.com%2Fu%2F561580%2Fsilhouette.png")
+
+(defn avatar [email & [w]]
+  (when email
+    (str "http://www.gravatar.com/avatar/" (js/md5 email) "?&d=retro" (when w (str "&s=" w)))))
+
+(defn achent-img [achent]
+  (when achent
+    (str "aches/" (name (:achent/id achent)) "@6x.png")))
+
 
 (r/defc repo [repo]
   (s/html
@@ -121,15 +134,18 @@
        ]
     ]))
 
-;; (def silhouette "https%3A%2F%2Fdl.dropboxusercontent.com%2Fu%2F561580%2Fsilhouette.png")
+(r/defc repo-profile [repo aches]
+  (s/html
+    [:.rp.pane
+      [:.rp__name  (repo-name (:repo/url repo)) [:.id (:repo/id repo)]]
+      [:.rp__email (:repo/url repo)]
+      [:.rp__hr]
+      [:.rp__achs
+        (for [[achent _] aches]
+          [:img.rp__ach {:src   (achent-img achent)
+                         :title (str (:achent/name achent) ":\n\n" (:achent/desc achent)) }])]]))
 
-(defn avatar [email & [w]]
-  (when email
-    (str "http://www.gravatar.com/avatar/" (js/md5 email) "?&d=retro" (when w (str "&s=" w)))))
 
-(defn achent-img [achent]
-  (when achent
-    (str "aches/" (name (:achent/id achent)) "@6x.png")))
 
 (r/defc user [user ach-cnt]
   (s/html
@@ -141,7 +157,7 @@
       [:.user__email (:user/email user)]
       (when ach-cnt [:.user__ach ach-cnt])]))
 
-(r/defc user-profile [user aches]
+(r/defc user-profile [user aches comp]
   (s/html
     [:.up.pane
       [:.up__avatar
@@ -150,9 +166,9 @@
       [:.up__email (:user/email user)]
       [:.up__hr]
       [:.up__achs
-        (for [[achent _] aches]
-          [:img.up__ach {:src   (achent-img achent)
-                         :title (str (:achent/name achent) ":\n\n" (:achent/desc achent)) }])]]))
+      (for [[achent _] aches]
+        [:img.up__ach {:src   (achent-img achent)
+                       :title (str (:achent/name achent) ":\n\n" (:achent/desc achent)) }])]]))
 
 (r/defc users-pane [db users]
   (let [ach-cnt (u/qmap '[:find  ?u (count ?a)
@@ -173,7 +189,14 @@
     (when path
       (str "https://github.com/" (trimr path ".git") "/commit/" sha1))))
 
-(r/defc ach [achent aches]
+(defn ach-details [ach]
+  (str (get-in ach [:ach/user :user/name])
+  " <" (get-in ach [:ach/user :user/email]) ">"
+  "\n" (:ach/ts ach)
+  "\n" (:ach/sha1 ach)
+  "\n" (get-in ach [:ach/repo :repo/url])))
+
+(r/defc user-achent [achent aches]
   (s/html
     [:.ach { :key (:db/id achent) }
       [:.ach__logo
@@ -188,9 +211,7 @@
             :let [sha1     (:ach/sha1 ach)
                   repo-url (get-in ach [:ach/repo :repo/url])
                   text     (str (repo-name repo-url) "/" (subs sha1 0 7))
-                  title    (str "Date: " (:ach/ts ach)
-                                "\nSHA-1: " sha1
-                                "\nRepository: " repo-url)]]
+                  title    (ach-details ach)]]
         [:div.ach__links
           (if-let [commit-url (sha1-url repo-url sha1)]
             [:a.ach__text { :target "_blank"
@@ -201,12 +222,27 @@
          [:.id (:ach/id ach)]])
      ]))
 
-(r/defc ach-pane [aches]
+(r/defc repo-achent [achent aches]
+  (s/html
+    [:.ach { :key (:db/id achent) }
+      [:.ach__logo
+        [:img {:src (achent-img achent)}]]
+      [:.ach__name (:achent/name achent)]
+      [:.ach__desc (:achent/desc achent)]
+      [:div.ach__users
+        (for [ach aches
+              :let [user   (:ach/user ach)
+                    avatar (avatar (:user/email user) 114)]]
+          [:a {:href (str "#/users/" (:user/id user))}
+            [:img.ach__user {:src avatar
+                             :title (ach-details ach)}]])]
+     ]))
+
+(r/defc ach-pane [aches comp]
   (s/html
     [:.ach_pane.pane
       [:h1 "Achievements"]
-      [:ul
-        (map (fn [[achent aches]] [:li (ach achent aches)]) aches)]]))
+      (map (fn [[achent aches]] (comp achent aches)) aches)]))
 
 (defn group-aches [aches]
   (->> aches
@@ -225,12 +261,15 @@
         (repo-pane  (u/qes-by db :repo/name))])))
 
 (r/defc repo-page [db id]
-  (let [repo (u/qe-by db :repo/id id)]
+  (let [repo  (u/qe-by db :repo/id id)
+        aches (->> (u/qes-by db :ach/repo (:db/id repo))
+                   group-aches)]
     (set-title! (:repo/name repo))
     (s/html
       [:.window
         (header false)
-        (repo-pane [repo])])))
+        (ach-pane aches repo-achent)
+        (repo-profile repo aches)])))
 
 (r/defc user-page [db id]
   (let [user  (u/qe-by  db :user/id id)
@@ -240,7 +279,7 @@
     (s/html
       [:.window
         (header false)
-        (ach-pane aches)
+        (ach-pane aches user-achent)
         (user-profile user aches)
         ])))
 
