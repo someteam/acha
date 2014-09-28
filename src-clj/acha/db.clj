@@ -26,6 +26,7 @@
                           [:id "integer primary key autoincrement"]
                           [:url :text]
                           [:state :text]
+                          [:sha1 :text]
                           [:reason :text]
                           [:timestamp :text])
         "CREATE UNIQUE INDEX `url_unique` ON `repo` (`url` ASC)"
@@ -35,7 +36,8 @@
                           [:timestamp :text]
                           [:level :integer]
                           [:userid :integer]
-                          [:repoid :integer])
+                          [:repoid :integer]
+                          [:sha1 :text])
         "CREATE INDEX `userid_index` ON `achievement` (`userid` ASC)"
         "CREATE INDEX `repoid_index` ON `achievement` (`repoid` ASC)")
       (catch Exception e
@@ -112,6 +114,9 @@
 
 (defn insert-achievement [body]
   (insert! db :achievement body))
+
+(defn update-repo-sha1 [repo-id sha1]
+  (update! db :repo {:sha1 sha1} ["id = ?" repo-id]))
 
 (defmacro with-connection [& body]
   `(with-db-connection [con# db]

@@ -19,10 +19,10 @@
       (->> (for [[code scanner] achievement/all-commit-info-scanners
                  :let [report (scan-achievement scanner commit-info)]
                  :when report]
-             [[(:email commit-info) code] (assoc report
-                                                  :author-email (:email commit-info)
-                                                  :author-name (:author commit-info)
-                                                  )])
+             [[(:email commit-info) code] (-> report
+                                            (assoc-in [:author :email] (:email commit-info))
+                                            (assoc-in [:author :name]  (:author commit-info))
+                                            (assoc-in [:sha1] (:id commit-info)))])
            (into {})))
     (catch Exception e
       (logging/error e "Error occured during commit-info parsing" (.getName commit)))
@@ -35,10 +35,11 @@
     (< (:level b 0) (:level a 0)) b
     :else a))
 
-(defn- find-achievements [repo]
+(defn- find-achievements [repo-info repo]
  (let [df (git-parser/diff-formatter repo)]
-    (->> (for [commit (git-parser/commit-list repo)]
-           ;; check that we don't know about this sha1
+    (->> (for [commit (git-parser/commit-list repo)
+               :while (or (nil? (:sha1 repo-info))
+                          (not= (.getName commit) (:sha1 repo-info)))]
            (analyze-commit repo commit df))
          (reduce (partial merge-with merge-achievements)))))
 
@@ -52,25 +53,28 @@
     (map (fn [[[email code] data]] [[email (name code) (:level data)] data]))
     (remove #(contains? current-achs (first %)))))
 
-(defn- sync-achievements [url new-achs]
-  (let [repo-db (db/get-or-insert-repo url)
-        current-achs (current-achievements (:id repo-db))]
+(defn- sync-achievements [repo-info new-achs]
+  (let [current-achs (current-achievements (:id repo-info))]
     (db/with-connection
       (doseq [[[email code level] data] (intersect-achievements new-achs current-achs)]
-        (let [user (db/get-or-insert-user email (:author-name data))]
-          (db/insert-achievement {:type (name code),
-                                  :level level,
-                                  :userid (:id user),
-                                  :repoid (:id repo-db),
+        (let [user (db/get-or-insert-user email (get-in data [:author :name]))]
+          (db/insert-achievement {:type (name code)
+                                  :level level
+                                  :userid (:id user)
+                                  :repoid (:id repo-info)
+                                  :sha1 (:sha1 data)
                                   :timestamp (util/format-date (:time data))}))))))
 
+(defn- sync-repo-sha1 [repo-info repo]
+  (let [sha1 (git-parser/head-sha1 repo)]
+    (db/update-repo-sha1 (:id repo-info) sha1)))
+
 (defn analyze [url]
-  (let [repo (git-parser/load-repo url)
-        new-achievements (find-achievements repo)]
-    (logging/info (time (sync-achievements url new-achievements)))
-    
-    
-    ))
+  (let [repo-info (db/get-or-insert-repo url)
+        repo (git-parser/load-repo url)
+        new-achievements (find-achievements repo-info repo)]
+    (sync-achievements repo-info new-achievements)
+    (sync-repo-sha1 repo-info repo)))
 
 (defn start-next []
   (if-let [repo (db/get-next-repo-to-process)]
