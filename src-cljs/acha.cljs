@@ -168,7 +168,7 @@
                   text     (str (subs sha1 0 7) " @ " (repo-name repo-url))]]
         [:div
           (if-let [commit-url (sha1-url repo-url sha1)]
-            [:a.ach__link { :target "__blank"
+            [:a.ach__link { :target "_blank"
                             :href  commit-url
                             :title sha1 }
              text]
