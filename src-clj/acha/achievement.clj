@@ -185,15 +185,26 @@
            cal (Calendar/getInstance)
            _ (.setTime cal time)
            commit-day (.get cal Calendar/DAY_OF_YEAR)]
-       (when (= [1024] [commit-day])
+       (when (= 1024 commit-day)
+         {:username (:author commit-info)
+          :time time})))])
+
+(def turkey-day
+  [:turkey-day
+   (fn [commit-info]
+     (let [time (:time commit-info)
+           ; TODO Correct timezone
+           cal (Calendar/getInstance)
+           _ (.setTime cal time)
+           commit-day (.get cal Calendar/DAY_OF_WEEK)
+           commit-month (.get cal Calendar/MONTH)
+           commit-month-day (.get cal Calendar/DAY_OF_MONTH)]
+       (when (and (= [10 3] [commit-month commit-day]) 
+             (and (>= commit-month-day 22) (<= commit-month-day 28)))
          {:username (:author commit-info)
           :time time})))])
 
 ; TODO date achievements
-(def turkey-day
-  [:turkey-day
-   (fn [commit-info]
-     nil)])
 (def owl
   [:owl
    (fn [commit-info]
