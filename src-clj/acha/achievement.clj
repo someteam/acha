@@ -4,6 +4,7 @@
     [acha.util :as util]
     [acha.achievement-static]
     [acha.spellings :as spellings]
+    [acha.swears :as swears]
     [clojure.string :as str])
   (:import
     [java.util Calendar]))
@@ -63,13 +64,14 @@
           :time time})))])
 
 (def bad-motherfucker
-  (make-word-counting-scanner [:bad-motherfucker #{"fuck"}]))
-
-(def swear-words
-  #{"fuck" "shit" "damn" "sucks"})
+  (make-word-counting-scanner [:bad-motherfucker swears/table]))
 
 (def hello-linus
-  (make-word-counting-scanner [:hello-linus swear-words]))
+  [:hello-linus 
+  (fn [commit-info]
+    (when (>= (:level ((second bad-motherfucker) commit-info)) 10))
+    {:username (:author commit-info)
+          :time (:time commit-info)})])
 
 (def borat
   (make-word-counting-scanner [:borat spellings/table]))
