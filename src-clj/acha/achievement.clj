@@ -26,19 +26,22 @@
          {:username author
           :time time}))])
 
+(defn commit-info-cal [commit-info]
+  (doto
+    (Calendar/getInstance (:timezone commit-info))
+    (.setTime (:time commit-info))))
+
 ; months are zero-based because java
 (defn make-date-scanner [[achievement-id month day]]
   [achievement-id
    (fn [commit-info]
-     (let [time (:time commit-info)
-           cal (Calendar/getInstance)
-           _ (.setTime cal time)
-           _ (.setTimeZone cal (:timezone commit-info))           
-           commit-day (.get cal Calendar/DAY_OF_MONTH)
-           commit-month (.get cal Calendar/MONTH)]
-       (when (= [month day] [commit-month commit-day])
+     (let [cal          (commit-info-cal commit-info)
+           commit-day   (.get cal Calendar/DAY_OF_MONTH)
+           commit-month (+ 1 (.get cal Calendar/MONTH))]
+       (when (and (= month commit-month)
+                  (= day commit-day))
          {:username (:author commit-info)
-          :time time})))])
+          :time     time})))])
 
 (defn make-filename-scanner [[achievement-id filename-pred]]
   [achievement-id
@@ -184,10 +187,7 @@
          {:username author
           :time time})))])
 
-(defn commit-info-cal [commit-info]
-  (doto
-    (Calendar/getInstance (:timezone commit-info))
-    (.setTime (:time commit-info))))
+
 
 (def programmers-day
   [:programmers-day
@@ -384,13 +384,13 @@
 (def unpretending nil)
 
 (def date-table
-  [[:christmas 11 25]
-   [:halloween 9 31]
-   [:fools-day 3 1]
-   [:leap-day 1 29]
-   [:new-year 0 1]
-   [:russia-day 5 12]
-   [:valentine 1 14]])
+  [[:christmas 12 25]
+   [:halloween 10 31]
+   [:fools-day 4 1]
+   [:leap-day 2 29]
+   [:new-year 1 1]
+   [:russia-day 6 12]
+   [:valentine 2 14]])
 
 (def substring-table
   [[:beggar #{"achievement" "achievements"}]
@@ -408,7 +408,7 @@
 
 (def language-table
   [[:basic ["bas" "vb" "vbs" "vba"]]
-   [:c ["c"]]
+;;    [:c ["c" "h"]]
    [:c-sharp ["cs"]]
    [:clojure ["clj" "cljx"]]
    [:clojurescript ["cljs"]]
@@ -416,20 +416,20 @@
    [:cxx ["c++" "cc" "cpp" "cxx" "pcc" "hh" "hpp" "hxx"]]
    [:dart ["dart"]]
    [:erlang ["erl" "hrl"]]
-   [:go ["go"]]
+;;    [:go ["go"]]
    [:haskell ["hs" "lhs"]]
    [:java ["java" "jsf" "jsp" "jspf"]]
    [:javascript ["js"]]
    [:objective-c ["m" "mm"]]
    [:pascal ["pas"]]
    [:perl ["pl"]]
-   [:php ["php" "php3" "php4" "php5"]]
+;;    [:php ["php" "php3" "php4" "php5"]]
    [:python ["py"]]
    [:ruby ["rake" "rb"]]
    [:scala ["scala"]]
    [:shell ["bash" "sh" "awk" "sed"]]
    [:sql ["sql"]]
-   [:swift ["swift"]]
+;;    [:swift ["swift"]]
    [:windows-language ["bat" "btm" "cmd" "ps1" "csproj" "vbproj" "vcproj" "wdproj" "wixproj" "xaml"]]
    [:xml ["xml" "xsl" "xslt" "xsd" "dtd"]]])
 

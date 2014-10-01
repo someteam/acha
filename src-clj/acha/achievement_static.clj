@@ -25,7 +25,7 @@
     :easy-fix
        {:name "Easy Fix"
         :description "Swap two lines"}
-    :multilingua
+    :multilingual
        {:name "Multilingual"
         :description "Add/edit files in 5 different languages in a single commit"}
     :necromancer
