@@ -89,6 +89,7 @@ h1 { font-size: 32px; }
 .ach__level { display: inline; position: relative; top: -5px; font-size: 10px; }
 .ach__text { color: #999; text-decoration: none; border-bottom: 1px solid #eee; }
 .ach__links { margin-top: 5px; }
+.ach__links > a { line-height: 14px; }
 
 .ach__users { line-height: 0; margin: 0 -3px; }
 .ach__user { width: 38px; height: 38px; margin: 3px;  -webkit-mask-box-image: url('i/avatar_mask.png'); }
@@ -106,3 +107,4 @@ h1 { font-size: 32px; }
 .lach__user__name, .lach__ach__name { font-weight: bold; }
 
 .lach div { white-space: nowrap; overflow: hidden; }
+.lach__ach__links > a { line-height: 14px; }

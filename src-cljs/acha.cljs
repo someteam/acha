@@ -41,6 +41,7 @@
         (js/setTimeout #(callback res) 0)))
     (or method "GET")))
 
+
 (defn map-by [f xs]
   (reduce (fn [acc x] (assoc acc (f x) x)) {} xs))
 
@@ -150,14 +151,14 @@
         repo-url (get-in ach [:ach/repo :repo/url])
         text     (str (repo-name repo-url) "/" (subs sha1 0 7))
         title    (ach-details ach)]
-    (if-let [commit-url (sha1-url repo-url sha1)]
-      (s/html
-        [:a.ach__text { :target "_blank"
-                        :href   commit-url
-                        :title  title }
-         text])
-      (s/html
-        [:.ach__text {:title title} text]))))
+    (s/html
+      [:div
+        (if-let [commit-url (sha1-url repo-url sha1)]
+          [:a.ach__text { :target "_blank"
+                          :href   commit-url
+                          :title  title }
+           text]
+          [:.ach__text {:title title} text])])))
 
 (r/defc last-ach [ach]
   (let [achent (:ach/achent ach)
@@ -353,6 +354,18 @@
       (println e)))
   es)
 
+(defn server-ach->entity [a aches repos users]
+  (when-let [achent (aches (keyword (:type a)))]
+     (cond->
+       { :ach/id     (:id a)
+         :ach/repo   (repos (:repoid a))
+         :ach/user   (users (:userid a))
+         :ach/achent achent
+         :ach/sha1   (:sha1 a)
+         :ach/ts     (js/Date. (.parse js/Date (:timestamp a))) }
+       (:level a)
+         (assoc :ach/level (:level a)))))
+
 (defn ^:export start []
   (d/listen! conn
     (fn [tx-report]
@@ -411,24 +424,19 @@
             (let [db @conn
                   aches (u/qmap '[:find ?id ?eid :where [?eid :achent/id ?id]] db)
                   users (u/qmap '[:find ?id ?eid :where [?eid :user/id ?id]]   db)
-                  repos (u/qmap '[:find ?id ?eid :where [?eid :repo/id ?id]]   db)]
+                  repos (u/qmap '[:find ?id ?eid :where [?eid :repo/id ?id]]   db)
+                  ents  (->> as
+                             (map (fn [a] (server-ach->entity a aches repos users)))
+                             (remove nil?)
+                             ;; vec
+                             ;; check-tx
+                        )]
+              
               (profile "transact :ach"
-                (d/transact! conn
-                  (->> as
-                    (map (fn [a]
-                           (when-let [achent (aches (keyword (:type a)))]
-                             (cond->
-                               { :ach/id     (:id a)
-                                 :ach/repo   (repos (:repoid a))
-                                 :ach/user   (users (:userid a))
-                                 :ach/achent achent
-                                 :ach/sha1   (:sha1 a)
-                                 :ach/ts     (js/Date. (.parse js/Date (:timestamp a))) }
-                               (:level a)
-                                 (assoc :ach/level (:level a))))))
-                    (remove nil?)
-                    check-tx))))
+                (d/transact! conn ents)))
             (println "Loaded :ach," (count (:eavt @conn)) "datoms")))
         )))
   )
+
+
 
