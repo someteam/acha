@@ -19,8 +19,8 @@
            [org.eclipse.jgit.treewalk EmptyTreeIterator CanonicalTreeParser AbstractTreeIterator]))
 
 (defn- data-dir [url]
-  (let [repo-name (last (string/split url #"/"))]
-    (str "./remotes/" repo-name "_" (util/md5 url))))
+  (let [repo-name (->> (string/split url #"/") (remove string/blank?) last)]
+    (str ".acha/" repo-name "_" (util/md5 url))))
 
 (defn force-pull [repo]
   (let [fetch-result ^FetchResult (jgit.p/git-fetch repo)]
@@ -35,7 +35,7 @@
 (SshSessionFactory/setInstance jsch-factory)
 
 (defn load-repo [url]
-  (let [path (str (data-dir url) "/repo")]
+  (let [path (data-dir url)]
     (if (.exists (io/as-file path))
       (let [repo (jgit.p/load-repo path)]
         (force-pull repo)

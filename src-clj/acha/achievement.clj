@@ -41,7 +41,7 @@
        (when (and (= month commit-month)
                   (= day commit-day))
          {:username (:author commit-info)
-          :time     time})))])
+          :time     (:time commit-info)})))])
 
 (defn make-filename-scanner [[achievement-id filename-pred]]
   [achievement-id

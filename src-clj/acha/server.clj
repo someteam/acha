@@ -6,6 +6,7 @@
     [acha.util :as util]
     [acha.db :as db]
     [clojure.tools.logging :as logging]
+    [clojure.java.io :as io]
     [ring.adapter.jetty :as jetty]
     [ring.middleware.reload :as reload]
     [ring.middleware.params :as params]
@@ -68,6 +69,7 @@
 (def handler-dev (reload/wrap-reload handler ["src-clj"]))
 
 (defn -main [& opts]
+  (.mkdir (io/as-file ".acha"))
 ;  (print "Not implemented/over implemented achievement lists:")
 ;  (print achievement/all-unused-achievements)
   (db/create-db)

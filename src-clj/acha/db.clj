@@ -9,7 +9,7 @@
 (def db-spec
   {:classname   "org.sqlite.JDBC"
    :subprotocol "sqlite"
-   :subname     "acha-sqlite.db"})
+   :subname     ".acha/db.sqlite"})
 
 (defn pool
   [spec]
@@ -30,7 +30,8 @@
 (defn db-conn [] @pooled-db)
 
 (defn create-db []
-  (when-not (.exists (io/as-file (:subname db-spec)))
+  (when-not (let [f (io/as-file (:subname db-spec))]
+              (and (.exists f) (pos? (.length f))))
     (try
       (logging/info "Creating DB" (:subname db-spec))
       (db-do-commands (db-conn)

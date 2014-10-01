@@ -12,3 +12,4 @@ pom.xml.asc
 /resources/public/acha.js
 /resources/public/acha.min.js
 acha-sqlite.db
+.acha
