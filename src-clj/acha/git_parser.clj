@@ -122,7 +122,7 @@
         message (-> (.getFullMessage rev-commit) str string/trim)]
     (merge {:id (.getName rev-commit)
             :author (.getName ident)
-            :email (.getEmailAddress ident)
+            :email  (string/lower-case (.getEmailAddress ident))
             :time time
             :timezone (.getTimeZone ident)
             :between-time (- (.getCommitTime rev-commit) (.getTime (.getWhen ident)))

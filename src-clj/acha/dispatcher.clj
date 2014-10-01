@@ -84,7 +84,7 @@
   (logging/info "Worker #" worker-id " is ready")
   (loop []
     (try
-      (when-let [repo (db/get-next-repo-to-process)]
+      (when-let [repo (not-empty (db/get-next-repo-to-process))]
         (logging/info "Worker #" worker-id " has started processing" repo)
         (analyze repo)
         (logging/info "Worker #" worker-id " has finished processing" repo))
