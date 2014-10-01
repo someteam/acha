@@ -22,28 +22,28 @@
   (let [repo-name (->> (string/split url #"/") (remove string/blank?) last)]
     (str ".acha/" repo-name "_" (util/md5 url))))
 
-(defn force-pull [repo]
-  (let [fetch-result ^FetchResult (jgit.p/git-fetch repo)]
-    (when-let [current (first (.getAdvertisedRefs fetch-result))]
-      (jgit.p/git-reset repo (.getName (.getObjectId current)) :hard))))
-
-
 (def jsch-factory (proxy [JschConfigSessionFactory] []
   (configure [^OpenSshConfig$Host hc ^Session session]
     (.getJSch ^JschConfigSessionFactory this hc FS/DETECTED))))
 
 (SshSessionFactory/setInstance jsch-factory)
 
+(defn- clone [url path]
+  (->
+    (doto (Git/cloneRepository)
+      (.setURI url)
+      (.setDirectory (io/as-file path))
+      (.setRemote "origin")
+      (.setCloneAllBranches true)
+      (.setNoCheckout true))
+    (.call)))
+
 (defn load-repo [url]
   (let [path (data-dir url)]
     (if (.exists (io/as-file path))
-      (let [repo (jgit.p/load-repo path)]
-        (force-pull repo)
-        repo)
-      (jgit.p/git-clone url path))))
-
-(defn head-sha1 [repo]
- (.. repo getRepository (resolve Constants/HEAD) getName))
+      (doto (jgit.p/load-repo path)
+        (jgit.p/git-fetch-all))
+        (clone url path))))
 
 (gen-interface
   :name achievement.git.IDiffStatsProvider
@@ -85,13 +85,11 @@
       (.setRepository (.getRepository repo))
       (.setDiffComparator RawTextComparator/DEFAULT))))
 
-(defn- normalize-path
-  [path]
-  (if (= path "/")
-    "/"
-    (if (= (first path) \/)
-      (apply str (rest path))
-      path)))
+(defn- normalize-path [path]
+  (cond
+    (= path "/") "/"
+    (= (first path) \/) (subs path 1)
+    :else path))
 
 (defn- change-kind
   [^DiffEntry entry]

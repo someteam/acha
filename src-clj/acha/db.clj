@@ -45,10 +45,13 @@
                           [:id "integer primary key autoincrement"]
                           [:url :text]
                           [:state :text]
-                          [:sha1 :text]
                           [:reason :text]
                           [:timestamp "integer not null default 0"])
         "CREATE UNIQUE INDEX `url_unique` ON `repo` (`url` ASC)"
+        (create-table-ddl :repo_seen
+                          [:id "integer primary key autoincrement"]
+                          [:repoid "integer references repo (id)"]
+                          [:sha1 :text])
         (create-table-ddl :achievement
                           [:id "integer primary key autoincrement"]
                           [:type :text]
@@ -126,11 +129,24 @@
 (defn insert-achievement [body]
   (insert! (db-conn) :achievement body))
 
-(defn update-repo-sha1 [repo-id sha1]
-  (update! (db-conn) :repo {:sha1 sha1 :state "ok"} ["id = ?" repo-id]))
+(defn get-repo-seen-commits [repo-id]
+  (->> (query (db-conn) ["select * from repo_seen where repoid = ?" repo-id])
+       (map :sha1)
+       set))
+
+(defn insert-repo-seen-commit [repo-id sha1]
+  (insert! (db-conn) :repo_seen {:repoid repo-id :sha1 sha1}))
 
 (defn update-repo-state [repo-id state]
   (update! (db-conn) :repo {:state state} ["id = ?" repo-id]))
 
 (defn count-new-repos []
   (count (query (db-conn) "select * from repo where state = \"new\"")))
+
+(defn cleanup! []
+  (delete! (db-conn) :achievement [])
+  (delete! (db-conn) :user [])
+  (delete! (db-conn) :repo_seen [])
+  (update! (db-conn) :repo {:state "new" :timestamp 0} []))
+
+;; (cleanup!)

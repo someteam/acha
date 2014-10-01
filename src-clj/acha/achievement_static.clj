@@ -191,7 +191,7 @@
        {:name "Zed’s Dead, Baby"
         :description "Add XML file to a repo"}
     :css
-       {:name "You Are a Designer Now?"
+       {:name "You Designer Now?"
         :description "Add CSS file to a repo"}
     :dart
        {:name "You Work in Google?"
@@ -230,7 +230,7 @@
        {:name "Turkey Code"
         :description "Commit on Thanksgiving"}
     :fools-day
-       {:name "Fool’s Code"
+       {:name "Fools’ Code"
         :description "Commit on Apr 1"}
     :impossible
        {:name "Mission Impossible"

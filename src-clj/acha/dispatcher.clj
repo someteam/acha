@@ -13,8 +13,9 @@
     (catch Exception e
       (logging/error e "Error occured during achievement scan commit"))))
 
-(defn- analyze-commit [repo commit df]
+(defn- analyze-commit [repo-info repo commit df]
   (try
+;;     (logging/info "Analyzing" (:url repo-info) (.getName commit) (.. commit getAuthorIdent getWhen))
     (let [commit-info (git-parser/commit-info repo commit df)]
       (when (not (:merge commit-info))
         (->> (for [[code scanner] achievement/all-commit-info-scanners
@@ -27,7 +28,8 @@
            (into {}))))
     (catch Exception e
       (logging/error e "Error occured during commit-info parsing" (.getName commit)))
-    (finally )))
+    (finally
+      (db/insert-repo-seen-commit (:id repo-info) (.getName commit)))))
 
 
 (defn- merge-achievements [a b]
@@ -38,12 +40,13 @@
 
 (defn- find-achievements [repo-info repo]
   (logging/info "Scanning new commits for achievements " (:url repo-info))
-  (let [df (git-parser/diff-formatter repo)]
-     (->> (for [commit (take 2000 (git-parser/commit-list repo))
-                :while (or (nil? (:sha1 repo-info))
-                           (not= (.getName commit) (:sha1 repo-info)))]
-            (analyze-commit repo commit df))
-          (reduce (partial merge-with merge-achievements)))))
+  (let [df      (git-parser/diff-formatter repo)
+        seen    (db/get-repo-seen-commits (:id repo-info))]
+    (->> (git-parser/commit-list repo)
+         (take 2000)
+         (remove #(contains? seen (.getName %)))
+         (map    #(analyze-commit repo-info repo % df))
+         (reduce #(merge-with merge-achievements %1 %2) {}))))
 
 (defn- current-achievements [repo-id]
   (->> (db/get-achievements-by-repo repo-id)
@@ -66,19 +69,13 @@
                 :sha1 (:sha1 data)
                 :timestamp (util/format-date (:time data))})))))
 
-(defn- sync-repo-sha1 [repo-info repo]
-  (let [sha1 (git-parser/head-sha1 repo)]
-    (db/update-repo-sha1 (:id repo-info) sha1)))
-
 (defn analyze [repo-info]
-  (let [repo (do
-               (logging/info "Fetching/cloning repo " (:url repo-info))
-               (git-parser/load-repo (:url repo-info)))
+  (logging/info "Fetching/cloning repo " (:url repo-info))
+  (let [repo (git-parser/load-repo (:url repo-info))
         new-achievements (find-achievements repo-info repo)]
     (logging/info "Add new achievements to db for " (:url repo-info))
     (sync-achievements repo-info new-achievements)
-    (logging/info "Write last sha1 to repo " (:url repo-info))
-    (sync-repo-sha1 repo-info repo)))
+    (db/update-repo-state (:id repo-info) "ok")))
 
 (defn- worker [worker-id]
   (logging/info "Worker #" worker-id " is ready")
@@ -95,5 +92,5 @@
     (recur)))
 
 (defn run-workers []
-  (doseq [id (range 4)]
+  (doseq [id (range 1)]
     (future (worker id))))
