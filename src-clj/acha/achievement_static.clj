@@ -202,6 +202,9 @@
     :basic
        {:name "Cradle of Civilization"
         :description "Add Basic file to a repo"}
+    :go
+       {:name "In Google we trust"
+        :description "Add Go file to a repo"}
     :programmers-day
        {:name "Professional Pride"
         :description "Commit on Programmers' Day"}
