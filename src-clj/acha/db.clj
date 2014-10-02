@@ -36,32 +36,35 @@
       (logging/info "Creating DB" (:subname db-spec))
       (db-do-commands (db-conn)
         (create-table-ddl :user
-                          [:id "integer primary key autoincrement"]
+                          [:id :integer "primary key autoincrement"]
                           [:name :text]
                           [:email :text]
                           [:gravatar :text])
         "CREATE UNIQUE INDEX `email_unique` ON `user` (`email` ASC)"
         (create-table-ddl :repo
-                          [:id "integer primary key autoincrement"]
+                          [:id :integer "primary key autoincrement"]
                           [:url :text]
                           [:state :text]
                           [:reason :text]
-                          [:timestamp "integer not null default 0"])
+                          [:timestamp :integer "not null default 0"])
         "CREATE UNIQUE INDEX `url_unique` ON `repo` (`url` ASC)"
         (create-table-ddl :repo_seen
-                          [:id "integer primary key autoincrement"]
-                          [:repoid "integer references repo (id)"]
+                          [:repoid :integer "references repo (id)"]
                           [:sha1 :text])
         (create-table-ddl :achievement
-                          [:id "integer primary key autoincrement"]
+                          [:id :integer "primary key autoincrement"]
                           [:type :text]
                           [:timestamp :text]
                           [:level :integer]
-                          [:userid :integer]
-                          [:repoid :integer]
+                          [:userid :integer "references user (id)"]
+                          [:repoid :integer "references repo (id)"]
                           [:sha1 :text])
         "CREATE INDEX `userid_index` ON `achievement` (`userid` ASC)"
         "CREATE INDEX `repoid_index` ON `achievement` (`repoid` ASC)")
+      ;; non-overlapping ID ranges
+      (insert! (db-conn) :sqlite_sequence {:seq 1000000 :name "user"})
+      (insert! (db-conn) :sqlite_sequence {:seq 2000000 :name "repo"})
+      (insert! (db-conn) :sqlite_sequence {:seq 3000000 :name "achievement"})
       (catch Exception e
         (logging/error e "Failed to initialize DB")))))
 

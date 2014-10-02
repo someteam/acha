@@ -39,7 +39,7 @@
     :else a))
 
 (defn- find-achievements [repo-info repo]
-  (logging/info "Scanning new commits for achievements " (:url repo-info))
+  (logging/info "Scanning new commits for achievements" (:url repo-info))
   (let [df      (git-parser/diff-formatter repo)
         seen    (db/get-repo-seen-commits (:id repo-info))]
     (->> (git-parser/commit-list repo)
@@ -70,10 +70,10 @@
                 :timestamp (util/format-date (:time data))})))))
 
 (defn analyze [repo-info]
-  (logging/info "Fetching/cloning repo " (:url repo-info))
+  (logging/info "Fetching/cloning repo" (:url repo-info))
   (let [repo (git-parser/load-repo (:url repo-info))
         new-achievements (find-achievements repo-info repo)]
-    (logging/info "Add new achievements to db for " (:url repo-info))
+    (logging/info "Add new achievements to db for" (:url repo-info))
     (sync-achievements repo-info new-achievements)
     (db/update-repo-state (:id repo-info) "ok")))
 
@@ -82,9 +82,9 @@
   (loop []
     (try
       (when-let [repo (not-empty (db/get-next-repo-to-process))]
-        (logging/info "Worker #" worker-id " has started processing" repo)
+        (logging/info "Worker #" worker-id "has started processing" repo)
         (analyze repo)
-        (logging/info "Worker #" worker-id " has finished processing" repo))
+        (logging/info "Worker #" worker-id "has finished processing" repo))
       (Thread/sleep (rand-int 2000))
       (catch InterruptedException e (throw e))
       (catch Exception e

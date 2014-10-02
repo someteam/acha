@@ -135,76 +135,76 @@
         :description "Get all achievements"}
     :haskell
        {:name "Ivory Tower"
-        :description "Add Haskell file to a repo"}
+        :description "Add Haskell file to the repo"}
     :perl
        {:name "Chmod 200"
-        :description "Add Perl file to a repo"}
+        :description "Add Perl file to the repo"}
     :ruby
        {:name "Back on the Rails"
-        :description "Add Ruby file to a repo"}
+        :description "Add Ruby file to the repo"}
     :clojure
        {:name "Even Lispers Hate Lisp"
-        :description "Add Clojure file to a repo"}
+        :description "Add Clojure file to the repo"}
     :clojurescript
        {:name "Even Lispers Hate Lisp (in a browser)"
-        :description "Add ClojureScript file to a repo"}
+        :description "Add ClojureScript file to the repo"}
     :javascript
        {:name "Happily Never After"
-        :description "Add JS file to a repo"}
+        :description "Add JS file to the repo"}
     :python
        {:name "Why not Ruby?"
-        :description "Add Python file to a repo"}
+        :description "Add Python file to the repo"}
     :java
        {:name "Write Once. Run. Anywhere"
-        :description "Add Java file to a repo"}
+        :description "Add Java file to the repo"}
     :cxx
        {:name "Troubles++14"
-        :description "Add C++ file to a repo"}
+        :description "Add C++ file to the repo"}
     :c-sharp
        {:name "It's Dangerous to Go Alone, Take LINQ"
-        :description "Add C# file to a repo"}
+        :description "Add C# file to the repo"}
     :objective-c
        {:name "NSVeryDescriptiveAchievementNameWithParame..."
-        :description "Add Objective-C file to a repo"}
+        :description "Add Objective-C file to the repo"}
     :swift
        {:name "I Need to Sort Complex Objects Fast!"
-        :description "Add Swift file to a repo"}
+        :description "Add Swift file to the repo"}
     :sql
        {:name "Not a Web Scale"
-        :description "Add SQL file to a repo"}
+        :description "Add SQL file to the repo"}
     :erlang
        {:name "It’s like ObjC, but for Ericsson phones"
-        :description "Add Erlang file to a repo"}
+        :description "Add Erlang file to the repo"}
     :shell
        {:name "We’ll Rewrite that Later"
-        :description "Add Bash file to a repo"}
+        :description "Add Bash file to the repo"}
     :php
        {:name "New Facebook is Born"
-        :description "Add PHP file to a repo"}
+        :description "Add PHP file to the repo"}
     :pascal
        {:name "Really?"
-        :description "Add Pascal file to a repo"}
+        :description "Add Pascal file to the repo"}
     :scala
        {:name "Well Typed, Bro"
-        :description "Add Scala file to a repo"}
+        :description "Add Scala file to the repo"}
     :xml
        {:name "Zed’s Dead, Baby"
-        :description "Add XML file to a repo"}
+        :description "Add XML file to the repo"}
     :css
        {:name "You Designer Now?"
-        :description "Add CSS file to a repo"}
+        :description "Add CSS file to the repo"}
     :dart
        {:name "You Work in Google?"
-        :description "Add Dart file to a repo"}
+        :description "Add Dart file to the repo"}
     :windows-language
        {:name "You Can't Program on Windows, Can You?"
-        :description "Add Windows Shell file to a repo"}
+        :description "Add Windows Shell file to the repo"}
     :basic
        {:name "Cradle of Civilization"
-        :description "Add Basic file to a repo"}
+        :description "Add Basic file to the repo"}
     :go
        {:name "In Google we trust"
-        :description "Add Go file to a repo"}
+        :description "Add Go file to the repo"}
     :programmers-day
        {:name "Professional Pride"
         :description "Commit on Programmers' Day"}

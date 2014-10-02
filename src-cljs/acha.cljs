@@ -105,10 +105,10 @@
 (r/defc repo [repo]
   (s/html
     [:.repo.a {:key (:db/id repo)
-               :on-click (fn [_] (go! "/repos/" (:repo/id repo)))}
+               :on-click (fn [_] (go! "/repos/" (:db/id repo)))}
       [:.repo__name
-        (:repo/name repo)
-        [:.id (:repo/id repo)]
+        (repo-name (:repo/url repo))
+        [:.id (:db/id repo)]
         (when (= :added (:repo/status repo)) [:span {:class "tag repo__added"} "Added"])]
       [:.repo__url (:repo/url repo)]     
       ]))
@@ -122,10 +122,10 @@
       (ajax (str "/api/add-repo/?url=" (js/encodeURIComponent url))
         (fn [data]
           (if (= :added (:repo/status data))
-            (d/transact! conn [{:repo/id     (get-in data [:repo :id])
-                                :repo/url    (get-in data [:repo :url])
-                                :repo/name   (repo-name (get-in data [:repo :url]))
-                                :repo/status :added}])
+            (let [repo (:repo data)]
+              (d/transact! conn [{:db/id       (:id repo)
+                                  :repo/url    (:url repo)
+                                  :repo/status :added}]))
             (println "Repo already exist" data)))
         "POST"))
     (set! (.-value el) "")
@@ -165,7 +165,7 @@
         user   (:ach/user   ach)]
     (s/html
       [:.lach
-        [:.lach__user.a {:on-click (fn [_] (go! (str "/users/" (:user/id user)))) }
+        [:.lach__user.a {:on-click (fn [_] (go! (str "/users/" (:db/id user)))) }
           [:img.lach__user__img {:src (avatar (:user/email user) 114)}]
           [:.lach__user__name (:user/name user)]
           [:.lach__user__email (:user/email user)]]
@@ -179,7 +179,7 @@
     
 
 (r/defc repo-pane [db]
-  (let [repos      (u/qes-by db :repo/name)
+  (let [repos      (u/qes-by db :repo/url)
         last-aches (->> (d/datoms db :avet :ach/ts) (take-last 10) (map #(d/entity db (.-e %))))]
     (s/html
       [:.repo_pane.pane
@@ -198,7 +198,7 @@
 (r/defc repo-profile [repo aches]
   (s/html
     [:.rp.pane
-      [:.rp__name  (repo-name (:repo/url repo)) [:.id (:repo/id repo)]]
+      [:.rp__name  (repo-name (:repo/url repo)) [:.id (:db/id repo)]]
       [:.rp__email (:repo/url repo)]
       [:.rp__hr]
       [:.rp__achs
@@ -211,10 +211,10 @@
 (r/defc user [user ach-cnt]
   (s/html
     [:.user.a {:key (:db/id user)
-               :on-click (fn [_] (go! "/users/" (:user/id user)))}
+               :on-click (fn [_] (go! "/users/" (:db/id user)))}
       [:.user__avatar
         [:img {:src (avatar (:user/email user) 114)}]]
-      [:.user__name (:user/name user) [:.id (:user/id user)]]
+      [:.user__name (:user/name user) [:.id (:db/id user)]]
       [:.user__email (:user/email user)]
       (when ach-cnt [:.user__ach ach-cnt])]))
 
@@ -223,7 +223,7 @@
     [:.up.pane
       [:.up__avatar
         [:img {:src (avatar (:user/email user) 228)}]]
-      [:.up__name (:user/name user) [:.id (:user/id user)]]
+      [:.up__name (:user/name user) [:.id (:db/id user)]]
       [:.up__email (:user/email user)]
       [:.up__hr]
       [:.up__achs
@@ -269,7 +269,7 @@
         (for [ach aches
               :let [user   (:ach/user ach)
                     avatar (avatar (:user/email user) 114)]]
-          [:a {:href (str "#/users/" (:user/id user))}
+          [:a {:href (str "#/users/" (:db/id user))}
             [:img.ach__user {:src avatar
                              :title (ach-details ach)}]])]
      ]))
@@ -293,15 +293,14 @@
     (s/html
       [:.window
         (header true)
-        (users-pane db (u/qes-by db :user/id))
+        (users-pane db (u/qes-by db :user/email))
         (repo-pane  db)
         (footer)])))
 
 (r/defc repo-page [db id]
-  (let [repo  (u/qe-by db :repo/id id)
-        aches (->> (u/qes-by db :ach/repo (:db/id repo))
-                   group-aches)]
-    (set-title! (:repo/name repo))
+  (let [repo  (d/entity db id)
+        aches (->> (:ach/_repo repo) group-aches)]
+    (set-title! (repo-name (:repo/url repo)))
     (s/html
       [:.window
         (header false)
@@ -310,9 +309,8 @@
         (footer)])))
 
 (r/defc user-page [db id]
-  (let [user  (u/qe-by  db :user/id id)
-        aches (->> (u/qes-by db :ach/user (:db/id user))
-                   group-aches)]
+  (let [user  (d/entity db id)
+        aches (->> (:ach/_user user) group-aches)]
     (set-title! (:user/name user))
     (s/html
       [:.window
@@ -354,15 +352,15 @@
       (println e)))
   es)
 
-(defn server-ach->entity [a aches repos users]
-  (when-let [achent (aches (keyword (:type a)))]
+(defn server-ach->entity [a achents]
+  (when-let [achent (achents (keyword (:type a)))]
      (cond->
        { :ach/id     (:id a)
-         :ach/repo   (repos (:repoid a))
-         :ach/user   (users (:userid a))
+         :ach/repo   (:repoid a)
+         :ach/user   (:userid a)
          :ach/achent achent
          :ach/sha1   (:sha1 a)
-         :ach/ts     (js/Date. (.parse js/Date (:timestamp a))) }
+         :ach/ts     (js/Date. (js/Date.parse (:timestamp a))) }
        (:level a)
          (assoc :ach/level (:level a)))))
 
@@ -383,7 +381,7 @@
       (fn [us]
         (profile "transact :users"
           (d/transact! conn
-            (map (fn [u] {:user/id    (:id u)
+            (map (fn [u] {:db/id      (:id u)
                           :user/name  (:name u)
                           :user/email (:email u)
                           :user/ach   (:achievements u)})
@@ -395,9 +393,8 @@
       (fn [rs]
         (profile "transact :repos"
           (d/transact! conn
-            (map (fn [r] {:repo/id   (:id r)
-                          :repo/url  (:url r)
-                          :repo/name (repo-name (:url r)) })
+            (map (fn [r] {:db/id     (:id r)
+                          :repo/url  (:url r) })
                  rs)))
         (println "Loaded :repos," (count (:eavt @conn)) "datoms")
         (async/put! ch :repos)))
@@ -407,7 +404,7 @@
         (profile "transact :achent"
           (d/transact! conn
             (map (fn [[k a]]
-                   { :achent/id k
+                   { :achent/id   k
                      :achent/name (:name a)
                      :achent/desc (:description a)
                      :achent/level-desc (:level-description a)})
@@ -422,14 +419,12 @@
         (ajax "/api/ach/"
           (fn [as]
             (let [db @conn
-                  aches (u/qmap '[:find ?id ?eid :where [?eid :achent/id ?id]] db)
-                  users (u/qmap '[:find ?id ?eid :where [?eid :user/id ?id]]   db)
-                  repos (u/qmap '[:find ?id ?eid :where [?eid :repo/id ?id]]   db)
-                  ents  (->> as
-                             (map (fn [a] (server-ach->entity a aches repos users)))
-                             (remove nil?)
-                             ;; vec
-                             ;; check-tx
+                  achents (u/qmap '[:find ?id ?eid :where [?eid :achent/id ?id]] db)
+                  ents    (->> as
+                            (map (fn [a] (server-ach->entity a achents)))
+                            (remove nil?)
+                            ;; vec
+                            ;; check-tx
                         )]
               
               (profile "transact :ach"
