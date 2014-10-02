@@ -82,7 +82,7 @@ a.logo > h2 { color: #7E5DA3; }
 .rp__email { font-size: 12px; }
 .rp__achs  { margin-top: 20px; line-height: 0; width: 450px; margin: 0 -3px; }
 
-.ach { position: relative; width: 400px; min-height: 57px; padding: 0 0 0 72px; margin: 32px 0; line-height: 18px; overflow: hidden; }
+.ach { position: relative; width: 400px; min-height: 60px; padding: 0 0 0 72px; margin: 32px 0; line-height: 18px; overflow: hidden; }
 /* .ach { border: 6px solid transparent; border-image:url(i/border.png) 12 12 repeat; } */
 /* .ach:hover { background: #f7f7f7; } */
 .ach__logo { position: absolute; left: 0; top: 3px; width: 57px; height: 57px;  }
