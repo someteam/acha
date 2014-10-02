@@ -85,10 +85,12 @@
     [:.header
       [:a.vote {:href "https://clojurecup.com/?#/apps/acha"
                 :target "_blank"}]
-      [:div.logo {:class    (when-not index? "a")
-                  :title    "Acha-acha"
-                  :on-click (fn [_] (go! "")) }
-        [:h2 "Enterprise Git Achievement solution" [:br] "Web scale. In the cloud"]]]))
+      (conj
+        (if index?
+          [:div.logo {:title "Acha-acha"}]
+          [:a.logo   {:title "Acha-acha"
+                      :href  "#" }])
+        [:h2 "Enterprise Git Achievement solution" [:br] "Web scale. In the cloud"])]))
 
 (r/defc footer []
   (s/html
@@ -112,8 +114,8 @@
 
 (r/defc repo [repo]
   (s/html
-    [:.repo.a {:key (:db/id repo)
-               :on-click (fn [_] (go! (repo-link repo)))}
+    [:a.repo {:key (:db/id repo)
+              :href (str "#" (repo-link repo))}
       [:.repo__name
         (repo-name (:repo/url repo))
         [:.id (:db/id repo)]
@@ -173,7 +175,7 @@
         user   (:ach/user   ach)]
     (s/html
       [:.lach {:key (:db/id ach)}
-        [:.lach__user.a {:on-click (fn [_] (go! (user-link user))) }
+        [:a.lach__user {:href (str "#" (user-link user)) }
           [:img.lach__user__img {:src (avatar (:user/email user) 114)}]
           [:.lach__user__name (:user/name user)]
           [:.lach__user__email (:user/email user)]]
@@ -219,8 +221,8 @@
 
 (r/defc user [user ach-cnt]
   (s/html
-    [:.user.a {:key (:db/id user)
-               :on-click (fn [_] (go! (user-link user)))}
+    [:a.user {:key (:db/id user)
+              :href (str "#" (user-link user))}
       [:.user__avatar
         [:img {:src (avatar (:user/email user) 114)}]]
       [:.user__name (:user/name user) [:.id (:db/id user)]]
