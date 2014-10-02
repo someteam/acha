@@ -71,18 +71,17 @@
   [q & sources]
   (into {} (apply -q q sources)))
 
-;; (defn- -transact-async! [conn datoms]
-;;   (if (empty? datoms)
-;;     (do
-;;       (.timeEnd js/console "transact-async!")
-;;       (.log js/console (str (count (:eavt @conn)) " datoms")))
-;;     (let [[h t] (split-at 50 datoms)]
-;;       (profile "  -transact-async!"
-;;         (d/transact! conn h))
-;;       (js/setTimeout #(-transact-async! conn t) 16))))
+(defn- -transact-async! [conn entities callback progress step]
+  (if (empty? entities)
+    (callback)
+    (let [[h t] (split-at 100 entities)]
+      (d/transact! conn h)
+      (swap! progress + (* step (count h)))
+      (js/setTimeout #(-transact-async! conn t callback progress step) 0))))
 
-;; (defn transact-async! [conn datoms]
-;;   (.time js/console "transact-async!")
-;;   (.log js/console (str "Adding " (count datoms) " entities"))
-;;   (-transact-async! conn datoms))
+(defn transact-async! [conn entities callback]
+  (let [progress (atom 0)
+        total    (count entities)]
+    (-transact-async! conn entities callback progress (/ 1 total))
+    progress))
 

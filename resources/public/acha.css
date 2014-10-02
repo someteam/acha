@@ -113,3 +113,6 @@ a.logo > h2 { color: #7E5DA3; }
 
 .lach div { white-space: nowrap; overflow: hidden; }
 .lach__ach__links > a { line-height: 14px; }
+
+.progress { height: 3px; width: 900px; margin: 168px auto 0; background-color: #D0BAE3;  }
+.progress__bar { background-color: #7E5DA3; height: 3px; }

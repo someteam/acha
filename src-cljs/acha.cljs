@@ -338,6 +338,17 @@
           (starts-with? path "/repo/") (repo-page db (subs path (count "/repo/"))))
         (footer)])))
 
+
+;; Progress bar
+
+(r/defc progress-bar [progress]
+  (s/html
+    [:.progress
+      [:.progress__bar {:style {:width (* progress 900)}}]]))
+
+(defn render-progress [x]
+  (r/render (progress-bar x) (.-body js/document)))
+
 ;; Rendering
 
 (def render-db (atom nil))
@@ -356,13 +367,6 @@
 
 ;; Start
 
-(defn check-tx [es]
-  (doseq [e es
-          [k v] e]
-    (if (nil? v)
-      (println e)))
-  es)
-
 (defn server-ach->entity [a achents]
   (when-let [achent (achents (keyword (:type a)))]
      (cond->
@@ -376,9 +380,7 @@
          (assoc :ach/level (:level a)))))
 
 (defn ^:export start []
-  (d/listen! conn
-    (fn [tx-report]
-      (request-render (:db-after tx-report))))
+  (render-progress 0)
 
   (doto history
     (events/listen EventType/NAVIGATE (fn [e] (d/transact! conn [[:db/add 0 :path (.-token e)]])))
@@ -423,24 +425,29 @@
         (println "Loaded :achent," (count (:eavt @conn)) "datoms")
         (async/put! ch :achent)))
   
-    (go-loop [i 3]
-      (if (pos? i)
-        (do (<! ch) (recur (dec i)))
+    (go-loop [i 1]
+      (if (<= i 3)
+        (do (<! ch)
+            (render-progress (/ i 10))
+            (recur (inc i)))
 
         (ajax "/api/ach/"
           (fn [as]
             (let [db @conn
-                  achents (u/qmap '[:find ?id ?eid :where [?eid :achent/id ?id]] db)
-                  ents    (->> as
-                            (map (fn [a] (server-ach->entity a achents)))
-                            (remove nil?)
-                            ;; vec
-                            ;; check-tx
-                        )]
-              
-              (profile "transact :ach"
-                (d/transact! conn ents)))
-            (println "Loaded :ach," (count (:eavt @conn)) "datoms")))
+                  achents  (u/qmap '[:find ?id ?eid :where [?eid :achent/id ?id]] db)
+                  ents     (->> as
+                             (map (fn [a] (server-ach->entity a achents)))
+                             (remove nil?))
+                  _        (js/console.time "transact :ach")
+                  progress (u/transact-async! conn ents #(do
+                             (js/console.timeEnd "transact :ach")
+                             (d/listen! conn
+                               (fn [tx-report]
+                                 (request-render (:db-after tx-report))))
+                             (println "Loaded :ach," (count (:eavt @conn)) "datoms")
+                             (request-render @conn)))]
+              (add-watch progress :progress (fn [_ _ _ new-val]
+                (render-progress (/ (+ 0.3 new-val) 1.3)))))))
         )))
   )
 
