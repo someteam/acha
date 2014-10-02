@@ -41,6 +41,11 @@
         (js/setTimeout #(callback res) 0)))
     (or method "GET")))
 
+(defn user-link [user]
+  (str "/user/" (:user/email user)))
+
+(defn repo-link [repo]
+  (str "/repo/" (:repo/url repo)))
 
 (defn map-by [f xs]
   (reduce (fn [acc x] (assoc acc (f x) x)) {} xs))
@@ -51,6 +56,9 @@
              (= (subs s pos) suffix))
       (subs s 0 pos)
       s)))
+
+(defn starts-with? [s prefix]
+  (= prefix (subs s 0 (count prefix))))
 
 (defn repo-name [url]
   (when url
@@ -105,7 +113,7 @@
 (r/defc repo [repo]
   (s/html
     [:.repo.a {:key (:db/id repo)
-               :on-click (fn [_] (go! "/repos/" (:db/id repo)))}
+               :on-click (fn [_] (go! (repo-link repo)))}
       [:.repo__name
         (repo-name (:repo/url repo))
         [:.id (:db/id repo)]
@@ -152,7 +160,7 @@
         text     (str (repo-name repo-url) "/" (subs sha1 0 7))
         title    (ach-details ach)]
     (s/html
-      [:div
+      [:div {:key (:db/id ach)}
         (if-let [commit-url (sha1-url repo-url sha1)]
           [:a.ach__text { :target "_blank"
                           :href   commit-url
@@ -164,8 +172,8 @@
   (let [achent (:ach/achent ach)
         user   (:ach/user   ach)]
     (s/html
-      [:.lach
-        [:.lach__user.a {:on-click (fn [_] (go! (str "/users/" (:db/id user)))) }
+      [:.lach {:key (:db/id ach)}
+        [:.lach__user.a {:on-click (fn [_] (go! (user-link user))) }
           [:img.lach__user__img {:src (avatar (:user/email user) 114)}]
           [:.lach__user__name (:user/name user)]
           [:.lach__user__email (:user/email user)]]
@@ -185,7 +193,7 @@
       [:.repo_pane.pane
         [:h1 "Repos"]
         [:ul
-          (map (fn [r] [:li (repo r)]) repos)]
+          (map (fn [r] [:li {:key (:db/id r)} (repo r)]) repos)]
         [:form.add_repo {:on-submit (fn [e] (add-repo) (.preventDefault e))}
           [:input {:id "add_repo__input" :type :text :placeholder "Clone URL"}]
          ]
@@ -203,7 +211,8 @@
       [:.rp__hr]
       [:.rp__achs
         (for [[achent _] aches]
-          [:img.rp__ach {:src   (achent-img achent)
+          [:img.rp__ach {:key   (:db/id achent)
+                         :src   (achent-img achent)
                          :title (str (:achent/name achent) ":\n\n" (:achent/desc achent)) }])]]))
 
 
@@ -211,14 +220,14 @@
 (r/defc user [user ach-cnt]
   (s/html
     [:.user.a {:key (:db/id user)
-               :on-click (fn [_] (go! "/users/" (:db/id user)))}
+               :on-click (fn [_] (go! (user-link user)))}
       [:.user__avatar
         [:img {:src (avatar (:user/email user) 114)}]]
       [:.user__name (:user/name user) [:.id (:db/id user)]]
       [:.user__email (:user/email user)]
       (when ach-cnt [:.user__ach ach-cnt])]))
 
-(r/defc user-profile [user aches comp]
+(r/defc user-profile [user aches]
   (s/html
     [:.up.pane
       [:.up__avatar
@@ -228,7 +237,8 @@
       [:.up__hr]
       [:.up__achs
       (for [[achent _] aches]
-        [:img.up__ach {:src   (achent-img achent)
+        [:img.up__ach {:key   (:db/id achent)
+                       :src   (achent-img achent)
                        :title (str (:achent/name achent) ":\n\n" (:achent/desc achent)) }])]]))
 
 (r/defc users-pane [db users]
@@ -240,7 +250,7 @@
       [:.users_pane.pane
         [:h1 "Users"]
         [:ul
-          (map (fn [u] [:li (user u (ach-cnt (:db/id u)))]) users)]])))
+          (map (fn [u] [:li {:key (:db/id u)} (user u (ach-cnt (:db/id u)))]) users)]])))
 
 
 (r/defc user-achent [achent aches]
@@ -269,16 +279,17 @@
         (for [ach aches
               :let [user   (:ach/user ach)
                     avatar (avatar (:user/email user) 114)]]
-          [:a {:href (str "#/users/" (:db/id user))}
+          [:a {:key  (:db/id user)
+               :href (str "#" (user-link user))}
             [:img.ach__user {:src avatar
                              :title (ach-details ach)}]])]
      ]))
 
-(r/defc ach-pane [aches comp]
+(r/defc ach-pane [aches component]
   (s/html
     [:.ach_pane.pane
       [:h1 "Achievements"]
-      (map (fn [[achent aches]] (comp achent aches)) aches)]))
+      (map (fn [[achent aches]] (component achent aches)) aches)]))
 
 (defn group-aches [aches]
   (->> aches
@@ -291,41 +302,39 @@
   (do
     (set-title! nil)
     (s/html
-      [:.window
-        (header true)
+      [:div
         (users-pane db (u/qes-by db :user/email))
-        (repo-pane  db)
-        (footer)])))
+        (repo-pane  db)])))
 
-(r/defc repo-page [db id]
-  (let [repo  (d/entity db id)
+(r/defc repo-page [db url]
+  (let [repo  (u/qe-by db :repo/url url)
         aches (->> (:ach/_repo repo) group-aches)]
-    (set-title! (repo-name (:repo/url repo)))
+    (set-title! (repo-name url))
     (s/html
-      [:.window
-        (header false)
+      [:div
         (ach-pane aches repo-achent)
-        (repo-profile repo aches)
-        (footer)])))
+        (repo-profile repo aches)])))
 
-(r/defc user-page [db id]
-  (let [user  (d/entity db id)
+(r/defc user-page [db email]
+  (let [user  (u/qe-by db :user/email email)
         aches (->> (:ach/_user user) group-aches)]
     (set-title! (:user/name user))
     (s/html
-      [:.window
-        (header false)
+      [:div
         (ach-pane aches user-achent)
-        (user-profile user aches)
-        (footer)])))
+        (user-profile user aches)])))
 
 (r/defc application [db]
-  (let [path      (u/q1 '[:find ?p :where [0 :path ?p]] db)
-        [_ p0 p1] (str/split path #"/")]
-    (cond
-      (= p0 nil)     (index-page db)
-      (= p0 "users") (user-page db (js/parseInt p1))
-      (= p0 "repos") (repo-page db (js/parseInt p1)))))
+  (let [path   (u/q1 '[:find ?p :where [0 :path ?p]] db)
+        index? (str/blank? path)]
+    (s/html
+      [:.window
+        (header index?)
+        (cond
+          index? (index-page db)
+          (starts-with? path "/user/") (user-page db (subs path (count "/user/")))
+          (starts-with? path "/repo/") (repo-page db (subs path (count "/repo/"))))
+        (footer)])))
 
 ;; Rendering
 
