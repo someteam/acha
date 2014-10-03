@@ -43,17 +43,20 @@
 (defn- find-achievements [repo-info repo]
   (logging/info "Scanning new commits for achievements" (:url repo-info))
   (let [df   (git-parser/diff-formatter repo)
-        seen (db/get-repo-seen-commits (:id repo-info))]
-    (->> (git-parser/commit-list repo)
-         (take 2000)
-         (remove #(contains? seen (.getName %)))
-         (map    #(analyze-commit repo-info repo % df))
-         (reduce #(merge-with merge-achievements %1 %2) {}))))
+        seen (db/get-repo-seen-commits (:id repo-info))
+        xf   (comp
+               (take 2000)
+               (remove #(contains? seen (.getName %)))
+               (map    #(analyze-commit repo-info repo % df)))]
+    (transduce xf
+               (completing #(merge-with merge-achievements %1 %2))
+               {}
+               (git-parser/commit-list repo))))
 
 (defn- sync-achievements [repo-info new-achs]
-  (let [current-achs  (->> (db/get-achievements-by-repo (:id repo-info))
-                           (map (juxt :email :type :level))
-                           set)
+  (let [current-achs  (into #{}
+                            (map (juxt :email :type :level))
+                            (db/get-achievements-by-repo (:id repo-info)))
         new-achs      (->> new-achs
                            (remove
                              (fn [[[email code] data]]
