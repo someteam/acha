@@ -16,7 +16,9 @@
     [org.clojure/clojure "1.7.0-alpha2"]
     [org.clojure/tools.logging "0.3.1"]
 
-    [ring "1.3.1"]
+    [http-kit "2.1.16"]
+    [ring/ring-core "1.3.1"]
+    [ring/ring-devel "1.3.1"]
     [compojure "1.1.9"]
     [com.cognitect/transit-clj "0.8.259"]
 
@@ -57,7 +59,6 @@
   
   :profiles {
     :dev {
-      :ring { :handler acha.server/handler-dev }
       :cljsbuild {
         :builds [
           { :id "dev"

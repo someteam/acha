@@ -5,9 +5,10 @@
     [acha.dispatcher :as dispatcher]
     [acha.util :as util]
     [acha.db :as db]
+    [acha.config :as config]
     [clojure.tools.logging :as logging]
     [clojure.java.io :as io]
-    [ring.adapter.jetty :as jetty]
+    [org.httpkit.server :as server]
     [ring.middleware.reload :as reload]
     [ring.middleware.params :as params]
     [cognitect.transit :as transit]
@@ -66,13 +67,20 @@
       (compojure.route/not-found "Page not found"))
     ))
 
-(def handler-dev (reload/wrap-reload handler ["src-clj"]))
+(defn -main [& {:as opts}]
+  (let [working-dir (get opts "--dir" ".acha")
+        ip          (get opts "--ip" "0.0.0.0")
+        port        (-> (get opts "--port" "8080") (Integer/parseInt))
+        dev         (contains? opts "--reload")]
 
-(defn -main [& opts]
-  (.mkdir (io/as-file ".acha"))
-;  (print "Not implemented/over implemented achievement lists:")
-;  (print achievement/all-unused-achievements)
-  (db/create-db)
-;  (db/add-fake-data)
-  (dispatcher/run-workers)
-  (jetty/run-jetty handler {:port 8080}))
+    (.mkdir (io/as-file working-dir))
+    (alter-var-root #'config/working-dir (fn [_] working-dir))
+    (logging/info "Working dir" working-dir)
+  
+    (db/create-db)
+    (dispatcher/run-workers)
+    (let [handler (if dev
+                    (reload/wrap-reload #'handler {:dirs ["src-clj"]})
+                    handler)]
+      (server/run-server handler {:port port :ip ip}))
+    (logging/info "Server ready at" (str ip ":" port))))

@@ -3,37 +3,32 @@
     [clojure.java.io :as io]
     [clojure.java.jdbc :refer :all]
     [clojure.tools.logging :as logging]
+    [acha.config :as config]
     [acha.util :as util])
   (:import com.mchange.v2.c3p0.ComboPooledDataSource))
 
-(def db-spec
-  {:classname   "org.sqlite.JDBC"
-   :subprotocol "sqlite"
-   :subname     ".acha/db.sqlite"})
+(defn db-path []
+  (str config/working-dir "/db.sqlite"))
 
-(defn pool
-  [spec]
-  (let [cpds (doto (ComboPooledDataSource.)
-               (.setDriverClass (:classname spec)) 
-               (.setJdbcUrl (str "jdbc:" (:subprotocol spec) ":" (:subname spec)))
-               (.setUser (:user spec))
-               (.setPassword (:password spec))
-               (.setMinPoolSize 1)
-               (.setMaxPoolSize 1)
-               ;; expire excess connections after 30 minutes of inactivity:
-               (.setMaxIdleTimeExcessConnections (* 30 60))
-               ;; expire connections after 3 hours of inactivity:
-               (.setMaxIdleTime (* 3 60 60)))] 
-    {:datasource cpds}))
-
-(def pooled-db (delay (pool db-spec)))
+(def pooled-db
+  (delay
+    (let [cpds (doto (ComboPooledDataSource.)
+                 (.setDriverClass "org.sqlite.JDBC")
+                 (.setJdbcUrl (str "jdbc:sqlite:" (db-path)))
+                 (.setMinPoolSize 1)
+                 (.setMaxPoolSize 1)
+                 ;; expire excess connections after 30 minutes of inactivity:
+                 (.setMaxIdleTimeExcessConnections (* 30 60))
+                 ;; expire connections after 3 hours of inactivity:
+                 (.setMaxIdleTime (* 3 60 60)))] 
+    {:datasource cpds})))
 (defn db-conn [] @pooled-db)
 
 (defn create-db []
-  (when-not (let [f (io/as-file (:subname db-spec))]
+  (when-not (let [f (io/as-file (db-path))]
               (and (.exists f) (pos? (.length f))))
     (try
-      (logging/info "Creating DB" (:subname db-spec))
+      (logging/info "Creating DB" (db-path))
       (db-do-commands (db-conn)
         (create-table-ddl :user
                           [:id :integer "primary key autoincrement"]
