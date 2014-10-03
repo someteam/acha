@@ -73,16 +73,16 @@
           :assigned  (System/currentTimeMillis) }))))
 
 (defn analyze [repo-info]
-  (logging/info "Fetching/cloning repo" (:url repo-info))
-  (async/put! acha.core/events [[:db/add (:id repo-info) :repo/status :fetching]])
-  (let [repo (git-parser/load-repo (:url repo-info))
-        _    (async/put! acha.core/events [[:db/add (:id repo-info) :repo/status :scanning]])
-        new-achievements (find-achievements repo-info repo)]
-    (logging/info "Add new achievements to db for" (:url repo-info))
-    (async/put! acha.core/events [[:db/add (:id repo-info) :repo/status :storing]])
-    (sync-achievements repo-info new-achievements)
-    (async/put! acha.core/events [[:db/add (:id repo-info) :repo/status :idle]])
-    (db/update-repo-state (:id repo-info) "ok")))
+  (let [{:keys [id url]} repo-info]
+    (db/update-repo-state id :fetching)
+    (logging/info "Fetching/cloning repo" url)
+    (let [repo (git-parser/load-repo url)
+          _    (db/update-repo-state id :scanning)
+          new-achievements (find-achievements repo-info repo)]
+      (logging/info "Add new achievements to db for" url)
+      (db/update-repo-state id :storing)
+      (sync-achievements repo-info new-achievements)
+      (db/update-repo-state id :idle))))
 
 (defn- worker [worker-id]
   (logging/info "Worker #" worker-id " is ready")

@@ -67,14 +67,15 @@
       (insert! (db-conn) :sqlite_sequence {:seq 2000000 :name "repo"})
       (insert! (db-conn) :sqlite_sequence {:seq 3000000 :name "achievement"})
       (catch Exception e
-        (logging/error e "Failed to initialize DB")))))
+        (logging/error e "Failed to initialize DB"))))
+  (update! (db-conn) :repo {:state "idle"} []))
 
 ;; REPOS
 
 (defn repo->entity [repo]
   { :db/id       (:id repo)
     :repo/url    (:url repo)
-    :repo/status :idle })
+    :repo/status (keyword (:state repo)) })
 
 (defn get-repo-list []
   (query (db-conn) "SELECT r.* FROM repo r"))
@@ -86,10 +87,14 @@
   (let [url (util/normalize-str url)]
     (if-let [repo (get-repo-by-url url)]
       :exists
-      (let [_    (insert! (db-conn) :repo {:url url :state "new"})
+      (let [_    (insert! (db-conn) :repo {:url url :state "waiting"})
             repo (get-repo-by-url url)]
-        (async/put! acha.core/events [(assoc (repo->entity repo) :repo/status :waiting)])
+        (async/put! acha.core/events [(repo->entity repo)])
         repo))))
+
+(defn update-repo-state [id state]
+  (update! (db-conn) :repo {:state (name state)} ["id = ?" id])
+  (async/put! acha.core/events [[:db/add id :repo/status state]]))
 
 (defn get-next-repo []
   (first (query (db-conn) ["select * from repo where (timestamp < ?)
@@ -103,11 +108,8 @@
   (when-let [repo (get-next-repo)]
     (if (try-to-update repo) repo [])))
 
-(defn update-repo-state [repo-id state]
-  (update! (db-conn) :repo {:state state} ["id = ?" repo-id]))
-
 (defn count-new-repos []
-  (count (query (db-conn) "select * from repo where state = \"new\"")))
+  (count (query (db-conn) "select * from repo where state = \"waiting\"")))
 
 (defn get-repo-seen-commits [repo-id]
   (->> (query (db-conn) ["select * from repo_seen where repoid = ?" repo-id])
@@ -184,7 +186,7 @@
 ;; CLEANUP
 
 (defn wipe-repo-timestamps! []
-  (update! (db-conn) :repo {:state "new" :timestamp 0} []))
+  (update! (db-conn) :repo {:state "waiting" :timestamp 0} []))
 
 (defn wipe-aches! []
   (delete! (db-conn) :achievement [])
