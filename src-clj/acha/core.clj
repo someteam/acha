@@ -2,6 +2,8 @@
   (:require
     [clojure.core.async :as async]))
 
+(def version "0.2.0")
+
 (def working-dir ".acha")
 
 (def events (async/chan))

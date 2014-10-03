@@ -35,6 +35,8 @@
     (try
       (logging/info "Creating DB" (db-path))
       (db-do-commands (db-conn)
+        (create-table-ddl :meta
+            [:version :text])
         (create-table-ddl :user
                           [:id :integer "primary key autoincrement"]
                           [:name :text]
@@ -66,6 +68,7 @@
       (insert! (db-conn) :sqlite_sequence {:seq 1000000 :name "user"})
       (insert! (db-conn) :sqlite_sequence {:seq 2000000 :name "repo"})
       (insert! (db-conn) :sqlite_sequence {:seq 3000000 :name "achievement"})
+      (insert! (db-conn) :meta {:version acha.core/version})
       (catch Exception e
         (logging/error e "Failed to initialize DB"))))
   (update! (db-conn) :repo {:state "idle"} []))
@@ -182,6 +185,10 @@
                    (ach->entity (assoc ach :id (gen-id-key db-res))))]
     (async/put! acha.core/events (vec entities))))
 
+;; META
+
+(defn db-meta []
+  (first (query (db-conn) "SELECT * FROM meta")))
 
 ;; CLEANUP
 

@@ -96,10 +96,12 @@
   (s/html
     [:.footer
       [:.footer__copy   "© Copyright 2014 " [:a {:href "https://clojurecup.com/?#/apps/acha"} "Team Acha-acha"]]
-      [:.footer__author [:img {:src "aches/wow@6x.png"}] "Nikita Prokopov"]
-      [:.footer__author [:img {:src "aches/programmers-day@6x.png"}] "Andrey Vasenin"]
-      [:.footer__author [:img {:src "aches/owl@6x.png"}] "Renat Idrisov"]
-      [:.footer__author [:img {:src "aches/haskell@6x.png"}] "Dmitry Ivanov"]]))
+      [:a.footer__author {:href "https://github.com/tonsky"}      [:img {:src "aches/go@6x.png"}] "Nikita Prokopov"]
+      [:a.footer__author {:href "https://github.com/avasenin"}    [:img {:src "aches/wow@6x.png"}] "Andrey Vasenin"]
+      [:a.footer__author {:href "https://github.com/parsifal-47"} [:img {:src "aches/owl@6x.png"}] "Renat Idrisov"]
+      [:a.footer__author {:href "https://github.com/ethercrow"}   [:img {:src "aches/swift@6x.png"}] "Dmitry Ivanov"]
+      (let [meta (d/entity @conn 0)]
+        [:.footer__version "App version " (:meta/app-version meta) ", db version " (:meta/app-version meta)])]))
 
 ;; (def silhouette "https%3A%2F%2Fdl.dropboxusercontent.com%2Fu%2F561580%2Fsilhouette.png")
 

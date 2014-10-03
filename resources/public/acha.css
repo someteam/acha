@@ -29,7 +29,7 @@ h1 { font-size: 32px; }
 .footer a:hover { color: #489125; }
 .footer { clear: both; width: 400px; padding: 40px 0 0 0; }
 .footer__copy { border-top: 3px solid #7E5DA3; margin-bottom: 12px; padding-top: 20px; }
-.footer__author { margin: 3px 0; }
+.footer__author { margin: 3px 0; display: block; }
 .footer__author > img { width: 19px; height: 19px; margin: 0 4px 0 0;}
 .footer__author > span { position: relative; top: -4px; }
 
