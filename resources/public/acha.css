@@ -47,8 +47,11 @@ a.logo > h2 { color: #7E5DA3; }
 .repo.a:hover { color: #7E5DA3; }
 .repo__url { font-size: 12px; color: #999; }
 
-.tag { font-size: 12px; line-height: 25px; display: inline; font-weight: bold; color: white; padding: 3px 4px 1px 4px; border-radius: 3px; text-transform: uppercase; letter-spacing: 1px; }
-.repo__added { background-color: #67D514; margin-left: 8px; }
+.tag { font-size: 12px; line-height: 25px; display: inline; font-weight: bold; color: white; padding: 3px 4px 1px 4px; border-radius: 3px; text-transform: uppercase; letter-spacing: 1px;  }
+.repo__status { background-color: #67D514; margin: 2px 0 0 6px; position: absolute; line-height: 12px;  }
+.repo__status_idle { display: none; background-color: #CCC; }
+.repo__status_waiting { background-color: #777; }
+.repo__status_error { background-color: #D56714; }
 
 .add_repo > input, .add_repo > button { outline: none; }
 .add_repo > input  { font-size: 16px; border: 3px solid #A9A9A9; border-radius: 3px; padding: 8px 6px; width: 300px; }

@@ -16,23 +16,22 @@
     [org.clojure/clojure "1.7.0-alpha2"]
     [org.clojure/tools.logging "0.3.1"]
 
-    [http-kit "2.1.16"]
-    [ring/ring-core "1.3.1"]
+    [http-kit "2.1.19"]
+    [ring/ring-core "1.3.1" :exclusions [commons-codec org.clojure/tools.reader]]
     [ring/ring-devel "1.3.1"]
-    [compojure "1.1.9"]
-    [com.cognitect/transit-clj "0.8.259"]
+    [compojure "1.2.0"]
+    [com.cognitect/transit-clj "0.8.259" :exclusions [org.msgpack/msgpack org.clojure/test.check]]
 
-    [clj-jgit "0.7.6"]
+    [clj-jgit "0.7.6" :exclusions [org.clojure/core.memoize]]
 
     [org.clojure/java.jdbc "0.3.5"]
     [org.xerial/sqlite-jdbc "3.7.2"]
+    [com.mchange/c3p0 "0.9.2.1"]
     
-    [org.clojure/clojurescript "0.0-2356"]
+    [org.clojure/clojurescript "0.0-2356" :exclusions [org.mozilla/rhino]]
     [org.clojure/core.async "0.1.338.0-5c5012-alpha"]
     [com.cognitect/transit-cljs "0.8.188"]
-
-    [com.mchange/c3p0 "0.9.2.1"]
-    [datascript "0.4.1"]
+    [datascript "0.4.1" :exclusions [org.clojure/clojurescript]]
     [sablono "0.2.22"]
     [com.facebook/react "0.11.2"]
   ]
@@ -42,7 +41,6 @@
     [lein-cljsbuild "1.0.3"]
   ]
 
-  :hooks [leiningen.cljsbuild]
   :cljsbuild { 
     :builds [
       { :id "prod"

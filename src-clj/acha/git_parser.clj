@@ -1,6 +1,6 @@
 (ns acha.git-parser
   (:require [acha.util :as util]
-            [acha.config :as config]
+            [acha.core :as core]
             [clj-jgit.porcelain :as jgit.p]
             [clj-jgit.querying :as jgit.q]
             [clojure.java.io :as io]
@@ -21,7 +21,7 @@
 
 (defn- data-dir [url]
   (let [repo-name (->> (string/split url #"/") (remove string/blank?) last)]
-    (str config/working-dir "/" repo-name "_" (util/md5 url))))
+    (str core/working-dir "/" repo-name "_" (util/md5 url))))
 
 (def jsch-factory (proxy [JschConfigSessionFactory] []
   (configure [^OpenSshConfig$Host hc ^Session session]

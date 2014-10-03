@@ -510,8 +510,3 @@
   [gandalf
    unpretending
    munchkin])
-
-(def all-unused-achievements
-  (diff (keys acha.achievement-static/table)
-    (keys (into {} (concat 
-      all-commit-info-scanners all-timeline-scanners all-meta-achievements)))))

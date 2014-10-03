@@ -4,7 +4,7 @@ Git Achievements
 
 ## Usage
 
-    lein uberjar
+    lein do clean, cljsbuild clean, cljsbuild once prod, uberjar
     java -jar target/acha-uber.jar &
     open http://localhost:8080/
 

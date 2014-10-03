@@ -109,7 +109,7 @@
 
 (defn achent-img [achent]
   (when achent
-    (str "aches/" (name (:achent/id achent)) "@6x.png")))
+    (str "aches/" (name (:achent/key achent)) "@6x.png")))
 
 
 (r/defc repo [repo]
@@ -119,7 +119,11 @@
       [:.repo__name
         (repo-name (:repo/url repo))
         [:.id (:db/id repo)]
-        (when (= :added (:repo/status repo)) [:span {:class "tag repo__added"} "Added"])]
+        (let [status (:repo/status repo)
+              class  (str "tag repo__status repo__status_" (name status))]
+          [:span {:class class
+                  :title (:repo/reason repo (name status))} (name status)])
+       ]
       [:.repo__url (:repo/url repo)]     
       ]))
 
@@ -129,15 +133,7 @@
             :let [url (str/trim url)]
             :when (not (str/blank? url))]
       (println "Adding" url)
-      (ajax (str "/api/add-repo/?url=" (js/encodeURIComponent url))
-        (fn [data]
-          (if (= :added (:repo/status data))
-            (let [repo (:repo data)]
-              (d/transact! conn [{:db/id       (:id repo)
-                                  :repo/url    (:url repo)
-                                  :repo/status :added}]))
-            (println "Repo already exist" data)))
-        "POST"))
+      (ajax (str "/api/add-repo/?url=" (js/encodeURIComponent url)) (fn [data]) "POST"))
     (set! (.-value el) "")
     (.focus el)))
 
@@ -190,7 +186,7 @@
 
 (r/defc repo-pane [db]
   (let [repos      (u/qes-by db :repo/url)
-        last-aches (->> (d/datoms db :avet :ach/ts) (take-last 10) (map #(d/entity db (.-e %))))]
+        last-aches (->> (d/datoms db :avet :ach/assigned) (take-last 10) reverse)]
     (s/html
       [:.repo_pane.pane
         [:h1 "Repos"]
@@ -202,7 +198,7 @@
         [:h1 {:style {:margin-top 100 :margin-bottom 40}} "Last 10 achievements"]
         [:.laches
           (for [ach last-aches]
-            (last-ach ach))]
+            (last-ach (d/entity db (.-e ach))))]
     ])))
 
 (r/defc repo-profile [repo aches]
@@ -297,7 +293,7 @@
   (->> aches
     (group-by :ach/achent)
     (sort-by (fn [[achent aches]] (list (reduce max 0 (map :ach/ts aches))
-                                        (:achent/id achent))))
+                                        (:achent/key achent))))
     reverse))
 
 (r/defc index-page [db]
@@ -367,89 +363,38 @@
 
 ;; Start
 
-(defn server-ach->entity [a achents]
-  (when-let [achent (achents (keyword (:type a)))]
-     (cond->
-       { :ach/id     (:id a)
-         :ach/repo   (:repoid a)
-         :ach/user   (:userid a)
-         :ach/achent achent
-         :ach/sha1   (:sha1 a)
-         :ach/ts     (js/Date. (js/Date.parse (:timestamp a))) }
-       (:level a)
-         (assoc :ach/level (:level a)))))
-
 (defn ^:export start []
-  (render-progress 0)
-
+  (render-progress 0.1)
   (doto history
     (events/listen EventType/NAVIGATE (fn [e] (d/transact! conn [[:db/add 0 :path (.-token e)]])))
     (.setUseFragment true)
     (.setPathPrefix "#")
     (.setEnabled true))
   
-  (let [ch (async/chan 3)]
-    
-    (ajax "/api/users/"
-      (fn [us]
-        (profile "transact :users"
-          (d/transact! conn
-            (map (fn [u] {:db/id      (:id u)
-                          :user/name  (:name u)
-                          :user/email (:email u)
-                          :user/ach   (:achievements u)})
-                   us)))
-        (println "Loaded :users," (count (:eavt @conn)) "datoms")
-        (async/put! ch :users)))
-
-    (ajax "/api/repos/"
-      (fn [rs]
-        (profile "transact :repos"
-          (d/transact! conn
-            (map (fn [r] {:db/id     (:id r)
-                          :repo/url  (:url r) })
-                 rs)))
-        (println "Loaded :repos," (count (:eavt @conn)) "datoms")
-        (async/put! ch :repos)))
-
-    (ajax "/api/ach-dir/"
-      (fn [as]
-        (profile "transact :achent"
-          (d/transact! conn
-            (map (fn [[k a]]
-                   { :achent/id   k
-                     :achent/name (:name a)
-                     :achent/desc (:description a)
-                     :achent/level-desc (:level-description a)})
-                 as)))
-        (println "Loaded :achent," (count (:eavt @conn)) "datoms")
-        (async/put! ch :achent)))
+  (let [socket (js/WebSocket. (str "ws://" (.. js/window -location -host) "/events"))]
+    (set! (.-onmessage socket) (fn [event]
+      (let [tx-data (read-transit (.-data event))]
+        (profile (str "Pushed " (count tx-data) " entities")
+          (d/transact! conn tx-data)))))
+    (set! (.-onclose socket) (fn [event]
+      (js/console.log event)))
+    (set! (.-onerror socket) (fn [event]
+      (js/console.log event))))
   
-    (go-loop [i 1]
-      (if (<= i 3)
-        (do (<! ch)
-            (render-progress (/ i 10))
-            (recur (inc i)))
-
-        (ajax "/api/ach/"
-          (fn [as]
-            (let [db @conn
-                  achents  (u/qmap '[:find ?id ?eid :where [?eid :achent/id ?id]] db)
-                  ents     (->> as
-                             (map (fn [a] (server-ach->entity a achents)))
-                             (remove nil?))
-                  _        (js/console.time "transact :ach")
-                  progress (u/transact-async! conn ents #(do
-                             (js/console.timeEnd "transact :ach")
-                             (d/listen! conn
-                               (fn [tx-report]
-                                 (request-render (:db-after tx-report))))
-                             (println "Loaded :ach," (count (:eavt @conn)) "datoms")
-                             (request-render @conn)))]
-              (add-watch progress :progress (fn [_ _ _ new-val]
-                (render-progress (/ (+ 0.3 new-val) 1.3)))))))
-        )))
-  )
+  (ajax "/api/db/"
+    (fn [entities]
+      (render-progress 0.2)
+      (js/console.time "transact db")
+      (let [progress (u/transact-async! conn entities
+                       (fn []
+                         (js/console.timeEnd "transact db")
+                           (d/listen! conn
+                             (fn [tx-report]
+                               (request-render (:db-after tx-report))))
+                           (println "Loaded db," (count (:eavt @conn)) "datoms")
+                           (request-render @conn)))]
+        (add-watch progress :progress (fn [_ _ _ new-val]
+          (render-progress (/ (+ 0.3 new-val) 1.3))))))))
 
 
 
