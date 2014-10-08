@@ -31,7 +31,7 @@ h1 { font-size: 32px; }
 .footer__copy { border-top: 3px solid #7E5DA3; margin-bottom: 12px; padding-top: 20px; }
 .footer__author { margin: 3px 0; display: block; }
 .footer__author > img { width: 19px; height: 19px; margin: 0 4px 0 0;}
-.footer__author > span { position: relative; top: -4px; }
+.footer__author > span { position: relative; top: -5px; }
 
 
 .logo { display: block; width: 500px; height: 120px; background-image: url(i/logo@6x.png); background-size: 165px 240px; position: relative; background-repeat: no-repeat; margin-left: -13px; }

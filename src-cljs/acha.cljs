@@ -95,9 +95,10 @@
     [:.footer
       [:.footer__copy   "© Copyright 2014 " [:a {:href "http://github.com/someteam"} "Some Team"]]
       [:a.footer__author {:href "https://github.com/tonsky"}      [:img {:src "aches/go@6x.png"}] "Nikita Prokopov"]
-      [:a.footer__author {:href "https://github.com/avasenin"}    [:img {:src "aches/wow@6x.png"}] "Andrey Vasenin"]
+      [:a.footer__author {:href "https://github.com/avasenin"}    [:img {:src "aches/mark-of-the-beast@6x.png"}] "Andrey Vasenin"]
       [:a.footer__author {:href "https://github.com/parsifal-47"} [:img {:src "aches/owl@6x.png"}] "Renat Idrisov"]
       [:a.footer__author {:href "https://github.com/ethercrow"}   [:img {:src "aches/swift@6x.png"}] "Dmitry Ivanov"]
+      [:a.footer__author {:href "https://vk.com/id59378819"}      [:img {:src "aches/wow@6x.png"}] "Julie Prokopova"]
       (let [meta (d/entity @conn 0)]
         [:.footer__version "App version " (:meta/app-version meta) ", db version " (:meta/db-version meta)])]))
 
