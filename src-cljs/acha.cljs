@@ -139,13 +139,19 @@
     (set! (.-value el) "")
     (.focus el)))
 
+;; user@domain:path[.git]
+;; http[s]://domain/path[.git]
+
+(def ^:private repo-commit-prefix
+  (memoize (fn [url]
+    (condp re-matches url
+      #"([^@:]+)@([^@:]+):(.+)" :>> (fn [[_ user domain path]] (str "http://" domain "/" (-> path (trimr ".git") (trimr "/")) "/commit/"))
+      #"(?i)(https?://.+)"      :>> (fn [[_ path]] (-> path (trimr ".git") (trimr "/") (str "/commit/")))
+      nil))))
+
 (defn- sha1-url [url sha1]
-  (let [path (condp re-matches url
-               #"(?i)(?:https?://)?(?:www\.)?github.com/(.+)" :>> second
-               #"(?i)git\@github\.com\:(.+)" :>> second
-               nil)]
-    (when path
-      (str "https://github.com/" (trimr path ".git") "/commit/" sha1))))
+  (when-let [prefix (repo-commit-prefix url)]
+    (str prefix sha1)))
 
 (defn ach-details [ach]
   (str (get-in ach [:ach/user :user/name])
