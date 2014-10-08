@@ -5,7 +5,7 @@
 
 ## Usage
 
-Grab a jar [from latest release](https://github.com/clojurecup2014/acha/releases).
+Grab a jar [from latest release](https://github.com/someteam/acha/releases).
 
 Run it as:
 
