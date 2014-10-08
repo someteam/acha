@@ -1,6 +1,6 @@
-(defproject acha "0.2.0"
+(defproject acha "0.2.1"
   :description "Enterprise Git Achievements Provider. Web scale. In the cloud"
-  :url "http://acha.clojurecup.com"
+  :url "http://acha-acha.co"
 
   :global-vars  {*warn-on-reflection* true}
   :source-paths ["src-clj"]

@@ -9,6 +9,8 @@
     [acha.achievement-static :as static])
   (:import com.mchange.v2.c3p0.ComboPooledDataSource))
 
+(def ^:const ^:private db-version "0.2.0")
+
 (def ^:private gen-id-key (keyword "last_insert_rowid()"))
 
 (defn db-path []
@@ -68,7 +70,7 @@
       (insert! (db-conn) :sqlite_sequence {:seq 1000000 :name "user"})
       (insert! (db-conn) :sqlite_sequence {:seq 2000000 :name "repo"})
       (insert! (db-conn) :sqlite_sequence {:seq 3000000 :name "achievement"})
-      (insert! (db-conn) :meta {:version acha.core/version})
+      (insert! (db-conn) :meta {:version db-version})
       (catch Exception e
         (logging/error e "Failed to initialize DB"))))
   (update! (db-conn) :repo {:state "idle"} []))
