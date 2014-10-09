@@ -40,7 +40,7 @@
       (.setNoCheckout true))
     (.call)))
 
-(defn load-repo [url]
+(defn load-repo ^Git [url]
   (let [path (data-dir url)]
     (if (.exists (io/as-file path))
       (doto (jgit.p/load-repo path)
@@ -71,8 +71,8 @@
 
 (def commit-list jgit.q/rev-list)
 
-(defn- complete-id [ent side reader]
-  (let [id (.getId ent side)]
+(defn- complete-id [^DiffEntry entry side ^ObjectReader reader]
+  (let [id (.getId entry side)]
     (if (.isComplete id)
       id
       (when-first [obj-id (.resolve reader id)]
@@ -119,15 +119,15 @@
       (finally 
         (.close stream)))))
 
-(defn- open-diff [ent side reader]
-  (let [mode (.getMode ent side)]
+(defn- open-diff [^DiffEntry entry side ^ObjectReader reader]
+  (let [mode (.getMode entry side)]
     (when (and (not= FileMode/MISSING mode)
                (= Constants/OBJ_BLOB (.getObjectType mode)))
-      (let [id (complete-id ent side reader)
-            path (.getPath ent side)]
+      (let [id (complete-id entry side reader)
+            path (.getPath entry side)]
         (load-obj id path reader)))))
 
-(defn- parse-diff-changes [entry alg reader]
+(defn- parse-diff-changes [^DiffEntry entry ^DiffAlgorithm alg ^ObjectReader reader]
   (when-not (or (= FileMode/GITLINK (.getOldMode entry))
                 (= FileMode/GITLINK (.getNewMode entry))
                 (nil? (.getOldId entry))
@@ -151,7 +151,7 @@
      :new-file (merge new-file (:new-file diff-changes))
      :diff (:diff diff-changes)}))
 
-(defn- tree-iterator [^RevCommit commit ^ObjectReader reader]
+(defn- tree-iterator ^AbstractTreeIterator [^RevCommit commit ^ObjectReader reader]
   (if commit
     (doto (CanonicalTreeParser.) (.reset reader (.getTree commit)))
     (EmptyTreeIterator.)))
