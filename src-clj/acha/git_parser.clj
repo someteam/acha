@@ -53,6 +53,9 @@
     (.setRepository (.getRepository repo))
     (.setDiffComparator RawTextComparator/DEFAULT)))
 
+(defn object-reader [^Git repo]
+  (.. repo getRepository newObjectReader))
+
 (defn- normalize-path [path]
   (cond
     (= path "/") "/"
