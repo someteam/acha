@@ -48,3 +48,7 @@
                 [{:kind :edit
                   :diff [{:added ["line a" 10], :removed ["line a" 11]}]}])]
       (is ((second achievement/easy-fix) ach)))))
+
+(deftest mover
+    (let [ach (commit-info :changed-files [{:kind :rename}])]
+      (is ((second achievement/mover) ach))))

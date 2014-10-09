@@ -254,10 +254,11 @@
 
 (def mover
   [:mover
-   (fn [commit-info]
-     (when (some #(= (first %) :copy) (:diffs commit-info))
-       {:username (:author commit-info)
-        :time     (:time commit-info)}))])
+   (fn [{:keys [changed-files author time]}]
+     (when (some #(and (= (:kind %) :rename)
+                       (= 0 (count (:diff %)))) changed-files)
+       {:username author
+        :time     time}))])
 
 (def empty-commit
   [:empty-commit

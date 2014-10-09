@@ -51,7 +51,8 @@
   [^Git repo]
   (doto (DiffFormatter. DisabledOutputStream/INSTANCE)
     (.setRepository (.getRepository repo))
-    (.setDiffComparator RawTextComparator/DEFAULT)))
+    (.setDiffComparator RawTextComparator/DEFAULT)
+    (.setDetectRenames true)))
 
 (defn object-reader [^Git repo]
   (.. repo getRepository newObjectReader))
@@ -69,7 +70,7 @@
       (= change "ADD") :add
       (= change "MODIFY") :edit
       (= change "DELETE") :delete
-      (= change "COPY") :copy)))
+      (= change "RENAME") :rename)))
 
 
 (def commit-list jgit.q/rev-list)
