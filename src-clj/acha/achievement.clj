@@ -7,7 +7,7 @@
     [acha.spellings :as spellings]
     [acha.swears :as swears]
     [acha.emoji :as emoji]
-    [clojure.string :as str])
+    [clojure.string :as string])
   (:import
     [java.util Calendar]))
 
@@ -22,7 +22,7 @@
 (defn make-subword-scanner [[achievement-id words]]
   [achievement-id
    (fn [{:keys [message author time]}]
-     (when (pos? (->> (clojure.string/split message #"\b") (filter words) (count)))
+     (when (pos? (->> (string/split message #"\b") (filter words) (count)))
          {:username author
           :time time}))])
 
@@ -62,7 +62,7 @@
 (defn make-word-counting-scanner [[achievement-id words]]
   [achievement-id
    (fn [{:keys [message author time]}]
-     (let [word-count (->> (clojure.string/split message #"\b") (filter words) (count))]
+     (let [word-count (->> (string/split message #"\b") (filter words) (count))]
        (when (pos? word-count)
          {:level word-count
           :username author
@@ -92,7 +92,7 @@
 (def leo-tolstoy
   (make-message-scanner
     [:leo-tolstoy
-    #(>= (count (str/split-lines %)) 10)]))
+    #(>= (count (string/split-lines %)) 10)]))
 
 (def man-of-few-words
   (make-message-scanner
@@ -171,23 +171,34 @@
 ; diff achievements
 (def easy-fix
   [:easy-fix
-   (fn [{:keys [diffs author time]}]
-     (let [two-line-swapped?
-           (fn [diff]
-             (and
-               ; exactly two lines are changed
-               (= (count diff) 2)
-               ; one is added and one removed
-               (= (count (filter #(= :add (first %)) diff)))
-               ; content is the same
-               (= ((first diff) 1) ((last diff) 1))
-               ; line number absolute difference is 1
-               (= 1 (Math/abs (- (last (first diff)) (last (last diff)))))))]
-       (when (and (= (count diffs) 1) (some two-line-swapped? diffs))
+   (fn [{:keys [changed-files author time]}]
+       (when (and
+                  ; only one file was changed
+                  (= (count changed-files) 1)
+                  (let [diff (get-in changed-files [0 :diff])]
+                    (or
+                      ; swap two nonadjacent lines
+                      (and
+                        (= 2 (count diff))
+                        ; not blank lines
+                        (not (string/blank? (get-in diff [0 :added 0])))
+                        (not (string/blank? (get-in diff [1 :added 0])))
+                        ; content added in one edit == removed in another edit
+                        (= (get-in diff [0 :added 0])   (get-in diff [1 :removed 0]))
+                        (= (get-in diff [1 :added 0])   (get-in diff [0 :removed 0])))
+
+                      ; swap two adjacent lines
+                      (and
+                        (= 1 (count diff))
+                        ; not blank line
+                        (not (string/blank? (get-in diff [0 :added 0])))
+                        ; the smae
+                        (= (get-in diff [0 :added 0])   (get-in diff [0 :removed 0]))
+                        ; adjacent
+                        (= 1 (Math/abs (- (get-in diff [0 :added 1])
+                                          (get-in diff [0 :removed 1]))))))))
          {:username author
-          :time time})))])
-
-
+          :time time}))])
 
 (def programmers-day
   [:programmers-day
@@ -443,7 +454,7 @@
 
 (def filename-table
   [[:nothing-to-hide #(= % "id_rsa")]
-   [:scribbler #(.startsWith (str/lower-case %) "readme")]
+   [:scribbler #(.startsWith (string/lower-case %) "readme")]
    ])
 
 ; Scanner is 2-tuple of name and scanning function
