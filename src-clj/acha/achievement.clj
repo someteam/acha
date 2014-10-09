@@ -47,8 +47,8 @@
   [achievement-id
    (fn [{:keys [changed-files author time]}]
      (let [added-files (->> changed-files
-                            (filter #(= (first %) :add))
-                            (map (comp :path last)))]
+                            (filter #(= (:kind %) :add))
+                            (map (comp :path :new-file)))]
        (when (some filename-pred added-files)
          {:username author
           :time time})))])
@@ -116,9 +116,9 @@
   [:change-of-mind
    (fn [{:keys [changed-files author time]}]
      (let [edited-files (->> changed-files
-                             (filter #(= (first %) :add))
-                             (map (comp :path last)))]
-       (when (some #{"LICENSE"} edited-files)
+                             (filter #(= (:kind %) :edit))
+                             (map (comp util/normalize-str :path :new-file)))]
+       (when (some #{"license" "license.md"} edited-files)
          {:username author
           :time time})))])
 
