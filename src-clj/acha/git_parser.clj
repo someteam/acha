@@ -8,16 +8,17 @@
             [clojure.string :as string])
   (:import [java.security MessageDigest]
            [java.io ByteArrayOutputStream]
-           [org.eclipse.jgit.diff DiffFormatter DiffEntry]
-           [org.eclipse.jgit.diff RawTextComparator]
-           [org.eclipse.jgit.lib ObjectReader]
-           [org.eclipse.jgit.api Git]
-           [org.eclipse.jgit.revwalk RevWalk RevCommit RevTree]
-           [org.eclipse.jgit.lib Constants]
            [com.jcraft.jsch Session JSch]
+           [org.eclipse.jgit.api Git]
+           [org.eclipse.jgit.diff ContentSource RawText RawTextComparator DiffFormatter]
+           [org.eclipse.jgit.diff DiffAlgorithm DiffAlgorithm$SupportedAlgorithm DiffEntry DiffEntry$Side]
+           [org.eclipse.jgit.diff Edit EditList MyersDiff]
+           [org.eclipse.jgit.lib ObjectReader ObjectLoader Constants FileMode AbbreviatedObjectId ConfigConstants]
+           [org.eclipse.jgit.revwalk RevWalk RevCommit RevTree]
            [org.eclipse.jgit.transport FetchResult JschConfigSessionFactory OpenSshConfig$Host SshSessionFactory]
-           [org.eclipse.jgit.util FS]
-           [org.eclipse.jgit.treewalk EmptyTreeIterator CanonicalTreeParser AbstractTreeIterator]))
+           [org.eclipse.jgit.treewalk EmptyTreeIterator CanonicalTreeParser AbstractTreeIterator]
+           [org.eclipse.jgit.util FS IO]
+           [org.eclipse.jgit.util.io DisabledOutputStream]))
 
 (defn- data-dir [url]
   (let [repo-name (->> (string/split url #"/") (remove string/blank?) last)]
@@ -46,45 +47,11 @@
         (jgit.p/git-fetch-all))
         (clone url path))))
 
-(gen-interface
-  :name achievement.git.IDiffStatsProvider
-  :methods [[calculateDiffs [java.util.List] clojure.lang.APersistentMap]
-            [treeIterator [org.eclipse.jgit.revwalk.RevCommit] org.eclipse.jgit.treewalk.AbstractTreeIterator ]])
-
 (defn diff-formatter
   [^Git repo]
-  (let [stats (atom {})
-        stream (ByteArrayOutputStream.)
-        reader (-> repo .getRepository .newObjectReader)
-        diffs (atom [])
-        section (atom [])
-        formatter (proxy [DiffFormatter achievement.git.IDiffStatsProvider] [stream]
-                    (writeAddedLine [text line]
-                      (swap! section conj [:add (.getString text line) line])
-                      (swap! stats update-in [:loc :added] (fnil inc 0)))
-                    (writeRemovedLine [text line]
-                      (swap! section conj [:remove (.getString text line) line])
-                      (swap! stats update-in [:loc :deleted] (fnil inc 0)))
-                    (writeHunkHeader [& _]
-                      (swap! diffs conj @section)
-                      (reset! section []))
-                    (treeIterator [commit]
-                      (if commit
-                        (doto (CanonicalTreeParser.) (.reset reader (.getTree commit)))
-                        (EmptyTreeIterator.)))
-                    (calculateDiffs [diff-entities]
-                      (reset! diffs [])
-                      (reset! section [])
-                      (reset! stats nil)
-                      (.reset stream)
-                      (proxy-super format diff-entities)
-                      (proxy-super flush)
-                      (when-not (empty? @section)
-                        (swap! diffs conj @section))
-                      (assoc @stats :diffs @diffs)))]
-    (doto formatter
-      (.setRepository (.getRepository repo))
-      (.setDiffComparator RawTextComparator/DEFAULT))))
+  (doto (DiffFormatter. DisabledOutputStream/INSTANCE)
+    (.setRepository (.getRepository repo))
+    (.setDiffComparator RawTextComparator/DEFAULT)))
 
 (defn- normalize-path [path]
   (cond
@@ -101,20 +68,97 @@
       (= change "DELETE") :delete
       (= change "COPY") :copy)))
 
-(defn- parse-diff-entry
+
+(def commit-list jgit.q/rev-list)
+
+(defn- complete-id [ent side reader]
+  (let [id (.getId ent side)]
+    (if (.isComplete id)
+      id
+      (when-first [obj-id (.resolve reader id)]
+        (AbbreviatedObjectId/fromObjectId obj-id)))))
+
+(def binary-file-threshold (* 2 1024))
+(def big-file-threshold (* 10 1024 1024))
+(def empty-array (byte-array 0))
+
+(def raw-comparator RawTextComparator/DEFAULT)
+(def diff-algorithm MyersDiff/INSTANCE)
+
+(defn- parse-edit-list [^EditList el ^RawText a ^RawText b]
+  (->> el
+    (mapv (fn [^Edit e]
+          {:removed (mapv #(vector (.getString a %) %) (range (.getBeginA e) (.getEndA e)))
+           :added   (mapv #(vector (.getString b %) %) (range (.getBeginB e) (.getEndB e)))}))))
+
+(defn- parse-change-kind
   [^DiffEntry entry]
   (let [change-kind (change-kind entry)
-        old-file {:id (-> entry .getOldId .name)};, :path (normalize-path (.getOldPath entry))}
+        old-file {:id (-> entry .getOldId .name)}
         new-file {:id (-> entry .getNewId .name), :path (normalize-path (.getNewPath entry))}]
     (case change-kind
-      :edit   [change-kind old-file new-file]
-      :add    [change-kind nil new-file]
-      :delete [change-kind old-file nil]
-      :else   [change-kind old-file new-file])))
+      :add    {:kind change-kind, :new-file new-file}
+      :delete {:kind change-kind, :old-file old-file}
+      {:kind change-kind, :old-file old-file, :new-file new-file})))
 
-(defn commit-info [^Git repo ^RevCommit rev-commit ^DiffFormatter df]
-  (let [parent-tree (.treeIterator df (first (.getParents rev-commit)))
-        commit-tree (.treeIterator df rev-commit)
+
+(defn- load-obj [^AbbreviatedObjectId id ^String path ^ObjectReader reader]
+  (let [loader (.. (ContentSource/create reader)
+                   (open path (.toObjectId id)))
+        stream (.openStream loader)
+        size (.getSize stream)
+        pre-bf (byte-array (min size binary-file-threshold))]
+    (try
+      (IO/readFully stream pre-bf 0)
+      (if (RawText/isBinary pre-bf)
+        [{:type :binary, :size size, :path path} empty-array]
+        (let [full-bf (byte-array (min size big-file-threshold))]
+          (System/arraycopy pre-bf 0 full-bf 0 (alength pre-bf))
+          (IO/readFully stream full-bf (alength pre-bf) (- (alength full-bf) (alength pre-bf)))
+          [{:type :text, :size size, :path path} full-bf]))
+      (finally 
+        (.close stream)))))
+
+(defn- open-diff [ent side reader]
+  (let [mode (.getMode ent side)]
+    (when (and (not= FileMode/MISSING mode)
+               (= Constants/OBJ_BLOB (.getObjectType mode)))
+      (let [id (complete-id ent side reader)
+            path (.getPath ent side)]
+        (load-obj id path reader)))))
+
+(defn- parse-diff-changes [entry alg reader]
+  (when-not (or (= FileMode/GITLINK (.getOldMode entry))
+                (= FileMode/GITLINK (.getNewMode entry))
+                (nil? (.getOldId entry))
+                (nil? (.getNewId entry)))
+    (let [[new-file new-bytes] (open-diff entry DiffEntry$Side/NEW reader)
+          [old-file old-bytes] (open-diff entry DiffEntry$Side/OLD reader)
+          new-raw (RawText. (or new-bytes empty-array))
+          old-raw (RawText. (or old-bytes empty-array))]
+      (when (and (not= :binary (:type new-file))
+                 (not= :binary (:type old-file)))
+        {:old-file old-file
+         :new-file new-file
+         :diff (-> (.diff alg raw-comparator old-raw new-raw)
+                   (parse-edit-list old-raw new-raw))}))))
+
+(defn- parse-diff-entry [^DiffEntry entry ^ObjectReader reader]
+  (let [{:keys [kind old-file new-file]} (parse-change-kind entry)
+        diff-changes (parse-diff-changes entry diff-algorithm reader)]
+    {:kind kind,
+     :old-file (merge old-file (:old-file diff-changes))
+     :new-file (merge new-file (:new-file diff-changes))
+     :diff (:diff diff-changes)}))
+
+(defn- tree-iterator [^RevCommit commit ^ObjectReader reader]
+  (if commit
+    (doto (CanonicalTreeParser.) (.reset reader (.getTree commit)))
+    (EmptyTreeIterator.)))
+
+(defn commit-info [^Git repo ^RevCommit rev-commit ^DiffFormatter df ^ObjectReader reader]
+  (let [parent-tree (tree-iterator (first (.getParents rev-commit)) reader)
+        commit-tree (tree-iterator rev-commit reader)
         diffs (.scan df parent-tree commit-tree)
         ident (.getAuthorIdent rev-commit)
         time  (.getWhen ident)
@@ -126,8 +170,19 @@
             :timezone (.getTimeZone ident)
             :between-time (- (.getCommitTime rev-commit) (.getTime (.getWhen ident)))
             :message message
-            :changed-files (mapv parse-diff-entry diffs)
-            :merge (> (.getParentCount rev-commit) 1)}
-           (.calculateDiffs df diffs))))
+            :changed-files (mapv #(parse-diff-entry % reader) diffs)
+            :merge (> (.getParentCount rev-commit) 1)})))
 
-(def commit-list jgit.q/rev-list)
+(defn- repo-info [url]
+  (let [repo (load-repo url)
+        reader (-> repo .getRepository .newObjectReader)
+        formatter (diff-formatter repo)]
+    (map #(commit-info repo % formatter reader) (jgit.q/rev-list repo))))
+
+(defn setup []
+  (use 'acha.git-parser :reload)
+  (try
+    (repo-info "https://github.com/someteam/acha.git")
+    (catch Exception e
+      (logging/error e "Something went wrong"))))
+

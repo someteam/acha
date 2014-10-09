@@ -15,10 +15,10 @@
     (catch Exception e
       (logging/error e "Error occured during achievement scan commit"))))
 
-(defn- analyze-commit [repo-info repo commit df]
+(defn- analyze-commit [repo-info repo commit df reader]
   (try
 ;;     (logging/info "Analyzing" (:url repo-info) (.getName commit) (.. commit getAuthorIdent getWhen))
-    (let [commit-info (git-parser/commit-info repo commit df)]
+    (let [commit-info (git-parser/commit-info repo commit df reader)]
       (when (not (:merge commit-info))
         (->> (for [[code scanner] achievement/all-commit-info-scanners
                    :let [report (scan-achievement scanner commit-info)]
@@ -42,16 +42,21 @@
 
 (defn- find-achievements [repo-info repo]
   (logging/info "Scanning new commits for achievements" (:url repo-info))
-  (let [df   (git-parser/diff-formatter repo)
-        seen (db/get-repo-seen-commits (:id repo-info))
-        xf   (comp
-               (take 2000)
-               (remove #(contains? seen (.getName %)))
-               (map    #(analyze-commit repo-info repo % df)))]
-    (transduce xf
-               (completing #(merge-with merge-achievements %1 %2))
-               {}
-               (git-parser/commit-list repo))))
+  (let [df (git-parser/diff-formatter repo)
+        reader (git-parser/object-reader repo)]
+    (try
+      (let [seen (db/get-repo-seen-commits (:id repo-info))
+            xf   (comp
+                   (take 2000)
+                   (remove #(contains? seen (.getName %)))
+                   (map    #(analyze-commit repo-info repo % df reader)))]
+        (transduce xf
+                   (completing #(merge-with merge-achievements %1 %2))
+                   {}
+                   (git-parser/commit-list repo)))
+      (finally
+        (.release reader)
+        (.release df)))))
 
 (defn- sync-achievements [repo-info new-achs]
   (let [current-achs  (into #{}
