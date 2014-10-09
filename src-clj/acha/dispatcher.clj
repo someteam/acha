@@ -60,7 +60,7 @@
         new-achs      (->> new-achs
                            (remove
                              (fn [[[email code] data]]
-                               (contains? current-achs [email code (:level data)]))))]
+                               (contains? current-achs [email (name code) (:level data)]))))]
     (db/insert-users
       (->> new-achs
         (map (fn [[[email code] data]]

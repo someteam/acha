@@ -121,7 +121,7 @@
         message (-> (.getFullMessage rev-commit) str string/trim)]
     (merge {:id (.getName rev-commit)
             :author (.getName ident)
-            :email  (string/lower-case (.getEmailAddress ident))
+            :email  (util/normalize-str (.getEmailAddress ident))
             :time time
             :timezone (.getTimeZone ident)
             :between-time (- (.getCommitTime rev-commit) (.getTime (.getWhen ident)))
@@ -131,11 +131,3 @@
            (.calculateDiffs df diffs))))
 
 (def commit-list jgit.q/rev-list)
-
-(defn- repo-info [url]
-  (let [repo (load-repo url)
-        formatter (diff-formatter repo)]
-    (map #(commit-info repo % formatter) (jgit.q/rev-list repo))))
-
-(defn setup []
- (repo-info "https://github.com/tonsky/datascript.git"))
