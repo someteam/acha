@@ -107,5 +107,5 @@
     (recur)))
 
 (defn run-workers []
-  (doseq [id (range 1)]
+  (doseq [id (range 4)]
     (future (worker id))))

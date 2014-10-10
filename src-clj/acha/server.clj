@@ -107,7 +107,7 @@
     (alter-var-root #'acha.core/working-dir (fn [_] working-dir))
     (logging/info "Working dir" working-dir)
   
-    (db/create-db)
+    (db/initialize-db)
     (dispatcher/run-workers)
     (let [handler (if dev
                     (reload/wrap-reload #'handler {:dirs ["src-clj"]})

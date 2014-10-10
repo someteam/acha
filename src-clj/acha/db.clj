@@ -23,6 +23,7 @@
                  (.setJdbcUrl (str "jdbc:sqlite:" (db-path)))
                  (.setMinPoolSize 1)
                  (.setMaxPoolSize 1)
+                 (.setInitialPoolSize 1)
                  ;; expire excess connections after 30 minutes of inactivity:
                  (.setMaxIdleTimeExcessConnections (* 30 60))
                  ;; expire connections after 3 hours of inactivity:
@@ -31,9 +32,21 @@
 
 (defn db-conn [] @pooled-db)
 
+(defn db-exists? []
+  (let [f (io/as-file (db-path))]
+    (and (.exists f) (pos? (.length f)))))
+
+(defn drop-db []
+  (try
+    (when (db-exists?)
+      (logging/info "Dropping DB" (db-path))
+      (-> (db-conn) :datasource .hardReset)
+      (io/delete-file (db-path)))
+    (catch Exception e
+      (logging/error e "Failed to drop DB"))))
+
 (defn create-db []
-  (when-not (let [f (io/as-file (db-path))]
-              (and (.exists f) (pos? (.length f))))
+  (when-not (db-exists?)
     (try
       (logging/info "Creating DB" (db-path))
       (db-do-commands (db-conn)
@@ -191,6 +204,19 @@
 
 (defn db-meta []
   (first (query (db-conn) "SELECT * FROM meta")))
+
+(defn initialize-db []
+  (logging/info "Initialize db")
+  (if (db-exists?)
+    (when-not (= (:version (db-meta)) db-version)
+      (let [repos (get-repo-list)]
+        (drop-db)
+        (create-db)
+        (logging/info "Add repos" repos)
+        (doseq [{url :url} repos] (get-or-insert-repo url))))
+    (create-db))
+  (-> (db-conn) :datasource .hardReset))
+
 
 ;; CLEANUP
 
