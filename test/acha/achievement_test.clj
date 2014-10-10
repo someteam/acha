@@ -53,3 +53,10 @@
 (deftest mover
     (let [ach (commit-info :changed-files [{:kind :rename}])]
       (is ((second achievement/mover) ach))))
+
+(deftest fat-ass
+    (let [ach (commit-info :changed-files [{:kind :add
+                                            :new-file {:type :binary
+                                                       :size 3000000}}])]
+      (is ((second achievement/fat-ass) ach))))
+

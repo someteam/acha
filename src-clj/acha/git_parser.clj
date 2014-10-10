@@ -138,14 +138,13 @@
                 (nil? (.getNewId entry)))
     (let [[new-file new-bytes] (open-diff entry DiffEntry$Side/NEW reader)
           [old-file old-bytes] (open-diff entry DiffEntry$Side/OLD reader)
-          new-raw (RawText. (or new-bytes empty-array))
-          old-raw (RawText. (or old-bytes empty-array))]
-      (when (and (not= :binary (:type new-file))
-                 (not= :binary (:type old-file)))
-        {:old-file old-file
-         :new-file new-file
-         :diff (-> (.diff alg raw-comparator old-raw new-raw)
-                   (parse-edit-list old-raw new-raw))}))))
+           new-raw (RawText. (or new-bytes empty-array))
+           old-raw (RawText. (or old-bytes empty-array))]
+      (cond-> {:old-file old-file, :new-file new-file}
+        (and (not= :binary (:type new-file))
+             (not= :binary (:type old-file)))
+        (assoc :diff (-> (.diff alg raw-comparator old-raw new-raw)
+                         (parse-edit-list old-raw new-raw)))))))
 
 (defn- parse-diff-entry [^DiffEntry entry ^ObjectReader reader]
   (let [{:keys [kind old-file new-file]} (parse-change-kind entry)

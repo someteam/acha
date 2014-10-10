@@ -306,10 +306,18 @@
   [:holy-war
    (fn [commit-info]
      nil)])
+
 (def fat-ass
   [:fat-ass
-   (fn [commit-info]
-     nil)])
+   (fn [{:keys [changed-files author time]}]
+     (let [fat-ass-threshold (* 2 1024 1024)]
+       (when (some #(and (= :add (:kind %))
+                         (= :binary (get-in % [:new-file :type]))
+                         (< fat-ass-threshold (get-in % [:new-file :size])))
+                   changed-files)
+         {:username author
+          :time time})))])
+
 (def deal-with-it
   [:deal-with-it
    (fn [commit-info]
