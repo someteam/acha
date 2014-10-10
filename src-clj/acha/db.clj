@@ -9,7 +9,7 @@
     [acha.achievement-static :as static])
   (:import com.mchange.v2.c3p0.ComboPooledDataSource))
 
-(def ^:const ^:private db-version "0.2.0")
+(def ^:const ^:private db-version "0.2.1")
 
 (def ^:private gen-id-key (keyword "last_insert_rowid()"))
 
