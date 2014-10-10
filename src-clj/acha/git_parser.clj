@@ -87,7 +87,7 @@
 (def empty-array (byte-array 0))
 
 (def raw-comparator RawTextComparator/DEFAULT)
-(def diff-algorithm MyersDiff/INSTANCE)
+(def diff-algorithm (DiffAlgorithm/getAlgorithm DiffAlgorithm$SupportedAlgorithm/HISTOGRAM))
 
 (defn- parse-edit-list [^EditList el ^RawText a ^RawText b]
   (->> el
