@@ -34,19 +34,20 @@
           ((last (achievement/make-language-scanner [:clojure ["clj"]]))
            {:time time
             :author "Bender"
-            :changed-files [[:add {:id 123} {:id 345 :path "project.clj"}]]})))))
+            :changed-files [{:kind :add
+                             :new-file {:path "project.clj"}}]})))))
 
 (deftest easy-fix
   (testing "nonadjacent lines"
     (let [ach (commit-info :changed-files
                 [{:kind :edit
-                  :diff [{:added ["line a" 10], :removed ["line b" 15]}
-                         {:added ["line b" 10], :removed ["line a" 15]}]}])]
+                  :diff [{:added [["line a" 10]], :removed [["line b" 15]]}
+                         {:added [["line b" 10]], :removed [["line a" 15]]}]}])]
       (is ((second achievement/easy-fix) ach))))
   (testing "adjacent lines"
     (let [ach (commit-info :changed-files
                 [{:kind :edit
-                  :diff [{:added ["line a" 10], :removed ["line a" 11]}]}])]
+                  :diff [{:added [["line a" 10]], :removed [["line a" 11]]}]}])]
       (is ((second achievement/easy-fix) ach)))))
 
 (deftest mover

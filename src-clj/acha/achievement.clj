@@ -172,33 +172,36 @@
 (def easy-fix
   [:easy-fix
    (fn [{:keys [changed-files author time]}]
-       (when (and
-                  ; only one file was changed
-                  (= (count changed-files) 1)
-                  (let [diff (get-in changed-files [0 :diff])]
-                    (or
-                      ; swap two nonadjacent lines
-                      (and
-                        (= 2 (count diff))
-                        ; not blank lines
-                        (not (string/blank? (get-in diff [0 :added 0])))
-                        (not (string/blank? (get-in diff [1 :added 0])))
-                        ; content added in one edit == removed in another edit
-                        (= (get-in diff [0 :added 0])   (get-in diff [1 :removed 0]))
-                        (= (get-in diff [1 :added 0])   (get-in diff [0 :removed 0])))
+     (when (some (fn [{diff :diff}]
+                   (or
+                     ; swap two nonadjacent lines
+                     (and
+                       (= 2 (count diff))
+                       ; one not blank lines
+                       (->> (for [d [0 1], m [:added :removed]]
+                              (and (= 1 (count (get-in diff [d m])))
+                                   (not (string/blank? (get-in diff [d m 0 0])))))
+                            (every? true?))
+                       ; content added in one edit == removed in another edit
+                       (= (get-in diff [0 :added 0 0])   (get-in diff [1 :removed 0 0]))
+                       (= (get-in diff [1 :added 0 0])   (get-in diff [0 :removed 0 0])))
 
-                      ; swap two adjacent lines
-                      (and
-                        (= 1 (count diff))
-                        ; not blank line
-                        (not (string/blank? (get-in diff [0 :added 0])))
-                        ; the smae
-                        (= (get-in diff [0 :added 0])   (get-in diff [0 :removed 0]))
-                        ; adjacent
-                        (= 1 (Math/abs (- (get-in diff [0 :added 1])
-                                          (get-in diff [0 :removed 1]))))))))
-         {:username author
-          :time time}))])
+                     ; swap two adjacent lines
+                     (and
+                       (= 1 (count diff))
+                       ; one line
+                       (= 1 (count (get-in diff [0 :added])))
+                       (= 1 (count (get-in diff [0 :removed])))
+                       ; not blank line
+                       (not (string/blank? (get-in diff [0 :added 0 0])))
+                       ; the smae
+                       (= (get-in diff [0 :added 0 0])   (get-in diff [0 :removed 0 0]))
+                       ; adjacent
+                       (= 1 (Math/abs (- (get-in diff [0 :added 0 1])
+                                         (get-in diff [0 :removed 0 1])))))))
+                 changed-files)
+       {:username author
+        :time time}))])
 
 (def programmers-day
   [:programmers-day
