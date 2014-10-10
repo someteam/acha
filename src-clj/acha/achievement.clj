@@ -314,8 +314,7 @@
    (fn [{:keys [changed-files author time]}]
      (let [fat-ass-threshold (* 2 1024 1024)]
        (when (some #(and (= :add (:kind %))
-                         (= :binary (get-in % [:new-file :type]))
-                         (< fat-ass-threshold (get-in % [:new-file :size])))
+                         (< fat-ass-threshold (get-in % [:new-file :size] 0)))
                    changed-files)
          {:username author
           :time time})))])
