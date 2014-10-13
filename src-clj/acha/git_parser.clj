@@ -70,6 +70,7 @@
       (= change "ADD") :add
       (= change "MODIFY") :edit
       (= change "DELETE") :delete
+      (= change "COPY") :copy
       (= change "RENAME") :rename)))
 
 
@@ -105,6 +106,13 @@
       :delete {:kind change-kind, :old-file old-file}
       {:kind change-kind, :old-file old-file, :new-file new-file})))
 
+(defn- calc-loc [diff]
+  (reduce (fn [s {:keys [added removed]}]
+            (-> s
+              (update-in [:added] + (count added))
+              (update-in [:removed] + (count removed))))
+    {:added 0 :removed 0}
+    diff))
 
 (defn- load-obj [^AbbreviatedObjectId id ^String path ^ObjectReader reader]
   (let [loader (.. (ContentSource/create reader)
@@ -148,11 +156,13 @@
 
 (defn- parse-diff-entry [^DiffEntry entry ^ObjectReader reader]
   (let [{:keys [kind old-file new-file]} (parse-change-kind entry)
-        diff-changes (parse-diff-changes entry diff-algorithm reader)]
-    {:kind kind,
-     :old-file (merge old-file (:old-file diff-changes))
-     :new-file (merge new-file (:new-file diff-changes))
-     :diff (:diff diff-changes)}))
+        {:keys [diff] :as diff-changes} (parse-diff-changes entry diff-algorithm reader)
+        has-diffs? (not (empty? diff))]
+    (cond-> {:kind kind,
+              :old-file (merge old-file (:old-file diff-changes))
+              :new-file (merge new-file (:new-file diff-changes))}
+      has-diffs? (assoc :diff diff)
+      has-diffs? (assoc :loc (calc-loc diff)))))
 
 (defn- tree-iterator ^AbstractTreeIterator [^RevCommit commit ^ObjectReader reader]
   (if commit

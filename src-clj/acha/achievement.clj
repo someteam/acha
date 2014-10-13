@@ -148,25 +148,40 @@
        {:username author
         :time time}))])
 
+(defn- calc-total-loc
+  ([changed-files] (calc-total-loc changed-files identity))
+  ([changed-files xf]
+    (transduce
+      (comp (map :loc) xf)
+      (completing #(merge-with + %1 %2))
+      {:added 0 :removed 0}
+      changed-files)))
+
 (def world-balance
-  (make-loc-scanner
-    [:world-balance
-    (fn [loc]
-      (and (= (:added loc 0) (:deleted loc 0))
-           (pos? (:added loc 0))))]))
+  [:world-balance
+   (fn [{:keys [changed-files author time]}]
+     (let [loc (calc-total-loc changed-files (filter #(not= (:added %) (:removed %))))]
+       (when (and (pos? (:added loc))
+                  (= (:added loc) (:removed loc)))
+         {:username author
+          :time time})))])
 
 (def eraser
-  (make-loc-scanner
-    [:eraser
-    (fn [loc]
-      (and
-        (= 0 (:added loc 0))
-        (pos? (:deleted loc 0))))]))
+  [:eraser
+  (fn [{:keys [changed-files author time]}]
+    (let [loc (calc-total-loc changed-files)]
+      (when (and (= 0 (:added loc))
+                 (pos? (:removed loc)))
+        {:username author
+         :time time})))])
 
 (def massive
-  (make-loc-scanner
-    [:massive
-    (fn [loc] (>= (:added loc 0) 1000))]))
+  [:massive
+  (fn [{:keys [id changed-files author time]}]
+    (let [loc (calc-total-loc changed-files)]
+      (when (<= 1000 (:added loc))
+        {:username author
+         :time time})))])
 
 ; diff achievements
 (def easy-fix
