@@ -13,3 +13,4 @@ pom.xml.asc
 /resources/public/acha.min.js
 acha-sqlite.db
 .acha
+.DS_Store
