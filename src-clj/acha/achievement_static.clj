@@ -173,7 +173,7 @@
   :key :mover,
   :name "Mover"}
  {:description
-  "Add/edit files in 5 different languages in a single commit",
+  "Add/edit files in 3+ different languages in a single commit",
   :key :multilingual,
   :name "Multilingual"}
  {:description "Get 5 achievements with 1 commit",

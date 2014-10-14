@@ -248,9 +248,11 @@
     (scan-filenames [#"(?i)^license(\.md)?$"] changed-files #{:edit}))
 
   (commit-scanner :multilingual [{:keys [changed-files]}]
-    (<= 5 (->> (get-in base [:languages])
-               (filter #(scan-filenames (second %) changed-files #{:add :edit}))
-               count))))
+    (let [level (->> (get-in base [:languages])
+                   (filter #(scan-filenames (second %) changed-files #{:add :edit}))
+                   count)]
+      (when (<= 3 level)
+        {:level level}))))
 
   ;;  TODO
   ;;  commenter
