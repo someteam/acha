@@ -1,20 +1,20 @@
 # Acha-acha
-## Enterprise Git Achievement solution. Web scale. In the cloud
 
-<img src="https://dl.dropboxusercontent.com/u/561580/lj/acha.jpg" style="width: 523px; height: 403px;">
+![Rick Hickey achievements](https://dl.dropboxusercontent.com/u/11486892/acha-hickey.png)
 
 ## Usage
 
-Grab a jar [from latest release](https://github.com/someteam/acha/releases).
+Grab a jar [from latest release](https://github.com/someteam/acha/releases/latest).
 
 Run it as:
 
-    java -jar acha-uber-0.2.0.jar
+    curl -L -o acha-uber.jar https://github.com/someteam/acha/releases/download/0.2.1/acha-uber-0.2.1.jar
+    java -jar acha-uber.jar
     open http://localhost:8080/
 
 Following configuration options are supported:
 
-    java -jar acha-uber-0.2.0.jar --ip 0.0.0.0 --port 8080 --dir .acha
+    java -jar acha-uber.jar --ip 0.0.0.0 --port 8080 --dir .acha
 
 ## Building from source
 
@@ -29,7 +29,7 @@ Following configuration options are supported:
 
 ## License
 
-Copyright © Nikita Prokopov, Renat Idrisov, Andrey Vasenin, Dmitry Ivanov
+Copyright © Nikita Prokopov, Yulya Prokopova, Renat Idrisov, Andrey Vasenin, Dmitry Ivanov
 
 Distributed under the Eclipse Public License either version 1.0 or (at
 your option) any later version.
