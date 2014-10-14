@@ -11,145 +11,22 @@
   (:import
     [java.util Calendar]))
 
-; FIXME: All commit-info scanners return commit's time and author.
-;        That's a lot of boilerplate.
+(defmacro defscanners
+  [name & scanners]
+  `(def ~name (-> {} ~@scanners)))
 
-(def example-achievement
-  {:username "Bender"
-   :level 3
-   :time #inst "2014-04-16T17:43:20.000-00:00"})
+(defmacro commit-scanner
+  [scanners sname args & body]
+  `(update-in ~scanners [:commit-scanners] assoc ~sname
+     (fn ~args
+       (when-let [ret# (do ~@body)]
+         (if (map? ret#) ret# {})))))
 
-(defn make-subword-scanner [[achievement-id words]]
-  [achievement-id
-   (fn [{:keys [message author time]}]
-     (when (pos? (->> (string/split message #"\b") (filter words) (count)))
-         {:username author
-          :time time}))])
+(defn- scan-word-count [text words]
+  (->> (string/split text #"\b") (filter words) count))
 
-(defn commit-info-cal [commit-info]
-  (doto
-    (Calendar/getInstance (:timezone commit-info))
-    (.setTime (:time commit-info))))
-
-; months are zero-based because java
-(defn make-date-scanner [[achievement-id month day]]
-  [achievement-id
-   (fn [commit-info]
-     (let [cal          (commit-info-cal commit-info)
-           commit-day   (.get cal Calendar/DAY_OF_MONTH)
-           commit-month (+ 1 (.get cal Calendar/MONTH))]
-       (when (and (= month commit-month)
-                  (= day commit-day))
-         {:username (:author commit-info)
-          :time     (:time commit-info)})))])
-
-(defn make-filename-scanner [[achievement-id filename-pred]]
-  [achievement-id
-   (fn [{:keys [changed-files author time]}]
-     (let [added-files (->> changed-files
-                            (filter #(= (:kind %) :add))
-                            (map (comp :path :new-file)))]
-       (when (some filename-pred added-files)
-         {:username author
-          :time time})))])
-
-(defn make-language-scanner [[achievement-id extensions]]
-  (let [dot-extensions (map #(str "." %) extensions)
-        has-interesting-extension?
-        (fn [file] (some #(.endsWith file %) dot-extensions))]
-    (make-filename-scanner [achievement-id has-interesting-extension?])))
-
-(defn make-word-counting-scanner [[achievement-id words]]
-  [achievement-id
-   (fn [{:keys [message author time]}]
-     (let [word-count (->> (string/split message #"\b") (filter words) (count))]
-       (when (pos? word-count)
-         {:level word-count
-          :username author
-          :time time})))])
-
-(def bad-motherfucker
-  (make-word-counting-scanner [:bad-motherfucker swears/table]))
-
-(def hello-linus
-  [:hello-linus 
-  (fn [commit-info]
-    (when-let [bad-acha ((second bad-motherfucker) commit-info)]
-      (when (>= (:level bad-acha) 10)
-        {:username (:author commit-info)
-         :time     (:time commit-info)})))])
-
-(def borat
-  (make-word-counting-scanner [:borat spellings/table]))
-
-(defn make-message-scanner [[achievement-id message-predicate]]
-  [achievement-id
-   (fn [{:keys [message author time]}]
-     (when (message-predicate message)
-       {:username author
-        :time time}))])
-
-(def leo-tolstoy
-  (make-message-scanner
-    [:leo-tolstoy
-    #(>= (count (string/split-lines %)) 10)]))
-
-(def man-of-few-words
-  (make-message-scanner
-    [:man-of-few-words
-    #(< (count %) 4)]))
-
-(def no-more-letters
-  (make-message-scanner
-    [:no-more-letters
-    (fn [message]
-      (not (some #(Character/isLetter (.charValue %)) message)))]))
-
-(def narcissist
-  [:narcissist
-   (fn [{:keys [message author time]}]
-       (when (.contains message author)
-         {:username author
-          :time time}))])
-
-(def change-of-mind
-  [:change-of-mind
-   (fn [{:keys [changed-files author time]}]
-     (let [edited-files (->> changed-files
-                             (filter #(= (:kind %) :edit))
-                             (map (comp util/normalize-str :path :new-file)))]
-       (when (some #{"license" "license.md"} edited-files)
-         {:username author
-          :time time})))])
-
-; sha achievements
-(defn make-sha-scanner [[achievement-id sha-predicate]]
-  [achievement-id
-   (fn [{:keys [id author time]}]
-     (when (sha-predicate id)
-       {:username author
-        :time time}))])
-
-(def lucky
-  (make-sha-scanner
-    [:lucky
-    #(.contains % "777")]))
-
-(def mark-of-the-beast
-  (make-sha-scanner
-    [:mark-of-the-beast
-    #(.contains % "666")]))
-
-; LOC achievements
-(defn make-loc-scanner [[achievement-id loc-predicate]]
-  [achievement-id
-   (fn [{:keys [loc author time]}]
-     (when (loc-predicate loc)
-       {:username author
-        :time time}))])
-
-(defn- calc-total-loc
-  ([changed-files] (calc-total-loc changed-files identity))
+(defn- calculate-loc
+  ([changed-files] (calculate-loc changed-files identity))
   ([changed-files xf]
     (transduce
       (comp (map :loc) xf)
@@ -157,395 +34,246 @@
       {:added 0 :removed 0}
       changed-files)))
 
-(def world-balance
-  [:world-balance
-   (fn [{:keys [changed-files author time]}]
-     (let [loc (calc-total-loc changed-files (filter #(not= (:added %) (:removed %))))]
-       (when (and (pos? (:added loc))
-                  (= (:added loc) (:removed loc)))
-         {:username author
-          :time time})))])
+(defn create-calendar ^Calendar [time timezone]
+  (doto
+    (Calendar/getInstance timezone)
+    (.setTime time)))
 
-(def eraser
-  [:eraser
-  (fn [{:keys [changed-files author time]}]
-    (let [loc (calc-total-loc changed-files)]
-      (when (and (= 0 (:added loc))
-                 (pos? (:removed loc)))
-        {:username author
-         :time time})))])
+(defn- date-scanner [scanners sname month day]
+  (commit-scanner scanners sname [{:keys [time timezone]}]
+   (let [calendar (create-calendar time timezone)]
+     (and (= month (+ 1 (.get calendar Calendar/MONTH)))
+          (= day (.get calendar Calendar/DAY_OF_MONTH))))))
 
-(def massive
-  [:massive
-  (fn [{:keys [id changed-files author time]}]
-    (let [loc (calc-total-loc changed-files)]
-      (when (<= 1000 (:added loc))
-        {:username author
-         :time time})))])
+(defn- subword-scanner [scanners sname words]
+  (commit-scanner scanners sname [commit-info]
+    (pos? (scan-word-count (:message commit-info) words))))
 
-; diff achievements
-(def easy-fix
-  [:easy-fix
-   (fn [{:keys [changed-files author time]}]
-     (when (and
-             ; only one file was changed
-             (= (count changed-files) 1)
-             (let [diff (get-in changed-files [0 :diff])]
-               (or
-                 ; swap two nonadjacent lines
-                 (and
-                   (= 2 (count diff))
-                   ; one not blank lines
-                   (->> (for [d [0 1], m [:added :removed]]
-                          (and (= 1 (count (get-in diff [d m])))
-                               (not (string/blank? (get-in diff [d m 0 0])))))
-                        (every? true?))
-                   ; content added in one edit == removed in another edit
-                   (= (get-in diff [0 :added 0 0])   (get-in diff [1 :removed 0 0]))
-                   (= (get-in diff [1 :added 0 0])   (get-in diff [0 :removed 0 0])))
+(defn- scan-filenames [rexps changed-files kinds]
+  (let [new-paths (->> changed-files
+                    (filter #(kinds (:kind %)))
+                    (map (comp :path :new-file)))]
+    (some (fn [[p e]] (re-matches e p))
+          (for [p new-paths, e rexps] [p e]))))
 
-                 ; swap two adjacent lines
-                 (and
-                   (= 1 (count diff))
-                   ; one line
-                   (= 1 (count (get-in diff [0 :added])))
-                   (= 1 (count (get-in diff [0 :removed])))
-                   ; not blank line
-                   (not (string/blank? (get-in diff [0 :added 0 0])))
-                   ; the smae
-                   (= (get-in diff [0 :added 0 0])   (get-in diff [0 :removed 0 0]))
-                   ; adjacent
-                   (= 1 (Math/abs (- (get-in diff [0 :added 0 1])
-                                     (get-in diff [0 :removed 0 1]))))))))
-       {:username author
-        :time time}))])
+(defn- language-scanner [scanners sname exts]
+  (let [rexps (map #(re-pattern (str "(?i)(?:.+)\\." % "$")) exts)]
+    (-> scanners
+      (update-in [:languages] assoc sname rexps)
+      (commit-scanner sname [{:keys [changed-files]}]
+        (scan-filenames rexps changed-files #{:add})))))
 
-(def programmers-day
-  [:programmers-day
-   (fn [commit-info]
-     (let [cal        (commit-info-cal commit-info)
-           commit-day (.get cal Calendar/DAY_OF_YEAR)]
-       (when (= 256 commit-day)
-         {:username (:author commit-info)
-          :time     (.getTime cal)})))])
+(defscanners base
+  (commit-scanner :bad-motherfucker [{:keys [message]}]
+    (let [word-count (scan-word-count message swears/table)]
+      (when (pos? word-count) {:level word-count})))
 
-(def thanksgiving
-  [:thanksgiving
-   (fn [commit-info]
-     (let [cal (commit-info-cal commit-info)
-           commit-day       (.get cal Calendar/DAY_OF_WEEK)
-           commit-month     (.get cal Calendar/MONTH)
-           commit-month-day (.get cal Calendar/DAY_OF_MONTH)]
-       (when (and (= 10 commit-month) ;; November
-                  (= 5 commit-day) ;; Thursday
-                  (<= 22 commit-month-day 28)) ;; 4th Thursday
-         {:username (:author commit-info)
-          :time     (.getTime cal)})))])
+  (commit-scanner :hello-linus [commit-info]
+    (when-let [a ((get-in base [:commit-scanners :bad-motherfucker]) commit-info)]
+      (<= 5 (:level a))))
 
-(def owl
-  [:owl
-   (fn [commit-info]
-     (let [cal (commit-info-cal commit-info)
-           commit-hour (.get cal Calendar/HOUR_OF_DAY)]
-       (when (<= 4 commit-hour 7) ;; between 4am and 7am
-         {:username (:author commit-info)
-          :time     (.getTime cal)})))])
+  (commit-scanner :borat [{:keys [message]}]
+    (let [word-count (scan-word-count message spellings/table)]
+      (when (pos? word-count) {:level word-count})))
 
-(def dangerous-game
-  [:dangerous-game
-   (fn [commit-info]
-     (let [cal (commit-info-cal commit-info)
-           commit-wday (.get cal Calendar/DAY_OF_WEEK)
-           commit-hour (.get cal Calendar/HOUR_OF_DAY)]
-       (when (and (>= commit-hour 18) ;; after 18PM
-                  (= commit-wday 6))  ;; friday
-         {:username (:author commit-info)
-          :time     (.getTime cal)})))])
+  (commit-scanner :leo-tolstoy [{:keys [message]}]
+    (<= 10 (-> message string/split-lines count)))
 
-(def time-get
-  [:time-get
-   (fn [commit-info]
-     (let [cal (commit-info-cal commit-info)
-           commit-minute (.get cal Calendar/MINUTE)
-           commit-hour (.get cal Calendar/HOUR_OF_DAY)]
-       (when (and (= commit-hour 0) (= commit-minute 0))
-         {:username (:author commit-info)
-          :time     (.getTime cal)})))])
+  (commit-scanner :man-of-few-words [{:keys [message]}]
+    (< (count message) 4))
 
-(def mover
-  [:mover
-   (fn [{:keys [changed-files author time]}]
-     (when (some #(and (= (:kind %) :rename)
-                       (= 0 (count (:diff %)))) changed-files)
-       {:username author
-        :time     time}))])
+  (commit-scanner :no-more-letters [{:keys [^String message]}]
+    (not (some #(Character/isLetter (.charValue %)) message)))
 
-(def empty-commit
-  [:empty-commit
-   (fn [{:keys [changed-files author time]}]
-     (when (= (count changed-files) 0)
-       {:username author
-        :time time}))])
+  (commit-scanner :narcissist [{:keys [^String message author]}]
+    (.contains (util/normalize-str message)
+               (util/normalize-str author)))
 
-(def wrecking-ball
-  [:wrecking-ball
-   (fn [{:keys [changed-files author time]}]
-     (when (>= (count changed-files) 100)
-       {:username author
-        :time time}))])
+  ;; SHA achievements
+  (commit-scanner :lucky [{:keys [^String id]}]
+    (.contains id "777"))
 
-(def cool-kid
-  [:emoji
-   (fn [{:keys [message author time]}]
-     (when (or (re-find #"[\ud83c\udc00-\ud83d\udeff\udbb9\udce5-\udbb9\udcee]" message)
-               (let [candidates (set (re-seq #"\:[\w0-9]+\:" message))]
-                 (not-empty (set/intersection candidates emoji/all))))
-         {:username author
-          :time time}))])
+  (commit-scanner :mark-of-the-beast [{:keys [^String id]}]
+    (.contains id "666"))
 
-(def alzheimers
-  [:alzheimers
-   (fn [{:keys [author time between-time]}]
-     (when (>= between-time (* 60 60 24 30))
-         {:username author
-          :time time}))])
+  ;; LOC achievements
+  (commit-scanner :world-balance [{:keys [changed-files]}]
+    (let [loc (calculate-loc changed-files (filter #(not= (:added %) (:removed %))))]
+       (and (pos? (:added loc))
+            (= (:added loc) (:removed loc)))))
 
-; TODO commit-info achievements
-(def commenter
-  [:commenter
-   (fn [commit-info]
-     nil)])
-;; (def ocd
-;;   [:ocd
-;;    (fn [commit-info]
-;;      nil)])
-(def holy-war
-  [:holy-war
-   (fn [commit-info]
-     nil)])
+  (commit-scanner :eraser [{:keys [changed-files]}]
+    (let [loc (calculate-loc changed-files)]
+      (and (= 0 (:added loc)) (pos? (:removed loc)))))
 
-(def fat-ass
-  [:fat-ass
-   (fn [{:keys [changed-files author time]}]
-     (let [fat-ass-threshold (* 2 1024 1024)]
-       (when (some #(and (= :add (:kind %))
-                         (< fat-ass-threshold (get-in % [:new-file :size] 0)))
-                   changed-files)
-         {:username author
-          :time time})))])
+  (commit-scanner :massive [{:keys [changed-files]}]
+    (let [loc (calculate-loc changed-files)]
+      (<= 1000 (:added loc))))
 
-(def deal-with-it
-  [:deal-with-it
-   (fn [commit-info]
-     nil)])
-(def for-stallman
-  [:for-stallman
-   (fn [commit-info]
-     nil)])
+  ;; DIFF achievements
+  (commit-scanner :easy-fix [{:keys [changed-files]}]
+    (and
+      ; only one file was changed
+      (= (count changed-files) 1)
+      (let [diff (get-in changed-files [0 :diff])]
+        (or
+          ; swap two nonadjacent lines
+          (and
+            (= 2 (count diff))
+            ; one not blank lines
+            (->> (for [d [0 1], m [:added :removed]]
+                   (and (= 1 (count (get-in diff [d m])))
+                        (not (string/blank? (get-in diff [d m 0 0])))))
+                 (every? true?))
+            ; content added in one edit == removed in another edit
+            (= (get-in diff [0 :added 0 0])   (get-in diff [1 :removed 0 0]))
+            (= (get-in diff [1 :added 0 0])   (get-in diff [0 :removed 0 0])))
 
-; TODO timeline achievements
-(def blamer
-  [:blamer
-   (fn [timeline]
-     nil)])
-(def catchphrase
-  [:catchphrase
-   (fn [timeline]
-     nil)])
-(def anniversary
-  [:anniversary
-   (fn [timeline]
-     nil)])
-(def flash
-  [:flash
-   (fn [timeline]
-     nil)])
-(def waste
-  [:waste
-   (fn [timeline]
-     nil)])
-(def loneliness
-  [:loneliness
-   (fn [timeline]
-     nil)])
-(def necromancer
-  [:necromancer
-   (fn [timeline]
-     nil)])
-(def collision
-  [:collision
-   (fn [timeline]
-     nil)])
-(def hydra
-  [:hydra
-   (fn [timeline]
-     nil)])
-(def peacemaker
-  [:peacemaker
-   (fn [timeline]
-     nil)])
-(def combo
-  [:combo
-   (fn [timeline]
-     nil)])
-(def combo-breaker
-  [:combo-breaker
-   (fn [timeline]
-     nil)])
-(def worker-bee
-  [:worker-bee
-   (fn [timeline]
-     nil)])
-(def oops
-  [:oops
-   (fn [timeline]
-     nil)])
-(def what-happened-here
-  [:what-happened-here
-   (fn [timeline]
-     nil)])
-(def all-things-die
-  [:all-things-die
-   (fn [timeline]
-     nil)])
-(def goodboy
-  [:goodboy
-   (fn [timeline]
-     nil)])
-(def commit-get
-  [:commit-get
-   (fn [timeline]
-     nil)])
+          ; swap two adjacent lines
+          (and
+            (= 1 (count diff))
+            ; one line
+            (= 1 (count (get-in diff [0 :added])))
+            (= 1 (count (get-in diff [0 :removed])))
+            ; not blank line
+            (not (string/blank? (get-in diff [0 :added 0 0])))
+            ; the smae
+            (= (get-in diff [0 :added 0 0])   (get-in diff [0 :removed 0 0]))
+            ; adjacent
+            (= 1 (Math/abs (- (get-in diff [0 :added 0 1])
+                              (get-in diff [0 :removed 0 1])))))))))
 
-; TODO meta achievements
-(def gandalf nil)
-(def munchkin nil)
-(def unpretending nil)
+  ;; COMMIT DATE AND TIME
+  (commit-scanner :programmers-day [{:keys [time timezone]}]
+    (let [calendar (create-calendar time timezone)]
+      (= 256 (.get calendar Calendar/DAY_OF_YEAR))))
 
-(def date-table
-  [[:christmas 12 25]
-   [:halloween 10 31]
-   [:fools-day 4 1]
-   [:leap-day 2 29]
-   [:new-year 1 1]
-   [:russia-day 6 12]
-   [:valentine 2 14]])
+  (commit-scanner :thanksgiving [{:keys [time timezone]}]
+    (let [calendar (create-calendar time timezone)]
+       (and (= 10 (.get calendar Calendar/MONTH)) ;; November
+            (= 5 (.get calendar Calendar/DAY_OF_WEEK)) ;; Thursday
+            (<= 22 (.get calendar Calendar/DAY_OF_MONTH) 28)))) ;; 4th Thursday
 
-(def substring-table
-  [[:beggar #{"achievement" "achievements"}]
-   [:citation-needed #{"stackoverflow"}]
-   [:fix #{"fix" "fixes" "fixed" "fixing"}]
-   [:forgot #{"forgot"}]
-   [:google #{"google"}]
-   [:hack #{"hack"}]
-   [:impossible #{"impossible"}]
-   [:magic #{"magic"}]
-   [:never-probably #{"later"}]
-   [:secure #{"secure"}]
-;;    [:sorry #{"sorry"}]
-   [:wow #{"wow"}]])
+  (commit-scanner :owl [{:keys [time timezone]}]
+    (let [calendar (create-calendar time timezone)]
+       (<= 4 (.get calendar Calendar/HOUR_OF_DAY) 7))) ;; between 4am and 7am
 
-(def language-table
-  [[:basic ["bas" "vb" "vbs" "vba"]]
-;;    [:c ["c" "h"]]
-   [:c-sharp ["cs"]]
-   [:clojure ["clj" "cljx"]]
-   [:clojurescript ["cljs"]]
-   [:css ["css" "sass" "scss" "less" "haml"]]
-   [:cxx ["c++" "cc" "cpp" "cxx" "pcc" "hh" "hpp" "hxx"]]
-   [:dart ["dart"]]
-   [:erlang ["erl" "hrl"]]
-   [:go ["go"]]
-   [:haskell ["hs" "lhs"]]
-   [:java ["java" "jsf" "jsp" "jspf"]]
-   [:javascript ["js"]]
-   [:objective-c ["m" "mm"]]
-   [:pascal ["pas"]]
-   [:perl ["pl"]]
-   [:php ["php" "php3" "php4" "php5"]]
-   [:python ["py"]]
-   [:ruby ["rake" "rb"]]
-   [:scala ["scala"]]
-   [:shell ["bash" "sh" "awk" "sed"]]
-   [:sql ["sql"]]
-   [:swift ["swift"]]
-   [:windows-language ["bat" "btm" "cmd" "ps1" "csproj" "vbproj" "vcproj" "wdproj" "wixproj" "xaml"]]
-   [:xml ["xml" "xsl" "xslt" "xsd" "dtd"]]])
+  (commit-scanner :dangerous-game [{:keys [time timezone]}]
+    (let [calendar (create-calendar time timezone)]
+      (and (<= 18 (.get calendar Calendar/HOUR_OF_DAY)) ;; after 18PM
+           (= 6 (.get calendar Calendar/DAY_OF_WEEK))))) ;; Friday
 
-(def multilingual
-  [:multilingual
-   (fn [commit-info]
-     (when (>= (reduce + (map #(if (% commit-info) 1 0) 
-      (map second (map make-language-scanner language-table)))) 5) 
-       {:username (:author commit-info)
-        :time (:time commit-info)}))])
+  (commit-scanner :time-get [{:keys [time timezone]}]
+    (let [calendar (create-calendar time timezone)]
+      (and (= 0 (.get calendar Calendar/HOUR_OF_DAY))
+           (= 0 (.get calendar Calendar/MINUTE)))))
 
-(def filename-table
-  [[:nothing-to-hide #(= % "id_rsa")]
-   [:scribbler #(.startsWith (string/lower-case %) "readme")]
-   ])
+  (commit-scanner :alzheimers [{:keys [between-time]}]
+    (<= (* 60 60 24 30) between-time))
 
-; Scanner is 2-tuple of name and scanning function
-(def all-commit-info-scanners
-  (concat
-    (map make-filename-scanner filename-table)
-    (map make-language-scanner language-table)
-    (map make-date-scanner date-table)
-    (map make-subword-scanner substring-table)
-    [bad-motherfucker
-     borat
-     cool-kid
-     eraser
-     hello-linus
-     leo-tolstoy
-     man-of-few-words
-     massive
-     no-more-letters
-     programmers-day
-     thanksgiving
-     owl
-     easy-fix
-     multilingual
-     mover
-     world-balance
-     narcissist
-     lucky
-     mark-of-the-beast
-     commenter
-;;      ocd
-     holy-war
-     fat-ass
-     deal-with-it
-     dangerous-game
-     empty-commit
-     time-get
-     for-stallman
-     wrecking-ball
-     alzheimers
-     ]))
+  (commit-scanner :mover [{:keys [changed-files]}]
+    (some #(and (= (:kind %) :rename)
+                (= 0 (count (:diff %)))) changed-files))
 
-(def all-timeline-scanners
-  [catchphrase
-   anniversary
-   blamer
-   flash
-   waste
-   loneliness
-   necromancer
-   commit-get
-   collision
-   hydra
-   peacemaker
-   combo
-   combo-breaker
-   worker-bee
-   oops
-   what-happened-here
-   all-things-die
-   goodboy
-   ])
+  ;; ASK. It's not possible to have a commit without message or without files (except merges)
+  (commit-scanner :empty-commit [{:keys [changed-files]}]
+    (= (count changed-files) 0))
 
-(def all-meta-achievements
-  [gandalf
-   unpretending
-   munchkin])
+  (commit-scanner :wrecking-ball [{:keys [changed-files]}]
+    (<= 100 (count changed-files)))
+
+  (commit-scanner :emoji [{:keys [message]}]
+    (or (re-find #"[\ud83c\udc00-\ud83d\udeff\udbb9\udce5-\udbb9\udcee]" message)
+        (let [candidates (set (re-seq #"\:[\w0-9]+\:" message))]
+          (not-empty (set/intersection candidates emoji/all)))))
+
+  (commit-scanner :fat-ass [{:keys [changed-files]}]
+    (some #(and (= :add (:kind %))
+                (<= (* 2 1024 1024) (get-in % [:new-file :size] 0)))
+          changed-files))
+
+  (date-scanner :christmas 12 25)
+  (date-scanner :halloween 10 31)
+  (date-scanner :fools-day 4 1)
+  (date-scanner :leap-day 2 29)
+  (date-scanner :new-year 1 1)
+  (date-scanner :russia-day 6 12)
+  (date-scanner :valentine 2 14)
+
+  (subword-scanner :beggar #{"achievement" "achievements"})
+  (subword-scanner :citation-needed #{"stackoverflow"})
+  (subword-scanner :fix #{"fix" "fixes" "fixed" "fixing"})
+  (subword-scanner :forgot #{"forgot"})
+  (subword-scanner :google #{"google"})
+  (subword-scanner :hack #{"hack"})
+  (subword-scanner :impossible #{"impossible"})
+  (subword-scanner :magic #{"magic"})
+  (subword-scanner :never-probably #{"later"})
+  (subword-scanner :secure #{"secure"})
+  (subword-scanner :wow #{"wow"})
+
+  (language-scanner :basic ["bas" "vb" "vbs" "vba"])
+  (language-scanner :c-sharp ["cs"])
+  (language-scanner :clojure ["clj" "cljx"])
+  (language-scanner :clojurescript ["cljs"])
+  (language-scanner :css ["css" "sass" "scss" "less" "haml"])
+  (language-scanner :cxx ["c++" "cc" "cpp" "cxx" "pcc" "hh" "hpp" "hxx"])
+  (language-scanner :dart ["dart"])
+  (language-scanner :erlang ["erl" "hrl"])
+  (language-scanner :go ["go"])
+  (language-scanner :haskell ["hs" "lhs"])
+  (language-scanner :java ["java" "jsf" "jsp" "jspf"])
+  (language-scanner :javascript ["js"])
+  (language-scanner :objective-c ["m" "mm"])
+  (language-scanner :pascal ["pas"])
+  (language-scanner :perl ["pl"])
+  (language-scanner :php ["php" "php3" "php4" "php5"])
+  (language-scanner :python ["py"])
+  (language-scanner :ruby ["rake" "rb"])
+  (language-scanner :scala ["scala"])
+  (language-scanner :shell ["bash" "sh" "awk" "sed"])
+  (language-scanner :sql ["sql"])
+  (language-scanner :swift ["swift"])
+  (language-scanner :windows-language ["bat" "btm" "cmd" "ps1" "csproj" "vbproj" "vcproj" "wdproj" "wixproj" "xaml"])
+  (language-scanner :xml ["xml" "xsl" "xslt" "xsd" "dtd"])
+
+  (commit-scanner :nothing-to-hide [{:keys [changed-files]}]
+    (scan-filenames [#"(?i)(?:.*)id_rsa$"] changed-files #{:add}))
+
+  (commit-scanner :scribbler [{:keys [changed-files]}]
+    (scan-filenames [#"(?i)^readme(\.md)?$"] changed-files #{:add}))
+
+  (commit-scanner :change-of-mind [{:keys [changed-files]}]
+    (scan-filenames [#"(?i)^license(\.md)?$"] changed-files #{:edit}))
+
+  (commit-scanner :multilingual [{:keys [changed-files]}]
+    (<= 5 (->> (get-in base [:languages])
+               (filter #(scan-filenames (second %) changed-files #{:add :edit}))
+
+               count))))
+
+  ;;  TODO
+  ;;  commenter
+  ;;  holy-war
+  ;;  deal-with-it
+  ;;  for-stallman
+  ;;  blamer
+  ;;  catchphrase
+  ;;  anniversary
+  ;;  flash
+  ;;  waste
+  ;;  loneliness
+  ;;  necromancer
+  ;;  collision
+  ;;  hydra
+  ;;  peacemaker
+  ;;  combo-breaker
+  ;;  combo
+  ;;  worker-bee
+  ;;  oops
+  ;;  what-happened-here
+  ;;  all-things-die
+  ;;  goodboy
+  ;;  commit-get
+
+

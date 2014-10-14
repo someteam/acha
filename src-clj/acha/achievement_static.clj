@@ -127,10 +127,10 @@
  {:description "Add Haskell file to the repo",
   :key :haskell,
   :name "Ivory Tower"}
- {:description "10+ swear words in a commit message",
+ {:description "5+ swear words in a commit message",
   :key :hello-linus,
   :name "Hello, Linus",
-  :level-description "One level for each 10 swear words in a message"}
+  :level-description "One level for each 5 swear words in a message"}
  {:description "Change tabs to spaces or vice versa",
   :key :holy-war,
   :name "Holy War"}

@@ -20,13 +20,11 @@
 ;;     (logging/info "Analyzing" (:url repo-info) (.getName commit) (.. commit getAuthorIdent getWhen))
     (let [commit-info (git-parser/commit-info repo commit df reader)]
       (when (not (:merge commit-info))
-        (->> (for [[code scanner] achievement/all-commit-info-scanners
+        (->> (for [[code scanner] (:commit-scanners achievement/base)
                    :let [report (scan-achievement scanner commit-info)]
                    :when report]
-             [[(:email commit-info) code] (-> report
-                                            (assoc-in [:author :email] (:email commit-info))
-                                            (assoc-in [:author :name]  (:author commit-info))
-                                            (assoc-in [:sha1] (:id commit-info)))])
+             [[(:email commit-info) code] (merge report
+                                                 (select-keys commit-info [:author :time :id]))])
            (into {}))))
     (catch Exception e
       (logging/error e "Error occured during commit-info parsing" (.getName commit)))
@@ -69,14 +67,14 @@
     (db/insert-users
       (->> new-achs
         (map (fn [[[email code] data]]
-               {:email email :name (get-in data [:author :name])}))))
+               {:email email :name (:author data)}))))
     (db/insert-achievements
       (for [[[email code] data] new-achs]
         { :type      (name code)
           :level     (:level data)
           :userid    (:id (db/get-user-by-email email))
           :repoid    (:id repo-info)
-          :sha1      (:sha1 data)
+          :sha1      (:id data)
           :timestamp (.getTime (:time data))
           :assigned  (System/currentTimeMillis) }))))
 
