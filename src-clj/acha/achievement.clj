@@ -2,6 +2,7 @@
   (:use clojure.data)
   (:require
     [clojure.set :as set]
+    [clojure.tools.logging :as logging]
     [acha.util :as util]
     [acha.achievement-static]
     [acha.spellings :as spellings]
@@ -249,7 +250,6 @@
   (commit-scanner :multilingual [{:keys [changed-files]}]
     (<= 5 (->> (get-in base [:languages])
                (filter #(scan-filenames (second %) changed-files #{:add :edit}))
-
                count))))
 
   ;;  TODO
