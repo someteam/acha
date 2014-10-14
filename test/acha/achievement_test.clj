@@ -75,3 +75,10 @@
                            [{:kind :edit, :loc {:added 0 :removed 10}}])]
       (is ((get-in achievement/base [:commit-scanners :eraser]) ach)))))
 
+(deftest citation-needed
+  (testing "link"
+    (let [ach (commit-info :message "See for more detilas http://stackoverflow.com/questions/701166/can-you-provide-some-examples-of-why-it-is-hard-to-parse-xml-and-html-with-a-reg")]
+      (is ((get-in achievement/base [:commit-scanners :citation-needed]) ach))))
+  (testing "without"
+    (let [ach (commit-info :message "bla-bla-bla")]
+      (is (not ((get-in achievement/base [:commit-scanners :citation-needed]) ach))))))

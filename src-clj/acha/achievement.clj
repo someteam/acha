@@ -201,8 +201,10 @@
   (date-scanner :russia-day 6 12)
   (date-scanner :valentine 2 14)
 
+  (commit-scanner :citation-needed [{:keys [message]}]
+    (re-find #"(?i)(?:http(?:s)?:\/\/)?(?:www\.)?stackoverflow\.com" message))
+
   (subword-scanner :beggar #{"achievement" "achievements"})
-  (subword-scanner :citation-needed #{"stackoverflow"})
   (subword-scanner :fix #{"fix" "fixes" "fixed" "fixing"})
   (subword-scanner :forgot #{"forgot"})
   (subword-scanner :google #{"google"})
