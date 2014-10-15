@@ -64,6 +64,16 @@
       (commit-scanner sname [{:keys [changed-files]}]
         (scan-filenames rexps changed-files #{:add})))))
 
+(defn- check-changed-lines [f changed-files]
+  (some->> (for [{:keys [diff]} changed-files
+                 {:keys [added removed]} diff]
+             (when (and (not= 0 (count added))
+                        (= (count added) (count removed)))
+               (every? (fn [[[l1 _] [l2 _]]] (f l1 l2))
+                       (map vector added removed))))
+           not-empty
+           (every? identity)))
+
 (defscanners base
   (commit-scanner :bad-motherfucker [{:keys [message]}]
     (let [word-count (scan-word-count message swears/table)]
@@ -192,6 +202,30 @@
     (some #(and (= :add (:kind %))
                 (<= (* 2 1024 1024) (get-in % [:new-file :size] 0)))
           changed-files))
+
+  (commit-scanner :holy-war [{:keys [changed-files]}]
+    (let [war? (fn [^String line-a ^String line-b]
+                 (and ;; one line has tab another doesn't have tab
+                      (or (and (re-find #"\t(.*?)\S" line-a)
+                               (not (re-find #"\t(.*?)\S" line-b)))
+                          (and (re-find #"\t(.*?)\S" line-b)
+                               (not (re-find #"\t(.*?)\S" line-a))))
+                      ;; not whitespace characters are the same
+                      (= (clojure.string/replace line-a #"\s" "")
+                         (clojure.string/replace line-b #"\s" ""))
+                      ;; number of space characters is changed (not tab deletion)
+                      (not= (clojure.string/replace line-a #"[^ ]" "")
+                            (clojure.string/replace line-b #"[^ ]" ""))))]
+      (check-changed-lines war? changed-files)))
+
+  (commit-scanner :ocd [{:keys [changed-files]}]
+    (let [ocd? (fn [^String line-a ^String line-b]
+                 (and 
+                   ;; line-b is a part of line-a
+                   (.startsWith line-a line-b)
+                   ;; the rest part contains spaces
+                   (re-matches #"^[ \t]+$" (.substring line-a (.length line-b)))))]
+      (check-changed-lines #(ocd? %2 %1) changed-files)))
 
   (date-scanner :christmas 12 25)
   (date-scanner :halloween 10 31)

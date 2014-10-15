@@ -82,3 +82,22 @@
   (testing "without"
     (let [ach (commit-info :message "bla-bla-bla")]
       (is (not ((get-in achievement/base [:commit-scanners :citation-needed]) ach))))))
+
+(deftest holy-war
+  (testing "true case"
+    (let [ach (commit-info :changed-files
+                [{:kind :edit
+                  :diff [{:added [["  line a" 10]], :removed [["	line a" 15]]}]}])]
+      (is ((get-in achievement/base [:commit-scanners :holy-war]) ach))))
+  (testing "false case"
+    (let [ach (commit-info :changed-files
+                [{:kind :edit
+                  :diff [{:added [["  line a" 10]], :removed [["  line a 	" 15]]}]}])]
+      (is (not ((get-in achievement/base [:commit-scanners :holy-war]) ach))))))
+
+(deftest ocd
+  (let [ach (commit-info :changed-files
+              [{:kind :edit
+                :diff [{:added [["  line a" 10]], :removed [["  line a  " 15]]}]}])]
+    (is ((get-in achievement/base [:commit-scanners :ocd]) ach))))
+
