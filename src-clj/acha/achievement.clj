@@ -194,9 +194,7 @@
     (<= 100 (count changed-files)))
 
   (commit-scanner :emoji [{:keys [message]}]
-    (or (re-find #"[\ud83c\udc00-\ud83d\udeff\udbb9\udce5-\udbb9\udcee]" message)
-        (let [candidates (set (re-seq #"\:[\w0-9]+\:" message))]
-          (not-empty (set/intersection candidates emoji/all)))))
+    (emoji/contains-emoji? message))
 
   (commit-scanner :fat-ass [{:keys [changed-files]}]
     (some #(and (= :add (:kind %))

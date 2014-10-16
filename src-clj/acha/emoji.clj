@@ -1,6 +1,23 @@
 (ns acha.emoji)
 
-(def all #{
+(defn- codepoint-seq [s]
+  (mapv #(.codePointAt s %) (range (.codePointCount s 0 (count s)))))
+
+(defn- unicode-emoji? [cp]
+  (or
+    (<= 0x1f300 cp 0x1f5ff)  ;; Miscellaneous Symbols and Pictographs
+    (<= 0x1f600 cp 0x1f64f)  ;; Emoticons
+    (<= 0x1f680 cp 0x1f6ff)  ;; Transport and maps
+    (<= 0x2600  cp 0x26ff)   ;; Miscellaneous Symbols
+    (<= 0x2700  cp 0x2fbf))) ;; Dingbats
+          
+(declare codes)
+
+(defn contains-emoji? [s]
+  (or (some unicode-emoji? (codepoint-seq s))
+      (some codes (re-seq #"\:[\w0-9]+\:" s))))
+
+(def codes #{
   ":bowtie:"
   ":smile:"
   ":laughing:"
