@@ -41,6 +41,9 @@ a.logo:hover { background-position-y: 0; }
 a.logo > h2 { color: #7E5DA3; }
 .logo.a:hover > h2 { color: #489125; }
 
+.ribbon { position: absolute; right:0; top:0; width: 150px; height: 150px; background: url('i/ribbon@2x.png'); background-size: 300px 300px; background-position: -150px 0; }
+.ribbon:hover { background-position: 0 -150px; }
+
 .pane { float: left; width: 450px; margin: 20px 0 0 0; }
 
 .repo { font-size: 16px; line-height: 20px; margin: 0 0 12px 0; display: inline-block; border-bottom: 2px solid transparent; }
