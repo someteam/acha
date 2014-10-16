@@ -51,11 +51,11 @@
     (pos? (scan-word-count (:message commit-info) words))))
 
 (defn- scan-filenames [rexps changed-files kinds]
-  (let [new-paths (->> changed-files
-                    (filter #(kinds (:kind %)))
-                    (map (comp :path :new-file)))]
-    (some (fn [[p e]] (re-matches e p))
-          (for [p new-paths, e rexps] [p e]))))
+  (not-empty
+    (for [file (filter #(kinds (:kind %)) changed-files)
+          :let [path (get-in file [:new-file :path])]
+          :when (some #(re-matches % path) rexps)]
+      file)))
 
 (defn- language-scanner [scanners sname exts]
   (let [rexps (map #(re-pattern (str "(?i)(?:.+)\\." % "$")) exts)]
@@ -288,13 +288,22 @@
                    (filter #(scan-filenames (second %) changed-files #{:add :edit}))
                    count)]
       (when (<= 3 level)
-        {:level level}))))
+        {:level level})))
+
+  (commit-scanner :for-stallman [{:keys [changed-files]}]
+    (when-let [licenses (scan-filenames [#"(?i)^license(\.md)?$"] changed-files #{:add})]
+      (some identity
+        (for [{:keys [diff]} licenses
+              {:keys [added _]} diff
+              [line _] (take 10 added)] ; first 10 lines
+          (re-find #"(?i)\bgnu\b(.*?)\blicense\b" line)))))
+
+  (commit-scanner :hydra [{:keys [parents-count]}]
+    (<= 3 parents-count)))
 
   ;;  TODO
   ;;  commenter
-  ;;  holy-war
   ;;  deal-with-it
-  ;;  for-stallman
   ;;  blamer
   ;;  catchphrase
   ;;  anniversary
@@ -303,7 +312,6 @@
   ;;  loneliness
   ;;  necromancer
   ;;  collision
-  ;;  hydra
   ;;  peacemaker
   ;;  combo-breaker
   ;;  combo

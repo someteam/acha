@@ -19,13 +19,12 @@
   (try
 ;;     (logging/info "Analyzing" (:url repo-info) (.getName commit) (.. commit getAuthorIdent getWhen))
     (let [commit-info (git-parser/commit-info repo commit df reader)]
-      (when (not (:merge commit-info))
-        (->> (for [[code scanner] (:commit-scanners achievement/base)
-                   :let [report (scan-achievement scanner commit-info)]
-                   :when report]
-             [[(:email commit-info) code] (merge report
-                                                 (select-keys commit-info [:author :time :id]))])
-           (into {}))))
+      (->> (for [[code scanner] (:commit-scanners achievement/base)
+                 :let [report (scan-achievement scanner commit-info)]
+                 :when report]
+           [[(:email commit-info) code] (merge report
+                                               (select-keys commit-info [:author :time :id]))])
+         (into {})))
     (catch Exception e
       (logging/error e "Error occured during commit-info parsing" (.getName commit)))
     (finally

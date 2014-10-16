@@ -10,7 +10,7 @@
      :email "warhol@acha-acha.co",
      :timezone (TimeZone/getTimeZone "CST")
      :time #inst "2014-10-09T14:09:38.000-00:00"
-     :merge false,
+     :parents-count 1,
      :author "Andy Warhol",
      :id "28736ac09b8d82c9075e8b69b60590edfffba74b",
      :changed-files [],

@@ -183,8 +183,8 @@
             :timezone (.getTimeZone ident)
             :between-time (- (.getCommitTime rev-commit) (.getTime (.getWhen ident)))
             :message message
-            :changed-files (mapv #(parse-diff-entry % reader) diffs)
-            :merge (> (.getParentCount rev-commit) 1)})))
+            :parents-count (.getParentCount rev-commit)
+            :changed-files (mapv #(parse-diff-entry % reader) diffs)})))
 
 (defn- repo-info [url]
   (let [repo (load-repo url)
