@@ -307,7 +307,9 @@
   (s/html
     [:.ach_pane.pane
       [:h1 "Achievements"]
-      (map (fn [[achent aches]] (component achent aches)) aches)]))
+      (if (not-empty aches)
+        (map (fn [[achent aches]] (component achent aches)) aches)
+        [:.empty "No achievements yet. Try harder!"])]))
 
 (defn group-aches [aches]
   (->> aches

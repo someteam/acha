@@ -119,5 +119,7 @@ a.ach__text { text-decoration: none; border-bottom: 1px solid #eee; }
 .lach div { white-space: nowrap; overflow: hidden; }
 .lach__ach__links > a { line-height: 14px; }
 
+.empty { background: url(i/empty@4x.png); background-repeat: no-repeat; height: 100px; background-size: 38px; background-position: 0 0px; padding: 20px 0 0 40px; margin: -20px 0 0 -10px; }
+
 .progress { height: 3px; width: 900px; margin: 168px auto 0; background-color: #D0BAE3;  }
 .progress__bar { background-color: #7E5DA3; height: 3px; }
