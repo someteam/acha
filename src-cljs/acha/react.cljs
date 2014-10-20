@@ -40,3 +40,14 @@
 
 (defn recall [k]
   (get @(.-state *component*) k))
+
+(defn mount [render-fn mount-el]
+  (let [dirty? (atom false)]
+    (add-watch dirty? :render (fn [_ _ old-val new-val]
+      (when (and (= old-val false) (= new-val true))
+        (js/requestAnimationFrame
+          (fn []
+            (render (render-fn) mount-el)
+            (reset! dirty? false))))))
+    (fn []
+      (reset! dirty? true))))

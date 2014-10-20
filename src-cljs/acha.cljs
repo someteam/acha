@@ -6,8 +6,8 @@
     [goog.history.EventType :as EventType]
     [datascript :as d]
     [acha.util :as u]
+    [acha.websocket :as ws]
     [clojure.string :as str]
-    [cognitect.transit :as transit]
     [cljs.core.async :as async]
     [clojure.set])
   (:import
@@ -19,27 +19,20 @@
 
 (enable-console-print!)
 
-
 ;; DB
 
-(def conn (d/create-conn {
+(def ^:private schema {
   :ach/repo   {:db/valueType :db.type/ref}
   :ach/user   {:db/valueType :db.type/ref}
   :ach/achent {:db/valueType :db.type/ref}
-}))
+})
+
+(def conn (d/create-conn schema))
+
+(def delta-chan (async/chan 100))
 
 ;; Utils
 
-(defn read-transit [s]
-  (transit/read (transit/reader :json) s))
-
-(defn- ajax [url callback & [method]]
-  (.send goog.net.XhrIo url
-    (fn [reply]
-      (let [res (.getResponseText (.-target reply))
-            res (profile (str "read-transit " url " (" (count res) " bytes)") (read-transit res))]
-        (js/setTimeout #(callback res) 0)))
-    (or method "GET")))
 
 (defn user-link [user]
   (str "/user/" (:user/email user)))
@@ -47,23 +40,10 @@
 (defn repo-link [repo]
   (str "/repo/" (:repo/url repo)))
 
-(defn map-by [f xs]
-  (reduce (fn [acc x] (assoc acc (f x) x)) {} xs))
-
-(defn trimr [s suffix]
-  (let [pos (- (count s) (count suffix))]
-    (if (and (>= (count s) (count suffix))
-             (= (subs s pos) suffix))
-      (subs s 0 pos)
-      s)))
-
-(defn starts-with? [s prefix]
-  (= prefix (subs s 0 (count prefix))))
-
 (defn repo-name [url]
   (when url
     (if-let [[_ m] (re-matches #".*/([^/]+)/?" url)]
-      (trimr m ".git")
+      (u/trimr m ".git")
       url)))
 
 ;; Navigation
@@ -81,18 +61,35 @@
 
 ;; Rendering
 
-(r/defc header [index?]
+(def state (atom {:progress    0
+                  :first-load? true
+                  :path        ""}))
+
+(r/defc progress-bar []
   (s/html
-    [:.header
-      [:a {:href "https://github.com/someteam/acha"
-           :target "_blank"}
-        [:div.ribbon]]
-      (conj
-        (if index?
-          [:div.logo {:title "Acha-acha"}]
-          [:a.logo   {:title "Acha-acha"
-                      :href  "#" }])
-        [:h2 "Enterprise Git Achievement solution" [:br] "Web scale. In the cloud"])]))
+    (let [p (:progress @state)]
+      (if (neg? p)
+        [:.progress.progress__offline]
+        [:.progress
+          [:.progress__bar
+           {:style {:width (* p 900)}}]]))))
+
+(r/defc header [index?]
+  (if (:first-load? @state)
+    (s/html
+      [:.header (progress-bar)])
+    (s/html
+      [:.header
+        [:a {:href "https://github.com/someteam/acha"
+             :target "_blank"}
+          [:div.ribbon]]
+        (conj
+          (if index?
+            [:div.logo {:title "Acha-acha"}]
+            [:a.logo   {:title "Acha-acha"
+                        :href  "#" }])
+          [:h2 "Enterprise Git Achievement solution" [:br] "Web scale. In the cloud"])
+        (progress-bar)])))
 
 (r/defc footer []
   (s/html
@@ -143,7 +140,7 @@
             :let [url (str/trim url)]
             :when (not (str/blank? url))]
       (println "Adding" url)
-      (ajax (str "/api/add-repo/?url=" (js/encodeURIComponent url)) (fn [data]) "POST"))
+      (u/ajax (str "/api/add-repo/?url=" (js/encodeURIComponent url)) (fn [data]) "POST"))
     (set! (.-value el) "")
     (.focus el)))
 
@@ -153,8 +150,17 @@
 (def ^:private repo-commit-prefix
   (memoize (fn [url]
     (condp re-matches url
-      #"([^@:]+)@([^@:]+):(.+)" :>> (fn [[_ user domain path]] (str "http://" domain "/" (-> path (trimr ".git") (trimr "/")) "/commit/"))
-      #"(?i)(https?://.+)"      :>> (fn [[_ path]] (-> path (trimr ".git") (trimr "/") (str "/commit/")))
+      #"([^@:]+)@([^@:]+):(.+)" :>> (fn [[_ user domain path]]
+                                      (str "http://" domain "/"
+                                           (-> path
+                                             (u/trimr ".git")
+                                             (u/trimr "/"))
+                                           "/commit/"))
+      #"(?i)(https?://.+)"      :>> (fn [[_ path]]
+                                      (-> path
+                                          (u/trimr ".git")
+                                          (u/trimr "/")
+                                          (str "/commit/")))
       nil))))
 
 (defn- sha1-url [url sha1]
@@ -350,78 +356,67 @@
         (user-profile user aches)])))
 
 (r/defc application [db]
-  (let [path   (u/q1 '[:find ?p :where [0 :path ?p]] db)
+  (let [path   (:path @state)
         index? (str/blank? path)]
     (s/html
       [:.window
         (header index?)
-        (cond
-          index? (index-page db)
-          (starts-with? path "/user/") (user-page db (subs path (count "/user/")))
-          (starts-with? path "/repo/") (repo-page db (subs path (count "/repo/"))))
-        (footer)])))
-
-
-;; Progress bar
-
-(r/defc progress-bar [progress]
-  (s/html
-    [:.progress
-      [:.progress__bar {:style {:width (* progress 900)}}]]))
-
-(defn render-progress [x]
-  (r/render (progress-bar x) (.-body js/document)))
-
-;; Rendering
-
-(def render-db (atom nil))
-
-(defn request-render [db]
-  (reset! render-db db))
-
-(defn render []
-  (when-let [db @render-db]
-    (r/render (application db) (.-body js/document))
-    (reset! render-db nil)))
-
-(add-watch render-db :render (fn [_ _ old-val new-val]
-  (when (and (nil? old-val) new-val)
-    (js/requestAnimationFrame render))))
+        (when-not (:first-load? @state)
+          (list
+            (cond
+              index? (index-page db)
+              (u/starts-with? path "/user/") (user-page db (subs path (count "/user/")))
+              (u/starts-with? path "/repo/") (repo-page db (subs path (count "/repo/"))))
+            (footer)))])))
 
 ;; Start
 
 (defn ^:export start []
-  (render-progress 0.1)
+
+  (let [request-render (r/mount #(application @conn) (.-body js/document))]
+    (add-watch state :rerender (fn [_ _ _ _] (request-render)))
+    (add-watch conn  :rerender (fn [_ _ _ _] (request-render))))
+  
   (doto history
-    (events/listen EventType/NAVIGATE (fn [e] (d/transact! conn [[:db/add 0 :path (.-token e)]])))
+    (events/listen EventType/NAVIGATE (fn [e] (swap! state assoc :path (.-token e))))
     (.setUseFragment true)
     (.setPathPrefix "#")
     (.setEnabled true))
-  
-  (let [socket (js/WebSocket. (str "ws://" (.. js/window -location -host) "/events"))]
-    (set! (.-onmessage socket) (fn [event]
-      (let [tx-data (read-transit (.-data event))]
-        (profile (str "Pushed " (count tx-data) " entities")
-          (d/transact! conn tx-data)))))
-    (set! (.-onclose socket) (fn [event]
-      (js/console.log event)))
-    (set! (.-onerror socket) (fn [event]
-      (js/console.log event))))
-  
-  (ajax "/api/db/"
-    (fn [entities]
-      (render-progress 0.2)
-      (js/console.time "transact db")
-      (let [progress (u/transact-async! conn entities
-                       (fn []
-                         (js/console.timeEnd "transact db")
-                           (d/listen! conn
-                             (fn [tx-report]
-                               (request-render (:db-after tx-report))))
-                           (println "Loaded db," (count (:eavt @conn)) "datoms")
-                           (request-render @conn)))]
-        (add-watch progress :progress (fn [_ _ _ new-val]
-          (render-progress (/ (+ 0.3 new-val) 1.3))))))))
 
+  (ws/connect "/events"
+    :on-open
+      (fn []
+        (async/put! delta-chan :connected))
+    :on-close
+      (fn []
+        (async/put! delta-chan :disconnected))
+    :on-message
+      (fn [tx-data]
+        (async/put! delta-chan tx-data))))
 
-
+(go-loop []
+  (let [msg (async/<! delta-chan)]
+    (cond
+      (= msg :connected)
+        (do
+          (swap! state assoc :progress 0.1)
+          (let [payload (async/<! delta-chan)]
+            (if (= payload :disconnected)
+              (swap! state assoc :progress -1)
+              (let [parts    (partition-all 100 payload)
+                    percent  (/ 0.89 (count parts))
+                    new-conn (d/create-conn schema)]
+                (profile (str "Pushed " (count payload) " entities")
+                  (doseq [entities parts]
+                    (d/transact! new-conn entities)
+                    (swap! state update-in [:progress] + percent)
+                    (async/<! (async/timeout 1))))
+                (reset! conn @new-conn)
+                (swap! state assoc
+                       :first-load? false
+                       :progress 1)))))
+      (= msg :disconnected)
+        (swap! state assoc :progress -1)
+      :else
+        (d/transact! conn msg))
+    (recur)))

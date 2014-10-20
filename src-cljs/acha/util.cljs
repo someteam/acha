@@ -1,9 +1,33 @@
 (ns acha.util
   (:require
-    [datascript :as d])
+    [datascript :as d]
+    [cognitect.transit :as transit])
   (:require-macros
     [acha :refer [profile]]))
 
+(defn read-transit [s]
+  (transit/read (transit/reader :json) s))
+
+(defn- ajax [url callback & [method]]
+  (.send goog.net.XhrIo url
+    (fn [reply]
+      (let [res (.getResponseText (.-target reply))
+            res (profile (str "read-transit " url " (" (count res) " bytes)") (read-transit res))]
+        (js/setTimeout #(callback res) 0)))
+    (or method "GET")))
+
+(defn map-by [f xs]
+  (reduce (fn [acc x] (assoc acc (f x) x)) {} xs))
+
+(defn trimr [s suffix]
+  (let [pos (- (count s) (count suffix))]
+    (if (and (>= (count s) (count suffix))
+             (= (subs s pos) suffix))
+      (subs s 0 pos)
+      s)))
+
+(defn starts-with? [s prefix]
+  (= prefix (subs s 0 (count prefix))))
 
 ;; DATASCRIPT
 
@@ -70,18 +94,3 @@
   "Convert returned 2-tuples to a map"
   [q & sources]
   (into {} (apply -q q sources)))
-
-(defn- -transact-async! [conn entities callback progress step]
-  (if (empty? entities)
-    (callback)
-    (let [[h t] (split-at 100 entities)]
-      (d/transact! conn h)
-      (swap! progress + (* step (count h)))
-      (js/setTimeout #(-transact-async! conn t callback progress step) 0))))
-
-(defn transact-async! [conn entities callback]
-  (let [progress (atom 0)
-        total    (count entities)]
-    (-transact-async! conn entities callback progress (/ 1 total))
-    progress))
-

@@ -127,7 +127,7 @@
                                   ])))
 
 (defn get-next-repo []
-  (first (query (db-conn) ["select * from repo where (timestamp < ?)
+  (first (query (db-conn) ["select * from repo where (timestamp < ?) and state in ('idle', 'waiting', 'error')
       order by timestamp asc limit 1" (- (quot (System/currentTimeMillis) 1000) (* 15 60))])))
 
 (defn try-to-update [repo]

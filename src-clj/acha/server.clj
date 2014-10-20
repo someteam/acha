@@ -59,22 +59,24 @@
 (def api-handler
   (->
     (compojure.core/routes
-      (compojure.core/GET "/db/" []
-        (concat
-          [[:db/add 0 :meta/app-version acha.core/version]
-           [:db/add 0 :meta/db-version  (:version (db/db-meta))]]
-          (map db/achent->entity acha.achievement-static/table)
-          (map db/repo->entity   (db/get-repo-list))
-          (map db/user->entity   (db/get-user-list))
-          (map db/ach->entity    (db/get-ach-list))))
       (compojure.core/POST "/add-repo/" [:as req]
         {:body (add-repo (get-in req [:params "url"]))}))
    wrap-transit-response
    params/wrap-params))
 
+(defn full-dump []
+  (concat
+    [[:db/add 0 :meta/app-version acha.core/version]
+     [:db/add 0 :meta/db-version  (:version (db/db-meta))]]
+    (map db/achent->entity acha.achievement-static/table)
+    (map db/repo->entity   (db/get-repo-list))
+    (map db/user->entity   (db/get-user-list))
+    (map db/ach->entity    (db/get-ach-list))))
+  
 (defn events-handler [req]
   (server/with-channel req socket
     (let [ch (async/chan)]
+      (server/send! socket (write-transit-str (full-dump)))
       (async/tap acha.core/events-mult ch)
       (async/go-loop []
         (when-let [data (async/<! ch)]
