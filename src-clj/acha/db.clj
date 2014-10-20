@@ -85,15 +85,15 @@
       (insert! (db-conn) :sqlite_sequence {:seq 3000000 :name "achievement"})
       (insert! (db-conn) :meta {:version db-version})
       (catch Exception e
-        (logging/error e "Failed to initialize DB"))))
-  (update! (db-conn) :repo {:state "idle"} []))
+        (logging/error e "Failed to initialize DB")))))
 
 ;; REPOS
 
 (defn repo->entity [repo]
   { :db/id       (:id repo)
     :repo/url    (:url repo)
-    :repo/status (keyword (:state repo)) })
+    :repo/status (keyword (:state repo))
+    :repo/reason (:reason repo) })
 
 (defn get-repo-list []
   (query (db-conn) "SELECT r.* FROM repo r"))
@@ -110,9 +110,21 @@
         (async/put! acha.core/events [(repo->entity repo)])
         repo))))
 
-(defn update-repo-state [id state]
-  (update! (db-conn) :repo {:state (name state)} ["id = ?" id])
-  (async/put! acha.core/events [[:db/add id :repo/status state]]))
+(defn update-repo-state
+  ([id state]
+    (update! (db-conn) :repo {:state (name state)
+                              :reason nil}
+             ["id = ?" id])
+    (async/put! acha.core/events [[:db/add id :repo/status state]
+                                  [:db.fn/retractAttribute id :repo/reason]]))
+  ([id state reason]
+    (update! (db-conn) :repo {:state (name state)
+                              :reason reason}
+             ["id = ?" id])
+    (async/put! acha.core/events [{:db/id id
+                                   :repo/status state
+                                   :repo/reason reason}
+                                  ])))
 
 (defn get-next-repo []
   (first (query (db-conn) ["select * from repo where (timestamp < ?)
@@ -215,7 +227,9 @@
         (logging/info "Add repos" repos)
         (doseq [{url :url} repos] (get-or-insert-repo url))))
     (create-db))
-  (-> (db-conn) :datasource .hardReset))
+  (-> (db-conn) :datasource .hardReset)
+  (update! (db-conn) :repo {:timestamp 0} ["state <> ?" "idle"])
+  (update! (db-conn) :repo {:state "idle" :reason nil} ["state <> ?" "error"]))
 
 
 ;; CLEANUP

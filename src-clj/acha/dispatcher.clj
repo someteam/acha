@@ -94,9 +94,15 @@
   (loop []
     (try
       (when-let [repo (not-empty (db/get-next-repo-to-process))]
-        (logging/info "Worker #" worker-id "has started processing" repo)
-        (analyze repo)
-        (logging/info "Worker #" worker-id "has finished processing" repo))
+        (try
+          (logging/info "Worker #" worker-id "has started processing" repo)
+          (analyze repo)
+          (logging/info "Worker #" worker-id "has finished processing" repo)
+          (catch Exception e
+            (let [cause (clojure.stacktrace/root-cause e)
+                  msg   (str (.getName (type cause)) ": " (.getMessage cause))]
+              (db/update-repo-state (:id repo) :error msg))
+            (logging/error e "Catch exception during repo analysing"))))
       (Thread/sleep (rand-int 2000))
       (catch InterruptedException e (throw e))
       (catch Exception e

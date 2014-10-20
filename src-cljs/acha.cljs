@@ -62,8 +62,9 @@
 
 (defn repo-name [url]
   (when url
-    (let [[_ m] (re-matches #".*/([^/]+)/?" url)]
-      (trimr m ".git"))))
+    (if-let [[_ m] (re-matches #".*/([^/]+)/?" url)]
+      (trimr m ".git")
+      url)))
 
 ;; Navigation
 
@@ -118,16 +119,16 @@
 
 (r/defc repo [repo]
   (s/html
-    [:a.repo {:key (:db/id repo)
-              :href (str "#" (repo-link repo))}
+    [(if (= (:repo/status repo) :error) :.repo :a.repo)
+       { :key (:db/id repo)
+         :href (str "#" (repo-link repo)) }
       [:.repo__name
         (repo-name (:repo/url repo))
         [:.id (:db/id repo)]
         (let [status (:repo/status repo)
               class  (str "tag repo__status repo__status_" (name status))]
           [:span {:class class
-                  :title (:repo/reason repo (name status))} (name status)])
-       ]
+                  :title (:repo/reason repo (name status))} (name status)])]
       [:.repo__url (:repo/url repo)]     
       ]))
 
