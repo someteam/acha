@@ -121,8 +121,8 @@
         class  (str "tag repo__status repo__status_" (name status))
         text   (str/capitalize (name status))]
     (s/html
-      [:span {:class class
-              :title (:repo/reason repo text)}
+      [:span (cond-> {:class class}
+               (:repo/reason repo) (assoc :title (:repo/reason repo)))
         text])))
 
 (r/defc repo [repo]
@@ -211,10 +211,12 @@
         [:form.add_repo {:on-submit (fn [e] (add-repo) (.preventDefault e))}
           [:input {:id "add_repo__input" :type :text :placeholder "Clone URL"}]
          ]
-        [:h1 {:style {:margin-top 100 :margin-bottom 40}} "Last 10 achievements"]
-        [:.laches
-          (for [ach last-aches]
-            (last-ach (d/entity db (.-e ach))))]
+        (when (not-empty last-aches)
+          (list
+            [:h1 {:style {:margin-top 100 :margin-bottom 40}} "Last 10 achievements"]
+            [:.laches
+              (for [ach last-aches]
+                (last-ach (d/entity db (.-e ach))))]))
     ])))
 
 (r/defc repo-profile [repo aches]
@@ -267,8 +269,11 @@
     (s/html
       [:.users_pane.pane
         [:h1 "Users"]
-        [:ul
-          (map (fn [u] [:li {:key (:db/id u)} (user u (ach-cnt (:db/id u)))]) users)]])))
+        (if (not-empty users)
+          [:ul
+            (map (fn [u] [:li {:key (:db/id u)} (user u (ach-cnt (:db/id u)))]) users)]
+          [:.empty "Nobody achieved anything yet"]
+          )])))
 
 
 (r/defc user-achent [achent aches]
