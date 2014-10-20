@@ -13,7 +13,7 @@
   (try
     (scanner commit-info)
     (catch Exception e
-      (logging/error e "Error occured during achievement scan commit"))))
+      (logging/error e "Failed commit achievement scan"))))
 
 (defn- analyze-commit [repo-info repo commit df reader]
   (try
@@ -26,7 +26,7 @@
                                                (select-keys commit-info [:author :time :id]))])
          (into {})))
     (catch Exception e
-      (logging/error e "Error occured during commit-info parsing" (.getName commit)))
+      (logging/error e "Failed commit-info parsing" (.getName commit)))
     (finally
       (db/insert-repo-seen-commit (:id repo-info) (.getName commit)))))
 
@@ -102,11 +102,11 @@
             (let [cause (clojure.stacktrace/root-cause e)
                   msg   (str (.getName (type cause)) ": " (.getMessage cause))]
               (db/update-repo-state (:id repo) :error msg))
-            (logging/error e "Catch exception during repo analysing"))))
+            (logging/error e "Repo analysis failed"))))
       (Thread/sleep (rand-int 2000))
       (catch InterruptedException e (throw e))
       (catch Exception e
-        (logging/error e "Catch exception during repo analysing")))
+        (logging/error e "Repo selection failed")))
     (recur)))
 
 (defn run-workers []
