@@ -85,7 +85,8 @@ a.logo > h2 { color: #7E5DA3; }
 .up__achs { position: absolute; top: 150px; left: 0; width: 450px; line-height: 0px; margin: 0 -3px; }
 
 .rp { padding-left: 0; }
-.rp__email { font-size: 12px; }
+.rp__url { font-size: 12px; }
+.rp__reason { font-size: 12px; line-height:16px; color: #D56714; }
 .rp__achs  { margin-top: 20px; line-height: 0; width: 450px; margin: 0 -3px; }
 
 .ach { position: relative; width: 400px; min-height: 60px; padding: 0 0 0 72px; margin: 32px 0; line-height: 18px; overflow: hidden; }

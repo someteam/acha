@@ -116,19 +116,24 @@
   (when achent
     (str "aches/" (name (:achent/key achent)) "@6x.png")))
 
+(r/defc repo-status [repo]
+  (let [status (:repo/status repo)
+        class  (str "tag repo__status repo__status_" (name status))
+        text   (str/capitalize (name status))]
+    (s/html
+      [:span {:class class
+              :title (:repo/reason repo text)}
+        text])))
 
 (r/defc repo [repo]
   (s/html
-    [(if (= (:repo/status repo) :error) :.repo :a.repo)
+    [:a.repo
        { :key (:db/id repo)
          :href (str "#" (repo-link repo)) }
       [:.repo__name
         (repo-name (:repo/url repo))
         [:.id (:db/id repo)]
-        (let [status (:repo/status repo)
-              class  (str "tag repo__status repo__status_" (name status))]
-          [:span {:class class
-                  :title (:repo/reason repo (name status))} (name status)])]
+        (repo-status repo)]
       [:.repo__url (:repo/url repo)]     
       ]))
 
@@ -215,8 +220,12 @@
 (r/defc repo-profile [repo aches]
   (s/html
     [:.rp.pane
-      [:.rp__name  (repo-name (:repo/url repo)) [:.id (:db/id repo)]]
-      [:.rp__email (:repo/url repo)]
+      [:.rp__name (repo-name (:repo/url repo))
+        [:.id (:db/id repo)]
+        (repo-status repo)]
+      [:.rp__url  (:repo/url repo)]
+      (when-let [reason (:repo/reason repo)]
+        [:.rp__reason reason])
       [:.rp__hr]
       [:.rp__achs
         (for [[achent _] aches]
