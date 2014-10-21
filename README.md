@@ -4,17 +4,18 @@
 
 ## Usage
 
-Grab a jar [from latest release](https://github.com/someteam/acha/releases/latest).
+Grab a jar [from latest release](https://github.com/someteam/acha/releases/latest):
+
+    curl -L -o acha-uber.jar https://github.com/someteam/acha/releases/download/0.2.2/acha-uber-0.2.2.jar
 
 Run it as:
 
-    curl -L -o acha-uber.jar https://github.com/someteam/acha/releases/download/0.2.1/acha-uber-0.2.1.jar
-    java -jar acha-uber.jar
+    java -jar acha-uber-0.2.2.jar
     open http://localhost:8080/
 
 Following configuration options are supported:
 
-    java -jar acha-uber.jar --ip 0.0.0.0 --port 8080 --dir .acha
+    java -jar acha-uber-0.2.2.jar --ip 0.0.0.0 --port 8080 --dir .acha
 
 ## Building from source
 
