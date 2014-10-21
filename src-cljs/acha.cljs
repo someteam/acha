@@ -290,7 +290,7 @@
       [:.ach__name (:achent/name achent)
         (let [max-lvl (reduce max 0 (map #(:ach/level % 0) aches))]
           (when (pos? max-lvl)
-            [:.ach__level {:title (:achent/level-desc achent)} max-lvl]))
+            [:.ach__level {:title (:achent/level-desc achent)} (str "lvl " max-lvl)]))
         ]
       [:.ach__desc (:achent/desc achent)]
       [:div.ach__links
@@ -371,8 +371,42 @@
 
 ;; Start
 
-(defn ^:export start []
+(defn- listen-loop []
+  (let [socket-ch (async/chan 1)
+        data-ch   (async/chan 10)
+        ajax-ch   (async/chan 1)
+        socket (ws/connect "/events"
+                 :on-open    #(async/put! socket-ch :open)
+                 :on-close   #(doseq [ch [socket-ch ajax-ch data-ch]]
+                                (async/close! ch))
+                 :on-message #(async/put! data-ch %))]
+    (go
+      (when (async/<! socket-ch) ;; open socket
+        (swap! state assoc :progress 0.1)
+        (u/ajax "/api/db/" (fn [tx-data] (async/put! ajax-ch tx-data)))
+        (let [[dump _] (async/alts! [ajax-ch (async/timeout 30000)])]
+          (when dump  ;; wait ajax
+            (let [new-conn (d/create-conn schema)
+                  parts    (partition-all 100 dump)
+                  percent  (/ 0.89 (count parts))]
+              (profile (str "Pushed " (count dump) " entities")
+                (doseq [ents parts]
+                  (d/transact! new-conn ents)
+                  (swap! state update-in [:progress] + percent)
+                  (async/<! (async/timeout 1)))) ;; temporary free js thread here
+              (reset! conn @new-conn)
+              (swap! state assoc
+                :first-load? false
+                :progress 1))
+            (loop []
+              (when-let [tx-data (async/<! data-ch)]  ;; listen for socket
+                (d/transact! conn tx-data)
+                (recur))))
+          (.close socket)))
+     (swap! state assoc :progress -1)
+     (js/setTimeout listen-loop 1000))))
 
+(defn ^:export start []
   (let [request-render (r/mount #(application @conn) (.-body js/document))]
     (add-watch state :rerender (fn [_ _ _ _] (request-render)))
     (add-watch conn  :rerender (fn [_ _ _ _] (request-render))))
@@ -382,41 +416,5 @@
     (.setUseFragment true)
     (.setPathPrefix "#")
     (.setEnabled true))
-
-  (ws/connect "/events"
-    :on-open
-      (fn []
-        (async/put! delta-chan :connected))
-    :on-close
-      (fn []
-        (async/put! delta-chan :disconnected))
-    :on-message
-      (fn [tx-data]
-        (async/put! delta-chan tx-data))))
-
-(go-loop []
-  (let [msg (async/<! delta-chan)]
-    (cond
-      (= msg :connected)
-        (do
-          (swap! state assoc :progress 0.1)
-          (let [payload (async/<! delta-chan)]
-            (if (= payload :disconnected)
-              (swap! state assoc :progress -1)
-              (let [parts    (partition-all 100 payload)
-                    percent  (/ 0.89 (count parts))
-                    new-conn (d/create-conn schema)]
-                (profile (str "Pushed " (count payload) " entities")
-                  (doseq [entities parts]
-                    (d/transact! new-conn entities)
-                    (swap! state update-in [:progress] + percent)
-                    (async/<! (async/timeout 1))))
-                (reset! conn @new-conn)
-                (swap! state assoc
-                       :first-load? false
-                       :progress 1)))))
-      (= msg :disconnected)
-        (swap! state assoc :progress -1)
-      :else
-        (d/transact! conn msg))
-    (recur)))
+  
+  (listen-loop))

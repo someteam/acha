@@ -96,8 +96,7 @@ a.logo > h2 { color: #7E5DA3; }
 
 .ach__name { font-weight: bold; }
 .ach__desc { color: #999; }
-.ach__level:before { content: " lvl "; }
-.ach__level { display: inline; position: relative; top: -5px; font-size: 10px; }
+.ach__level { display: inline; position: relative; top: -5px; left: 3px; font-size: 10px; }
 .ach__text { color: #999;  }
 a.ach__text { text-decoration: none; border-bottom: 1px solid #eee; }
 .ach__links { margin-top: 5px; }
