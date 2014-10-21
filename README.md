@@ -6,7 +6,7 @@
 
 Grab a jar [from latest release](https://github.com/someteam/acha/releases/latest):
 
-    curl -L -o acha-uber.jar https://github.com/someteam/acha/releases/download/0.2.2/acha-uber-0.2.2.jar
+    curl -L -o acha-uber-0.2.2.jar https://github.com/someteam/acha/releases/download/0.2.2/acha-uber-0.2.2.jar
 
 Run it as:
 
