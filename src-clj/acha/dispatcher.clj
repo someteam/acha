@@ -17,7 +17,6 @@
 
 (defn- analyze-commit [repo-info repo commit df reader]
   (try
-;;     (logging/info "Analyzing" (:url repo-info) (.getName commit) (.. commit getAuthorIdent getWhen))
     (let [commit-info (git-parser/commit-info repo commit df reader)]
       (->> (for [[code scanner] (:commit-scanners achievement/base)
                  :let [report (scan-achievement scanner commit-info)]
