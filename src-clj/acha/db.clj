@@ -1,5 +1,6 @@
 (ns acha.db
   (:require
+    [clojure.string :as string]
     [clojure.java.io :as io]
     [clojure.java.jdbc :refer :all]
     [clojure.tools.logging :as logging]
@@ -102,7 +103,7 @@
   (first (query (db-conn) ["select * from repo where url = ?" url])))
 
 (defn get-or-insert-repo [url]
-  (let [url (util/normalize-str url)]
+  (let [url (util/canonical-repo-url url)]
     (if-let [repo (get-repo-by-url url)]
       :exists
       (let [_    (insert! (db-conn) :repo {:url url :state "waiting"})

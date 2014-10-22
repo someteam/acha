@@ -36,25 +36,34 @@
 
 (defn add-repo [url]
   (if (< 4 (db/count-new-repos))
-      (do
+    (do
+      (async/put! acha.core/events
+        [{:db/id       2999999
+          :repo/status :error
+          :repo/reason "Too many unprocessed repos in queue"
+          :repo/url    url}])
+      {:result :error, :url url, :message "Too many unprocessed repos in queue"})
+    (try
+      (let [repo (db/get-or-insert-repo url)]
+        (if (= repo :exists)
+          (do
+            (async/put! acha.core/events
+              [{:db/id       2999999
+                :repo/status :error
+                :repo/reason "Repository already added"
+                :repo/url    (:url repo)}])
+          {:result :exists, :url url})
+          (do
+            (logging/info "Added repo:" repo)
+            {:result :added, :url (:url repo)})))
+      (catch Exception e
         (async/put! acha.core/events
           [{:db/id       2999999
             :repo/status :error
-            :repo/reason "Too many unprocessed repos in queue"
+            :repo/reason (str "Something went wrong: " (util/reason e))
             :repo/url    url}])
-        {:result :error, :url url, :message "Too many unprocessed repos in queue"})
-    (let [repo (db/get-or-insert-repo url)]
-      (if (= repo :exists)
-        (do
-          (async/put! acha.core/events
-            [{:db/id       2999999
-              :repo/status :error
-              :repo/reason "Repository already added"
-              :repo/url    url}])
-        {:result :exists, :url url})
-        (do
-          (logging/info "Added repo:" repo)
-          {:result :added, :url url})))))
+          {:result :error, :url url})
+        )))
 
 (defn- full-dump []
   (concat

@@ -99,9 +99,7 @@
           (analyze repo)
           (logging/info "Worker #" worker-id "has finished processing" repo)
           (catch Exception e
-            (let [cause (clojure.stacktrace/root-cause e)
-                  msg   (str (.getName (type cause)) ": " (.getMessage cause))]
-              (db/update-repo-state (:id repo) :error msg))
+            (db/update-repo-state (:id repo) :error (util/reason e))
             (logging/error e "Repo analysis failed"))))
       (Thread/sleep (rand-int 2000))
       (catch InterruptedException e (throw e))
