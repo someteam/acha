@@ -23,8 +23,8 @@
 
 (deftest language-scanner
   (is ((get-in achievement/base [:commit-scanners :clojure])
-       {:changed-files [{:kind :add
-                         :new-file {:path "project.clj"}}]})))
+         (commit-info 
+           :changed-files [{:kind :add, :new-file {:path "project.clj"}}]))))
 
 (deftest easy-fix
   (testing "nonadjacent lines"
@@ -100,4 +100,20 @@
               [{:kind :edit
                 :diff [{:added [["  line a" 10]], :removed [["  line a  " 15]]}]}])]
     (is ((get-in achievement/base [:commit-scanners :ocd]) ach))))
+
+(deftest multi-lingua
+  (testing "3 main languages"
+    (is (= ((get-in achievement/base [:commit-scanners :multilingual])
+              (commit-info
+                :changed-files [{:kind :add, :new-file {:path "project.clj"}}
+                                {:kind :edit, :new-file {:path "project.java"}}
+                                {:kind :edit, :new-file {:path "react.js"}}]))
+           {:level 1})))
+  (testing "2 main languages and xml"
+    (is (nil? ((get-in achievement/base [:commit-scanners :multilingual])
+                 (commit-info
+                   :changed-files [{:kind :add, :new-file {:path "project.clj"}}
+                                   {:kind :edit, :new-file {:path "project.java"}}
+                                   {:kind :edit, :new-file {:path "old.xml"}}]))))))
+
 

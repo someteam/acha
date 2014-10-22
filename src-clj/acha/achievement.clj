@@ -60,13 +60,14 @@
           :when (some #(re-matches % path) rexps)]
       file)))
 
-(defn- language-scanner [scanners sname exts]
+(defn- language-scanner [scanners sname exts & {:keys [multi-listed?]
+                                                :or {multi-listed? true}}]
   (let [rexps (map #(re-pattern (str "(?i)(?:.+)\\." % "$")) exts)]
-    (-> scanners
-      (update-in [:languages] assoc sname rexps)
-      (commit-scanner sname
-        (fn [{:keys [changed-files]}]
-          (scan-filenames rexps changed-files #{:add}))))))
+    (cond-> scanners
+      multi-listed? (update-in [:languages] assoc sname rexps)
+      true (commit-scanner sname
+             (fn [{:keys [changed-files]}]
+               (scan-filenames rexps changed-files #{:add}))))))
 
 (defn- check-changed-lines [f changed-files]
   (some->> (for [{:keys [diff]} changed-files
@@ -274,12 +275,12 @@
   (subword-scanner :secure #{"secure"})
   (subword-scanner :wow #{"wow"})
 
-  (language-scanner :basic ["bas" "vb" "vbs" "vba"])
-  (language-scanner :c-sharp ["cs"])
+  (language-scanner :basic ["bas" "vb" "vbs" "vba" "vbproj"])
+  (language-scanner :c-sharp ["cs" "csproj"])
   (language-scanner :clojure ["clj" "cljx"])
   (language-scanner :clojurescript ["cljs"])
-  (language-scanner :css ["css" "sass" "scss" "less" "haml"])
-  (language-scanner :cxx ["c++" "cc" "cpp" "cxx" "pcc" "hh" "hpp" "hxx"])
+  (language-scanner :css ["css" "sass" "scss" "less" "haml"] :multi-listed? false)
+  (language-scanner :cxx ["c++" "cc" "cpp" "cxx" "pcc" "hh" "hpp" "hxx" "vcproj"])
   (language-scanner :dart ["dart"])
   (language-scanner :erlang ["erl" "hrl"])
   (language-scanner :go ["go"])
@@ -294,10 +295,10 @@
   (language-scanner :ruby ["rake" "rb"])
   (language-scanner :scala ["scala"])
   (language-scanner :shell ["bash" "sh" "awk" "sed"])
-  (language-scanner :sql ["sql"])
+  (language-scanner :sql ["sql"] :multi-listed? false)
   (language-scanner :swift ["swift"])
   (language-scanner :windows-language ["bat" "btm" "cmd" "ps1" "xaml"])
-  (language-scanner :xml ["xml" "xsl" "xslt" "xsd" "dtd"])
+  (language-scanner :xml ["xml" "xsl" "xslt" "xsd" "dtd"] :multi-listed? false)
 
   (commit-scanner :nothing-to-hide
     (fn [{:keys [changed-files]}]
@@ -313,13 +314,13 @@
 
   (commit-scanner :multilingual
     (fn [{:keys [changed-files]}]
-      (let [level (->>
+      (let [threshold 3
+            level (->>
                      (get-in base [:languages])
                      (filter #(scan-filenames (second %) changed-files #{:add :edit}))
-                     count)
-            level-threshold 3]
-        (when (<= level-threshold level)
-          {:level (inc (- level level-threshold))}))))
+                     count)]
+        (when (<= threshold level)
+          {:level (inc (- level threshold))}))))
 
   (commit-scanner :for-stallman
     (fn [{:keys [changed-files]}]
