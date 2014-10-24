@@ -1,9 +1,27 @@
 (ns acha.util
   (:require
      clojure.stacktrace
+    [cognitect.transit :as transit]
     [clojure.string :as string])
   (:import
+    [java.io ByteArrayOutputStream ByteArrayInputStream]
     [java.security MessageDigest]))
+
+
+(defn write-transit-bytes [x]
+  (let [baos (ByteArrayOutputStream.)
+        w    (transit/writer baos :json {})]
+    (transit/write w x)
+    (.toByteArray baos)))
+
+(defn write-transit-str [x]
+  (String. ^bytes (write-transit-bytes x) "UTF-8"))
+
+(defn read-transit-str
+  "Reads a value from a decoded string"
+  [^String s]
+    (let [in (ByteArrayInputStream. (.getBytes s "UTF-8"))]
+      (transit/read (transit/reader in :json))))
 
 (defn md5
   "Compute the hex MD5"

@@ -15,24 +15,14 @@
     [cognitect.transit :as transit]
     [ring.util.response :as response]
     [compojure core route])
-  (:import
-    [java.io ByteArrayOutputStream ByteArrayInputStream])
   (:gen-class))
 
-(defn write-transit-bytes [x]
-  (let [baos (ByteArrayOutputStream.)
-        w    (transit/writer baos :json {})]
-    (transit/write w x)
-    (.toByteArray baos)))
-
-(defn write-transit-str [x]
-  (String. ^bytes (write-transit-bytes x) "utf-8"))
 
 (defn wrap-transit-response [handler]
   (fn [request]
     (-> (handler request)
        (update-in [:headers] assoc "Content-Type" "application/transit+json; charset=utf-8")
-       (update-in [:body] #(ByteArrayInputStream. (write-transit-bytes %))))))
+       (update-in [:body] #(io/input-stream (util/write-transit-bytes %))))))
 
 (defn add-repo [url]
   (if (< 4 (db/count-new-repos))
@@ -84,14 +74,35 @@
    wrap-transit-response
    params/wrap-params))
 
+(defn activate-heartbeats
+  "Activates heartbeats and returns wrapped on-receive function"
+  [socket on-receive]
+  (let [heartbeat (async/chan (async/sliding-buffer 1))]
+    (async/go-loop []
+      ;; send ping every 30 secs
+      (async/<! (async/timeout 30000))
+      (when (server/open? socket)
+        (server/send! socket (util/write-transit-str :ping))
+        ;; waiting for pong for 30 secs
+        (if (= :pong (first (async/alts! [heartbeat (async/timeout 30000)])))
+          (recur)
+          (server/close socket))))
+    (fn [raw]
+      (let [data (util/read-transit-str raw)]
+        (if (= :pong data)
+          (async/>!! heartbeat :pong)
+          (on-receive data))))))
+
 (defn events-handler [req]
   (server/with-channel req socket
-    (let [ch (async/chan)]
+    (let [ch (async/chan)
+          on-receive (activate-heartbeats socket identity)]
       (async/tap acha.core/events-mult ch)
       (async/go-loop []
         (when-let [data (async/<! ch)]
-          (server/send! socket (write-transit-str data))
+          (server/send! socket (util/write-transit-str data))
           (recur)))
+      (server/on-receive socket on-receive)
       (server/on-close socket
         (fn [status]
           (async/untap acha.core/events-mult ch)

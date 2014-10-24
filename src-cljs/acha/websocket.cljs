@@ -15,7 +15,10 @@
     (when on-message
       (set! (.-onmessage socket)
         (fn [event]
-          (on-message (u/read-transit (.-data event))))))
+          (let [data (u/read-transit (.-data event))]
+            (if (= :ping data)
+              (.send socket (u/write-transit :pong))
+              (on-message data))))))
     (when on-close
       (set! (.-onclose socket)
         (fn [event]

@@ -8,6 +8,9 @@
 (defn read-transit [s]
   (transit/read (transit/reader :json) s))
 
+(defn write-transit [s]
+  (transit/write (transit/writer :json) s))
+
 (defn- ajax [url callback & [method]]
   (.send goog.net.XhrIo url
     (fn [reply]
