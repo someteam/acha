@@ -33,6 +33,15 @@
 
 ;; Utils
 
+(defn scroll-to-top
+  ([]
+    (when (> (.-scrollY js/window) 190) ;; ~height of header
+      (scroll-to-top 30)))
+  ([delta]
+    (let [y (.-scrollY js/window)] 
+      (when (> y 0)
+        (.scrollBy js/window 0 (- (min y delta)))
+        (js/setTimeout #(scroll-to-top (* 1.1 delta)) 16)))))
 
 (defn user-link [user]
   (str "/user/" (:user/email user)))
@@ -56,6 +65,7 @@
   (set! (.-title js/document) (if title (str title " — " *title-suffix*) *title-suffix*)))
 
 (defn go! [& path]
+  (scroll-to-top)
   (.setToken history (apply str path)))
 
 
@@ -63,7 +73,7 @@
 
 (def state (atom {:progress    0
                   :first-load? true
-                  :path        ""}))
+                  :path        "/"}))
 
 (r/defc progress-bar []
   (s/html
@@ -87,8 +97,8 @@
           (if index?
             [:div.logo {:title "Acha-acha"}]
             [:a.logo   {:title "Acha-acha"
-                        :href  "#" }])
-          [:h2 "Enterprise Git Achievement solution" [:br] "Web scale. In the cloud"])
+                        :href  "#/" }])
+          [:h2 "Enterprise Git Achievement Solution" [:br] "Web Scale. In the Cloud"])
         (progress-bar)])))
 
 (r/defc footer []
@@ -145,7 +155,7 @@
     (.focus el)))
 
 (defn delete-repo [id]
-  (go! "")
+  (go! "/")
   (u/ajax (str "/api/delete-repo/?id=" id) nil "POST"))
 
 ;; user@domain:path[.git]
@@ -373,11 +383,16 @@
                     :on-click (fn [_] (d/transact! conn [[:db.fn/retractEntity (:db/id msg)]])) }
           (:message/text msg)]))))
 
+(defn inside? [node tag]
+  (when node
+    (or (= (.-nodeName node) tag)
+        (recur (.-parentElement node) tag))))
+
 (r/defc application [db]
   (let [path   (:path @state)
-        index? (str/blank? path)]
+        index? (or (= "/" path) (str/blank? path))]
     (s/html
-      [:.window
+      [:.window {:on-click (fn [e] (when (inside? (.-target e) "A") (scroll-to-top)))}
         (header index?)
         (when-not (:first-load? @state)
           (list
@@ -434,7 +449,9 @@
     (add-watch conn  :rerender (fn [_ _ _ _] (request-render))))
   
   (doto history
-    (events/listen EventType/NAVIGATE (fn [e] (swap! state assoc :path (.-token e))))
+    (events/listen EventType/NAVIGATE
+      (fn [e]
+        (swap! state assoc :path (.-token e))))
     (.setUseFragment true)
     (.setPathPrefix "#")
     (.setEnabled true))
