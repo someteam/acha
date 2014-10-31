@@ -122,3 +122,11 @@ a.ach__text { text-decoration: none; border-bottom: 1px solid #eee; }
 .progress { height: 3px; position: absolute; width: 900px; top: 168px; background-color: #D0BAE3;  }
 .progress__bar { background-color: #7E5DA3; height: 3px; }
 .progress__offline { background-color: #B0B0B0; }
+
+.messages { position: fixed; top: 20px; right: 60px; width: 300px; z-index: 100; }
+.message  { color: white; padding: 12px; word-break: break-word; line-height: 16px; margin: 0 0 12px; border-radius: 2px; box-shadow: 0 1px 2px hsla(206, 83%, 20%, 0.6); cursor: pointer; }
+.message.error { background-color: hsla(26, 83%, 46%, 0.9); }
+.popup-enter { top: 6px; opacity: 0.2; transition: opacity .1s ease-out, top .1s ease-out; position: relative; }
+.popup-enter.popup-enter-active { opacity: 1; top: 0; }
+.popup-leave { opacity: 1; top: 0; position: relative; }
+.popup-leave.popup-leave-active { top: -10px; opacity: 0; transition: opacity .1s ease-in, top .1s ease-in; }

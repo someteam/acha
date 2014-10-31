@@ -355,6 +355,18 @@
         (ach-pane aches user-achent)
         (user-profile user aches)])))
 
+(r/defc messages-overlay [db]
+  ((-> js/React (aget "addons") (aget "CSSTransitionGroup"))
+    #js {:transitionName "popup"
+         :className "messages"}
+    (s/html
+      (for [msg (u/qes-by db :message/text)]
+        [:.message {:key (:db/id msg)
+                    :class (name (:message/class msg))
+                    :title "Click to close"
+                    :on-click (fn [_] (d/transact! conn [[:db.fn/retractEntity (:db/id msg)]])) }
+          (:message/text msg)]))))
+
 (r/defc application [db]
   (let [path   (:path @state)
         index? (str/blank? path)]
@@ -363,6 +375,7 @@
         (header index?)
         (when-not (:first-load? @state)
           (list
+            (messages-overlay db)
             (cond
               index? (index-page db)
               (u/starts-with? path "/user/") (user-page db (subs path (count "/user/")))
@@ -417,4 +430,13 @@
     (.setPathPrefix "#")
     (.setEnabled true))
   
-  (listen-loop))
+  (listen-loop)
+  
+  (d/listen! conn
+    (fn [tx-report]
+      (doseq [datom (:tx-data tx-report)
+              :when (and (= (.-a datom) :message/text)
+                         (.-added datom))]
+        (js/setTimeout (fn [] 
+                         (d/transact! conn [[:db.fn/retractEntity (.-e datom)]]))
+                       10000)))))

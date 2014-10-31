@@ -48,7 +48,7 @@
         :source-paths ["src-cljs"]
         :compiler {
           :externs       ["react/externs/react.js" "datascript/externs.js"]
-          :preamble      ["react/react.min.js" "public/md5.js"]
+          :preamble      ["react/react_with_addons.min.js" "public/md5.js"]
           :output-to     "resources/public/acha.min.js"
           :optimizations :advanced
           :pretty-print  false
