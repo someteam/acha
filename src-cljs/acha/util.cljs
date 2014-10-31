@@ -16,7 +16,8 @@
     (fn [reply]
       (let [res (.getResponseText (.-target reply))
             res (profile (str "read-transit " url " (" (count res) " bytes)") (read-transit res))]
-        (js/setTimeout #(callback res) 0)))
+        (when callback
+          (js/setTimeout #(callback res) 0))))
     (or method "GET")))
 
 (defn map-by [f xs]

@@ -140,9 +140,13 @@
             :let [url (str/trim url)]
             :when (not (str/blank? url))]
       (println "Adding" url)
-      (u/ajax (str "/api/add-repo/?url=" (js/encodeURIComponent url)) (fn [data]) "POST"))
+      (u/ajax (str "/api/add-repo/?url=" (js/encodeURIComponent url)) nil "POST"))
     (set! (.-value el) "")
     (.focus el)))
+
+(defn delete-repo [id]
+  (go! "")
+  (u/ajax (str "/api/delete-repo/?id=" id) nil "POST"))
 
 ;; user@domain:path[.git]
 ;; http[s]://domain/path[.git]
@@ -233,7 +237,9 @@
         (repo-status repo)]
       [:.rp__url  (:repo/url repo)]
       (when-let [reason (:repo/reason repo)]
-        [:.rp__reason reason])
+        (list 
+          [:.rp__reason reason]
+          [:button.rp__delete {:on-click (fn [_] (delete-repo (:db/id repo))) }]))
       [:.rp__hr]
       [:.rp__achs
         (for [[achent _] aches]
@@ -413,7 +419,10 @@
                 :progress 1))
             (loop []
               (when-let [tx-data (async/<! data-ch)]  ;; listen for socket
-                (d/transact! conn tx-data)
+                (try
+                  (d/transact! conn tx-data)
+                  (catch js/Error e
+                    (.error js/console e)))
                 (recur))))
           (.close socket)))
      (swap! state assoc :progress -1)

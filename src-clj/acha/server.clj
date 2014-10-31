@@ -28,8 +28,7 @@
   (if (< 4 (db/count-new-repos))
     (do
       (async/put! acha.core/events
-        [{:db/id -1
-          :message/class :error
+        [{:message/class :error
           :message/text (str "Cannot add " url ": too many unprocessed repos in queue")}])
       {:result :error, :url url, :message "Too many unprocessed repos in queue"})
     (try
@@ -37,8 +36,7 @@
         (if (= repo :exists)
           (do
             (async/put! acha.core/events
-              [{:db/id       -1
-                :message/class :error
+              [{:message/class :error
                 :message/text (str "Repository already added: " url)}])
           {:result :exists, :url url})
           (do
@@ -46,11 +44,21 @@
             {:result :added, :url (:url repo)})))
       (catch Exception e
         (async/put! acha.core/events
-          [{:db/id       -1
-            :message/class :error
+          [{:message/class :error
             :message/text  (str "Cannot add" url ": " (util/reason e))}])
           {:result :error, :url url})
         )))
+
+(defn delete-repo [id]
+  (if-let [repo (db/get-repo id)]
+    (let [ids (db/delete-repo id)]
+      (async/put! acha.core/events
+        (concat
+          (mapv #(vector :db.fn/retractEntity %) ids)
+          [{:message/class :info
+            :message/text (str "Deleted repo " (:url repo))}]))
+      {:result :deleted, :id id})
+    {:result :error, :text (str "No such repo: " id)}))
 
 (defn- full-dump []
   (concat
@@ -67,7 +75,9 @@
       (compojure.core/GET "/db/" []
         (full-dump))
       (compojure.core/POST "/add-repo/" [:as req]
-        {:body (add-repo (get-in req [:params "url"]))}))
+        {:body (add-repo (get-in req [:params "url"]))})
+      (compojure.core/POST "/delete-repo/" [:as req]
+        {:body (delete-repo (Integer/parseInt (get-in req [:params "id"])))}))
    wrap-transit-response
    params/wrap-params))
 

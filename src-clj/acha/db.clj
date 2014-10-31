@@ -102,6 +102,9 @@
 (defn get-repo-by-url [url] 
   (first (query (db-conn) ["select * from repo where url = ?" url])))
 
+(defn get-repo [id]
+  (first (query (db-conn) ["select * from repo where id = ?" id])))
+
 (defn get-or-insert-repo [url]
   (let [url (util/canonical-repo-url url)]
     (if-let [repo (get-repo-by-url url)]
@@ -150,6 +153,19 @@
 (defn insert-repo-seen-commit [repo-id sha1]
   (insert! (db-conn) :repo_seen {:repoid repo-id :sha1 sha1}))
 
+(defn delete-repo [id]
+  (let [conn  (db-conn)
+        aches (query conn ["select id from achievement where (repoid = ?)" id])
+        _     (delete! conn :achievement ["repoid = ?" id])
+        users (query conn "select id from user where id not in (select distinct userid from achievement)")
+        _     (delete! conn :user ["id not in (select distinct userid from achievement)"])
+        _     (delete! conn :repo_seen ["repoid = ?" id])
+        _     (delete! conn :repo ["id = ?" id])]
+    (concat 
+      (map :id aches)
+      (map :id users)
+      [id])))
+
 
 ;; USERS
 
@@ -188,7 +204,7 @@
 
 (defn ach->entity [a]
   (cond->
-    { :ach/id       (:id a)
+    { :db/id        (:id a)
       :ach/repo     (:repoid a)
       :ach/user     (:userid a)
       :ach/achent   (-> (:type a) keyword static/table-map :id)

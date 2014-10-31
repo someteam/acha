@@ -88,6 +88,11 @@ a.logo > h2 { color: #7E5DA3; }
 .rp__reason { font-size: 12px; line-height:16px; color: #D56714; }
 .rp__achs  { margin-top: 20px; line-height: 0; width: 450px; margin: 0 -3px; }
 
+.rp__delete { width: 64px; height: 26px; background: url('i/delete_repo@4x.png'); background-size: 64px 52px;
+              border: none; cursor: pointer; outline: none; display: block; margin: 6px 0 0 -4px;}
+.rp__delete:hover { background-position-y: -26px; }
+.rp__delete:active { position: relative; top: 2px; }
+
 .ach { position: relative; width: 400px; min-height: 60px; padding: 0 0 0 72px; margin: 32px 0; line-height: 18px; overflow: hidden; }
 /* .ach { border: 6px solid transparent; border-image:url(i/border.png) 12 12 repeat; } */
 /* .ach:hover { background: #f7f7f7; } */
@@ -124,8 +129,9 @@ a.ach__text { text-decoration: none; border-bottom: 1px solid #eee; }
 .progress__offline { background-color: #B0B0B0; }
 
 .messages { position: fixed; top: 20px; right: 60px; width: 300px; z-index: 100; }
-.message  { color: white; padding: 12px; word-break: break-word; line-height: 16px; margin: 0 0 12px; border-radius: 2px; box-shadow: 0 1px 2px hsla(206, 83%, 20%, 0.6); cursor: pointer; }
+.message  { color: white; padding: 12px; word-break: break-word; line-height: 16px; margin: 0 0 12px; border-radius: 2px; box-shadow: 0 1px 2px hsla(206, 83%, 20%, 0.3); cursor: pointer; }
 .message.error { background-color: hsla(26, 83%, 46%, 0.9); }
+.message.info { background-color: hsla(122, 65%, 50%, 0.9); }
 .popup-enter { top: 6px; opacity: 0.2; transition: opacity .1s ease-out, top .1s ease-out; position: relative; }
 .popup-enter.popup-enter-active { opacity: 1; top: 0; }
 .popup-leave { opacity: 1; top: 0; position: relative; }
