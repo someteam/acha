@@ -2,16 +2,14 @@
   (:require
     [acha.react :as r :include-macros true]
     [sablono.core :as s :include-macros true]
-    [goog.events :as events]
-    [goog.history.EventType :as EventType]
     [datascript :as d]
+    [acha.dom :as dom]
     [acha.util :as u]
     [acha.websocket :as ws]
     [clojure.string :as str]
     [cljs.core.async :as async]
     [clojure.set])
   (:import
-    goog.history.Html5History
     goog.net.XhrIo)
   (:require-macros
     [acha :refer [profile]]
@@ -33,16 +31,6 @@
 
 ;; Utils
 
-(defn scroll-to-top
-  ([]
-    (when (> (.-scrollY js/window) 190) ;; ~height of header
-      (scroll-to-top 30)))
-  ([delta]
-    (let [y (.-scrollY js/window)] 
-      (when (> y 0)
-        (.scrollBy js/window 0 (- (min y delta)))
-        (js/setTimeout #(scroll-to-top (* 1.1 delta)) 16)))))
-
 (defn user-link [user]
   (str "/user/" (:user/email user)))
 
@@ -54,20 +42,6 @@
     (if-let [[_ m] (re-matches #".*/([^/]+)/?" url)]
       (u/trimr m ".git")
       url)))
-
-;; Navigation
-
-(def ^:private history (Html5History.))
-
-(def ^:dynamic *title-suffix* "Acha-acha")
-
-(defn set-title! [title]
-  (set! (.-title js/document) (if title (str title " — " *title-suffix*) *title-suffix*)))
-
-(defn go! [& path]
-  (scroll-to-top)
-  (.setToken history (apply str path)))
-
 
 ;; Rendering
 
@@ -155,7 +129,7 @@
     (.focus el)))
 
 (defn delete-repo [id]
-  (go! "/")
+  (dom/go! "/")
   (u/ajax (str "/api/delete-repo/?id=" id) nil "POST"))
 
 ;; user@domain:path[.git]
@@ -347,7 +321,7 @@
 
 (r/defc index-page [db]
   (do
-    (set-title! nil)
+    (dom/set-title! nil)
     (s/html
       [:div
         (users-pane db (u/qes-by db :user/email))
@@ -356,7 +330,7 @@
 (r/defc repo-page [db url]
   (let [repo  (u/qe-by db :repo/url url)
         aches (->> (:ach/_repo repo) group-aches)]
-    (set-title! (repo-name url))
+    (dom/set-title! (repo-name url))
     (s/html
       [:div
         (ach-pane aches repo-achent)
@@ -365,7 +339,7 @@
 (r/defc user-page [db email]
   (let [user  (u/qe-by db :user/email email)
         aches (->> (:ach/_user user) group-aches)]
-    (set-title! (:user/name user))
+    (dom/set-title! (:user/name user))
     (s/html
       [:div
         (ach-pane aches user-achent)
@@ -383,16 +357,15 @@
                     :on-click (fn [_] (d/transact! conn [[:db.fn/retractEntity (:db/id msg)]])) }
           (:message/text msg)]))))
 
-(defn inside? [node tag]
-  (when node
-    (or (= (.-nodeName node) tag)
-        (recur (.-parentElement node) tag))))
-
+(defn- inner-nav? [e]
+  (when-let [a (dom/parent (.-target e) #(= (dom/node-name %) "a"))]
+    (u/starts-with? (dom/attr a "href") "#")))
+       
 (r/defc application [db]
   (let [path   (:path @state)
         index? (or (= "/" path) (str/blank? path))]
     (s/html
-      [:.window {:on-click (fn [e] (when (inside? (.-target e) "A") (scroll-to-top)))}
+      [:.window {:on-click (fn [e] (when (inner-nav? e) (dom/scroll-to-top)))}
         (header index?)
         (when-not (:first-load? @state)
           (list
@@ -448,13 +421,7 @@
     (add-watch state :rerender (fn [_ _ _ _] (request-render)))
     (add-watch conn  :rerender (fn [_ _ _ _] (request-render))))
   
-  (doto history
-    (events/listen EventType/NAVIGATE
-      (fn [e]
-        (swap! state assoc :path (.-token e))))
-    (.setUseFragment true)
-    (.setPathPrefix "#")
-    (.setEnabled true))
+  (dom/listen-nav #(swap! state assoc :path %))
   
   (listen-loop)
   
