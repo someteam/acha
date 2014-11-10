@@ -24,6 +24,10 @@
         (when-let [ret (f commit-info)]
           (if (map? ret) ret {}))))))
 
+(defn timeline-scanner
+  [scanners sname f]
+  (update-in scanners [:timeline-scanners] assoc sname f))
+
 (defn- scan-word-count [text words]
   (->> (string/split text #"\b") (filter words) count))
 

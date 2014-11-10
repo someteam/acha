@@ -154,7 +154,7 @@
         (assoc :diff (-> (.diff alg raw-comparator old-raw new-raw)
                          (parse-edit-list old-raw new-raw)))))))
 
-(defn- parse-diff-entry [^DiffEntry entry ^ObjectReader reader]
+(defn- parse-diff-entry [^ObjectReader reader ^DiffEntry entry]
   (let [{:keys [kind old-file new-file]} (parse-change-kind entry)
         {:keys [diff] :as diff-changes} (parse-diff-changes entry diff-algorithm reader)
         has-diffs? (not (empty? diff))]
@@ -169,22 +169,28 @@
     (doto (CanonicalTreeParser.) (.reset reader (.getTree commit)))
     (EmptyTreeIterator.)))
 
-(defn commit-info [^Git repo ^RevCommit rev-commit ^DiffFormatter df ^ObjectReader reader]
+(defn- commit-info-core [^Git repo ^RevCommit rev-commit ^DiffFormatter df ^ObjectReader reader diff-parser]
   (let [parent-tree (tree-iterator (first (.getParents rev-commit)) reader)
         commit-tree (tree-iterator rev-commit reader)
         diffs (.scan df parent-tree commit-tree)
         ident (.getAuthorIdent rev-commit)
         time  (.getWhen ident)
         message (-> (.getFullMessage rev-commit) str string/trim)]
-    (merge {:id (.getName rev-commit)
-            :author (.getName ident)
-            :email  (util/normalize-str (.getEmailAddress ident))
-            :time time
-            :timezone (.getTimeZone ident)
-            :between-time (- (.getCommitTime rev-commit) (.getTime (.getWhen ident)))
-            :message message
-            :parents-count (.getParentCount rev-commit)
-            :changed-files (mapv #(parse-diff-entry % reader) diffs)})))
+    {:id (.getName rev-commit)
+     :author (.getName ident)
+     :email  (util/normalize-str (.getEmailAddress ident))
+     :time time
+     :timezone (.getTimeZone ident)
+     :between-time (- (.getCommitTime rev-commit) (.getTime (.getWhen ident)))
+     :message message
+     :parents-count (.getParentCount rev-commit)
+     :changed-files (mapv diff-parser diffs)}))
+
+(defn commit-info-without-diffs [^Git repo ^RevCommit rev-commit ^DiffFormatter df ^ObjectReader reader]
+  (commit-info-core repo rev-commit df reader parse-change-kind))
+
+(defn commit-info [^Git repo ^RevCommit rev-commit ^DiffFormatter df ^ObjectReader reader]
+  (commit-info-core repo rev-commit df reader (partial parse-diff-entry reader)))
 
 (defn- repo-info [url]
   (let [repo (load-repo url)
