@@ -29,7 +29,6 @@
     (finally
       (db/insert-repo-seen-commit (:id repo-info) (.getName commit)))))
 
-
 (defn- merge-achievements [a b]
   (cond
     (< (:level a 0) (:level b 0)) a
@@ -60,14 +59,13 @@
     (try
       (let [commits (mapv #(git-parser/commit-info-without-diffs repo % df reader)
                            (git-parser/commit-list repo))]
-        (when-not scanned?
-          (->> (for [[code scanner] (:timeline-scanners achievement/base)
-                     report (scan-achievement scanner commits)
-                     :when report
-                     :let [commit-info (:commit-info report)]]
-               [[(:email commit-info) code] (merge report
-                                                   (select-keys commit-info [:author :time :id]))])
-             (into {}))))
+        (->> (for [[code scanner] (:timeline-scanners achievement/base)
+                   report (scan-achievement scanner commits)
+                   :when report
+                   :let [commit-info (:commit-info report)]]
+             [[(:email commit-info) code] (merge report
+                                                 (select-keys commit-info [:author :time :id]))])
+           (into {})))
       (finally
         (.release reader)
         (.release df)))))

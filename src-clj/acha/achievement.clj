@@ -338,15 +338,45 @@
   (commit-scanner :hydra
     (fn [{:keys [parents-count]}]
       (<= 3 parents-count))
-    :include-merges true))
+    :include-merges true)
+
+  (timeline-scanner :anniversary
+    (fn [commits]
+      (let [init-commit (last commits)]
+        (when (= 0 (:parents-count init-commit)) ;; it's really init-commit
+          (let [birthday (create-calendar (:time init-commit) (:timezone init-commit))
+                anniv-commits (filter (fn [{:keys [time timezone]}]
+                                        (let [c (create-calendar time timezone)]
+                                            (and (= (.get birthday Calendar/MONTH) (.get c Calendar/MONTH))
+                                                 (= (.get birthday Calendar/DAY_OF_MONTH) (.get c Calendar/DAY_OF_MONTH))
+                                                 (not= (.get birthday Calendar/YEAR) (.get c Calendar/YEAR)))))
+                                      commits)]
+            (->> anniv-commits
+              (group-by :email)
+              (map (fn [[email commits]]
+                     {:commit-info (first commits)
+                      :level (count commits)}))))))))
+
+  ;; HELPME Should we take into account merge commits?
+  (timeline-scanner :flash
+    (fn [commits]
+      (let [time-in-millis #(.getTimeInMillis (create-calendar (:time %) (:timezone %)))]
+        (for [[email author-commits] (->> commits
+                                       (map #(assoc % :timestamp (time-in-millis %)))
+                                       (group-by :email))
+              :let [sorted (sort-by :timestamp > author-commits)
+                    [c1 c2] (->> (zipmap sorted (rest sorted))
+                                 (filter (fn [[c1 c2]]
+                                           (< (- (:timestamp c1) (:timestamp c2)) 
+                                              (* 60 1000))))
+                                 first)]
+              :when c1]
+          {:commit-info c1})))))
 
   ;;  TODO
   ;;  commenter
-  ;;  deal-with-it
   ;;  blamer
   ;;  catchphrase
-  ;;  anniversary
-  ;;  flash
   ;;  waste
   ;;  loneliness
   ;;  necromancer
