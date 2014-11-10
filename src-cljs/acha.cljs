@@ -216,12 +216,14 @@
 (r/defc repo-profile [repo aches]
   (s/html
     [:.rp.pane
-      [:.rp__name (repo-name (:repo/url repo))
-        [:.id (:db/id repo)]
-        (repo-status repo)]
-      [:.rp__url  (:repo/url repo)]
+      (let [repo-url (:repo/url repo)]
+        (list
+         [:.rp__name (repo-name repo-url)
+          [:.id (:db/id repo)]
+          (repo-status repo)]
+         [:a.rp__url {:href repo-url} repo-url]))
       (when-let [reason (:repo/reason repo)]
-        (list 
+        (list
           [:.rp__reason reason]
           [:button.rp__delete {:on-click (fn [_] (delete-repo (:db/id repo))) }]))
       [:.rp__hr]
