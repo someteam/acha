@@ -135,25 +135,23 @@
 ;; user@domain:path[.git]
 ;; http[s]://domain/path[.git]
 
-(def ^:private repo-commit-prefix
-  (memoize (fn [url]
-    (condp re-matches url
+(def ^:private repo-web-url
+  (memoize (fn [clone-url]
+    (condp re-matches clone-url
       #"([^@:]+)@([^@:]+):(.+)" :>> (fn [[_ user domain path]]
                                       (str "http://" domain "/"
                                            (-> path
                                              (u/trimr ".git")
-                                             (u/trimr "/"))
-                                           "/commit/"))
+                                             (u/trimr "/"))))
       #"(?i)(https?://.+)"      :>> (fn [[_ path]]
                                       (-> path
                                           (u/trimr ".git")
-                                          (u/trimr "/")
-                                          (str "/commit/")))
+                                          (u/trimr "/")))
       nil))))
 
-(defn- sha1-url [url sha1]
-  (when-let [prefix (repo-commit-prefix url)]
-    (str prefix sha1)))
+(defn- commit-web-url [clone-url sha1]
+  (when-let [web-url (repo-web-url clone-url)]
+    (str web-url "/commit/" sha1)))
 
 (defn ach-details [ach]
   (str (get-in ach [:ach/user :user/name])
@@ -169,7 +167,7 @@
         title    (ach-details ach)]
     (s/html
       [:div {:key (:db/id ach)}
-        (if-let [commit-url (sha1-url repo-url sha1)]
+        (if-let [commit-url (commit-web-url repo-url sha1)]
           [:a.ach__text { :target "_blank"
                           :href   commit-url
                           :title  title }
@@ -218,10 +216,12 @@
     [:.rp.pane
       (let [repo-url (:repo/url repo)]
         (list
-         [:.rp__name (repo-name repo-url)
-          [:.id (:db/id repo)]
-          (repo-status repo)]
-         [:a.rp__url {:href repo-url} repo-url]))
+          [:.rp__name (repo-name repo-url)
+            [:.id (:db/id repo)]
+            (repo-status repo)]
+          (if-let [web-url (repo-web-url repo-url)]
+            [:a.rp__url {:href web-url :target "_blank"} repo-url]
+            [:.rp__url repo-url])))
       (when-let [reason (:repo/reason repo)]
         (list
           [:.rp__reason reason]
