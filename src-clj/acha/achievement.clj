@@ -380,13 +380,26 @@
         (filter (fn [[_ cs]] (<= 10 (count cs))))
         (map (fn [[_ cs]] {:commit-info (first cs)})))))
 
+  (timeline-scanner :loneliness
+    (fn [commits]
+      (let [ordered (sort-by (comp .getTime :calendar) commits)
+
+            loneliness? (fn [[before commit after]]
+                          (let [week #(.get (:calendar %) Calendar/WEEK)
+                                year #(.get (:calendar %) Calendar/YEAR)]
+                            (and (or (not= (week before) (week commit))
+                                     (not= (year before) (year commit)))
+                                 (or (not= (week after) (week commit))
+                                     (not= (year after) (year commit))))))]
+
+        (->> (map #(do %&) ordered (next ordered) (next (next ordered)))
+             (filter loneliness?)
+             (map (fn [[before commit after]] commit))
+             (group-by :email)
+             (map (fn [[author-email cs]] {:commit-info (first cs)}))))))
 
 
 
-)
-
-;; catchphrase
-;; loneliness
 ;; necromancer
 ;; combo
 ;; combo-breaker

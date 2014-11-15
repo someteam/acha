@@ -175,12 +175,14 @@
         diffs (.scan df parent-tree commit-tree)
         ident (.getAuthorIdent rev-commit)
         time  (.getWhen ident)
+        timezone (.getTimeZone ident)
         message (-> (.getFullMessage rev-commit) str string/trim)]
     {:id (.getName rev-commit)
      :author (.getName ident)
      :email  (util/normalize-str (.getEmailAddress ident))
      :time time
-     :timezone (.getTimeZone ident)
+     :timezone timezone
+     :calendar (util/create-calendar time timezone)
      :between-time (- (.getCommitTime rev-commit) (.getTime (.getWhen ident)))
      :message message
      :parents-count (.getParentCount rev-commit)

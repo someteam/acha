@@ -4,9 +4,14 @@
     [cognitect.transit :as transit]
     [clojure.string :as string])
   (:import
+    [java.util Calendar]
     [java.io ByteArrayOutputStream ByteArrayInputStream]
     [java.security MessageDigest]))
 
+(defn create-calendar ^Calendar [time timezone]
+  (doto
+    (Calendar/getInstance timezone)
+    (.setTime time)))
 
 (defn write-transit-bytes [x]
   (let [baos (ByteArrayOutputStream.)
