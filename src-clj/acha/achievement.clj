@@ -371,7 +371,29 @@
                                               (* 60 1000))))
                                  first)]
               :when c1]
-          {:commit-info c1})))))
+          {:commit-info c1}))))
+
+  (timeline-scanner :catchphrase
+    (fn [commits]
+      (->> commits
+        (group-by (juxt :email :message))
+        (filter (fn [[_ cs]] (<= 10 (count cs))))
+        (map (fn [[_ cs]] {:commit-info (first cs)})))))
+
+
+
+
+)
+
+;; catchphrase
+;; loneliness
+;; necromancer
+;; combo
+;; combo-breaker
+;; what-happended-here
+;; all-things-die
+;; good-boy
+
 
   ;;  TODO
   ;;  commenter
