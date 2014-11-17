@@ -382,25 +382,34 @@
 
   (timeline-scanner :loneliness
     (fn [commits]
-      (let [ordered (sort-by (comp .getTime :calendar) commits)
-
-            loneliness? (fn [[before commit after]]
-                          (let [week #(.get (:calendar %) Calendar/WEEK)
-                                year #(.get (:calendar %) Calendar/YEAR)]
-                            (and (or (not= (week before) (week commit))
-                                     (not= (year before) (year commit)))
-                                 (or (not= (week after) (week commit))
-                                     (not= (year after) (year commit))))))]
-
-        (->> (map #(do %&) ordered (next ordered) (next (next ordered)))
-             (filter loneliness?)
-             (map (fn [[before commit after]] commit))
+      (let [ordered (sort-by :calendar commits)
+            lone? (fn [[before commit after]]
+                    (let [week #(.get (:calendar %) Calendar/WEEK_OF_YEAR)
+                          year #(.get (:calendar %) Calendar/YEAR)]
+                      (and (not= [(week before) (year before)]
+                                 [(week commit) (year commit)])
+                           (not= [(week commit) (year commit)]
+                                 [(week after) (year after)]))))]
+        (->> (map vector ordered (next ordered) (next (next ordered)))
+             (filter lone?)
+             (map second)
              (group-by :email)
              (map (fn [[author-email cs]] {:commit-info (first cs)}))))))
 
+  (timeline-scanner :necromancer
+    (fn [commits]
+      (let [ordered (sort-by :calendar commits)
+            necro? (fn [[before commit]]
+                          (let [threshold (doto (.clone (:calendar commit))
+                                                (.add Calendar/MONTH -1))]
+                            (< (compare (:calendar before) threshold) 0)))]
+        (->> (map vector ordered (next ordered))
+             (filter necro?)
+             (map second)
+             (group-by :email)
+             (map (fn [[author-email cs]] {:commit-info (first cs)})))))))
 
 
-;; necromancer
 ;; combo
 ;; combo-breaker
 ;; what-happended-here
