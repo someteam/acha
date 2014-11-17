@@ -85,3 +85,12 @@
               (.startsWith url "https://"))
         (resolve-redirects url)
         url))))
+
+(defn mapmap [f m]
+  (into {} (map (fn [[k v]] (f k v)) m)))
+
+(defn map-keys [f m]
+  (mapmap (fn [k v] [(f k) v]) m))
+
+(defn map-vals [f m]
+  (mapmap (fn [k v] [k (f v)]) m))

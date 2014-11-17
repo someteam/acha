@@ -382,19 +382,17 @@
 
   (timeline-scanner :loneliness
     (fn [commits]
-      (let [ordered (sort-by :calendar commits)
-            lone? (fn [[before commit after]]
-                    (let [week #(.get (:calendar %) Calendar/WEEK_OF_YEAR)
-                          year #(.get (:calendar %) Calendar/YEAR)]
-                      (and (not= [(week before) (year before)]
-                                 [(week commit) (year commit)])
-                           (not= [(week commit) (year commit)]
-                                 [(week after) (year after)]))))]
-        (->> (map vector ordered (next ordered) (next (next ordered)))
-             (filter lone?)
-             (map second)
-             (group-by :email)
-             (map (fn [[author-email cs]] {:commit-info (first cs)}))))))
+      (let [taxon (fn [^Calendar calendar]
+                    [(.get calendar Calendar/YEAR) (.get calendar Calendar/MONTH)])
+            current-month (taxon (Calendar/getInstance))]
+        (->>
+          (for [[tx month-commits] (group-by #(taxon (:calendar %)) commits)
+                :when (not= current-month tx)
+                :let [authored-commits (group-by :email month-commits)]
+                :when (= 1 (count authored-commits))]
+            (first authored-commits))
+          (into {})
+          (map (fn [[_ cs]] {:commit-info (ffirst cs)}))))))
 
   (timeline-scanner :necromancer
     (fn [commits]
