@@ -1,15 +1,15 @@
 (ns acha.achievement-test
   (:require [clojure.test :refer :all]
+            [acha.util :as util]
             [acha.achievement :as achievement])
-  (:import [java.util TimeZone])
+  (:import [java.util TimeZone Calendar])
   )
 
 (defn commit-info [& {:as opts}]
   (merge
     {:between-time -1411450912411,
      :email "warhol@acha-acha.co",
-     :timezone (TimeZone/getTimeZone "CST")
-     :time #inst "2014-10-09T14:09:38.000-00:00"
+     :calendar (util/create-calendar #inst "2014-10-09")
      :parents-count 1,
      :author "Andy Warhol",
      :id "28736ac09b8d82c9075e8b69b60590edfffba74b",
@@ -18,7 +18,7 @@
     opts))
 
 (deftest date-scanner
-  (let [ach (commit-info :time #inst "2014-04-01T17:29:59.000-00:00")]
+  (let [ach (commit-info :calendar (util/create-calendar #inst "2014-04-01"))]
     (is ((get-in achievement/base [:commit-scanners :fools-day]) ach))))
 
 (deftest language-scanner
@@ -115,5 +115,48 @@
                    :changed-files [{:kind :add, :new-file {:path "project.clj"}}
                                    {:kind :edit, :new-file {:path "project.java"}}
                                    {:kind :edit, :new-file {:path "old.xml"}}]))))))
+
+(deftest catchphrase 
+  (testing "false case"
+    (is (empty? ((get-in achievement/base [:timeline-scanners :catchphrase])
+                  [(commit-info :calendar (util/create-calendar #inst "2014-04-01"))
+                   (commit-info :calendar (util/create-calendar #inst "2014-04-02"))
+                   (commit-info :calendar (util/create-calendar #inst "2014-04-03"))]
+                  :threshold 4))))
+  (testing "true case"
+    (is (= [{:commit-info (commit-info :calendar (util/create-calendar #inst "2014-04-01"))}]
+           ((get-in achievement/base [:timeline-scanners :catchphrase])
+                 [(commit-info :calendar (util/create-calendar #inst "2014-04-01"))
+                  (commit-info :calendar (util/create-calendar #inst "2014-04-02"))
+                  (commit-info :calendar (util/create-calendar #inst "2014-04-03"))]
+                 :threshold 3)))))
+
+(deftest loneliness
+  (testing "false case"
+    (is (empty? ((get-in achievement/base [:timeline-scanners :loneliness])
+                  [(commit-info :email "foo@bar" :calendar (util/create-calendar #inst "2014-04-01"))
+                   (commit-info :email "boo@far" :calendar (util/create-calendar #inst "2014-04-02"))]))))
+  (testing "true case"
+    (is (= [{:commit-info (commit-info :calendar (util/create-calendar #inst "2014-04-01"))}]
+           ((get-in achievement/base [:timeline-scanners :loneliness])
+                   [(commit-info :calendar (util/create-calendar #inst "2014-04-01"))
+                    (commit-info :calendar (util/create-calendar #inst "2014-04-02"))]))))
+  (testing "skip last month"
+    (is (empty? ((get-in achievement/base [:timeline-scanners :loneliness])
+                  [(commit-info :calendar (Calendar/getInstance))
+                   (commit-info :calendar (Calendar/getInstance))])))))
+
+(deftest necromancer
+  (testing "false case"
+    (is (empty? ((get-in achievement/base [:timeline-scanners :necromancer])
+                  [(commit-info :calendar (util/create-calendar #inst "2014-03-08"))
+                   (commit-info :calendar (util/create-calendar #inst "2014-04-07"))]))))
+  (testing "true case"
+    (is (= [{:commit-info (commit-info :calendar (util/create-calendar #inst "2014-04-08"))}]
+           ((get-in achievement/base [:timeline-scanners :necromancer])
+                   [(commit-info :calendar (util/create-calendar #inst "2014-03-07"))
+                    (commit-info :calendar (util/create-calendar #inst "2014-04-08"))])))))
+
+
 
 

@@ -22,7 +22,7 @@
                  :let [report (scan-achievement scanner commit-info)]
                  :when report]
            [[(:email commit-info) code] (merge report
-                                               (select-keys commit-info [:author :time :id]))])
+                                               (select-keys commit-info [:author :calendar :id]))])
          (into {})))
     (catch Exception e
       (logging/error e "Failed commit-info parsing" (.getName commit)))
@@ -64,7 +64,7 @@
                    :when report
                    :let [commit-info (:commit-info report)]]
              [[(:email commit-info) code] (merge report
-                                                 (select-keys commit-info [:author :time :id]))])
+                                                 (select-keys commit-info [:author :calendar :id]))])
            (into {})))
       (finally
         (.release reader)
@@ -94,7 +94,7 @@
           :userid    (:id (db/get-user-by-email email))
           :repoid    (:id repo-info)
           :sha1      (:id data)
-          :timestamp (.getTime (:time data))
+          :timestamp (.getTimeInMillis (:calendar data))
           :assigned  (System/currentTimeMillis) }))))
 
 (defn analyze [repo-info]

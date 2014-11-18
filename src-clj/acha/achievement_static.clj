@@ -152,7 +152,7 @@
  {:description "More than 10 lines in a commit message",
   :key :leo-tolstoy,
   :name "Leo Tolstoy"}
- {:description "You are the only committer for a week",
+ {:description "You are the only committer for a month",
   :key :loneliness,
   :name "Loneliness"}
  {:description "Consecutive 777 in SHA-1", :key :lucky, :name "Lucky"}

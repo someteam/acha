@@ -40,17 +40,11 @@
       {:added 0 :removed 0}
       changed-files)))
 
-(defn create-calendar ^Calendar [time timezone]
-  (doto
-    (Calendar/getInstance timezone)
-    (.setTime time)))
-
 (defn- date-scanner [scanners sname month day]
   (commit-scanner scanners sname
-    (fn [{:keys [time timezone]}]
-      (let [calendar (create-calendar time timezone)]
-        (and (= month (+ 1 (.get calendar Calendar/MONTH)))
-             (= day (.get calendar Calendar/DAY_OF_MONTH)))))))
+    (fn [{:keys [calendar]}]
+      (and (= month (+ 1 (.get calendar Calendar/MONTH)))
+           (= day (.get calendar Calendar/DAY_OF_MONTH))))))
 
 (defn- subword-scanner [scanners sname words]
   (commit-scanner scanners sname
@@ -174,33 +168,28 @@
 
   ;; COMMIT DATE AND TIME
   (commit-scanner :programmers-day
-    (fn [{:keys [time timezone]}]
-      (let [calendar (create-calendar time timezone)]
-        (= 256 (.get calendar Calendar/DAY_OF_YEAR)))))
+    (fn [{:keys [calendar]}]
+      (= 256 (.get calendar Calendar/DAY_OF_YEAR))))
 
   (commit-scanner :thanksgiving
-    (fn [{:keys [time timezone]}]
-      (let [calendar (create-calendar time timezone)]
-         (and (= 10 (.get calendar Calendar/MONTH)) ;; November
-              (= 5 (.get calendar Calendar/DAY_OF_WEEK)) ;; Thursday
-              (<= 22 (.get calendar Calendar/DAY_OF_MONTH) 28))))) ;; 4th Thursday
+    (fn [{:keys [calendar]}]
+       (and (= 10 (.get calendar Calendar/MONTH)) ;; November
+            (= 5 (.get calendar Calendar/DAY_OF_WEEK)) ;; Thursday
+            (<= 22 (.get calendar Calendar/DAY_OF_MONTH) 28)))) ;; 4th Thursday
 
   (commit-scanner :owl
-    (fn [{:keys [time timezone]}]
-      (let [calendar (create-calendar time timezone)]
-         (<= 4 (.get calendar Calendar/HOUR_OF_DAY) 7)))) ;; between 4am and 7am
+    (fn [{:keys [calendar]}]
+      (<= 4 (.get calendar Calendar/HOUR_OF_DAY) 7))) ;; between 4am and 7am
 
   (commit-scanner :dangerous-game
-    (fn [{:keys [time timezone]}]
-      (let [calendar (create-calendar time timezone)]
-        (and (<= 18 (.get calendar Calendar/HOUR_OF_DAY)) ;; after 18PM
-             (= 6 (.get calendar Calendar/DAY_OF_WEEK)))))) ;; Friday
+    (fn [{:keys [calendar]}]
+      (and (<= 18 (.get calendar Calendar/HOUR_OF_DAY)) ;; after 18PM
+           (= 6 (.get calendar Calendar/DAY_OF_WEEK))))) ;; Friday
 
   (commit-scanner :time-get
-    (fn [{:keys [time timezone]}]
-      (let [calendar (create-calendar time timezone)]
-        (and (= 0 (.get calendar Calendar/HOUR_OF_DAY))
-             (= 0 (.get calendar Calendar/MINUTE))))))
+    (fn [{:keys [calendar]}]
+      (and (= 0 (.get calendar Calendar/HOUR_OF_DAY))
+           (= 0 (.get calendar Calendar/MINUTE)))))
 
   (commit-scanner :alzheimers
     (fn [{:keys [between-time]}]
@@ -344,12 +333,11 @@
     (fn [commits]
       (let [init-commit (last commits)]
         (when (= 0 (:parents-count init-commit)) ;; it's really init-commit
-          (let [birthday (create-calendar (:time init-commit) (:timezone init-commit))
-                anniv-commits (filter (fn [{:keys [time timezone]}]
-                                        (let [c (create-calendar time timezone)]
-                                            (and (= (.get birthday Calendar/MONTH) (.get c Calendar/MONTH))
-                                                 (= (.get birthday Calendar/DAY_OF_MONTH) (.get c Calendar/DAY_OF_MONTH))
-                                                 (not= (.get birthday Calendar/YEAR) (.get c Calendar/YEAR)))))
+          (let [birthday (:calendar init-commit)
+                anniv-commits (filter (fn [{:keys [calendar]}]
+                                        (and (= (.get birthday Calendar/MONTH) (.get calendar Calendar/MONTH))
+                                             (= (.get birthday Calendar/DAY_OF_MONTH) (.get calendar Calendar/DAY_OF_MONTH))
+                                             (not= (.get birthday Calendar/YEAR) (.get calendar Calendar/YEAR))))
                                       commits)]
             (->> anniv-commits
               (group-by :email)
@@ -357,42 +345,43 @@
                      {:commit-info (first commits)
                       :level (count commits)}))))))))
 
-  ;; HELPME Should we take into account merge commits?
+  ;; FIXME Should we take into account merge commits?
   (timeline-scanner :flash
     (fn [commits]
-      (let [time-in-millis #(.getTimeInMillis (create-calendar (:time %) (:timezone %)))]
-        (for [[email author-commits] (->> commits
-                                       (map #(assoc % :timestamp (time-in-millis %)))
-                                       (group-by :email))
-              :let [sorted (sort-by :timestamp > author-commits)
-                    [c1 c2] (->> (zipmap sorted (rest sorted))
-                                 (filter (fn [[c1 c2]]
-                                           (< (- (:timestamp c1) (:timestamp c2)) 
-                                              (* 60 1000))))
-                                 first)]
-              :when c1]
-          {:commit-info c1}))))
+      (for [[email author-commits] (group-by :email commits)
+            :let [ordered (sort-by :calendar #(compare %2 %1) author-commits) ; desc
+                  commit  (->> (map vector ordered (next ordered))
+                               (filter (fn [[commit before]]
+                                         (< (- (.getTimeInMillis ^Calendar (:calendar commit))
+                                               (.getTimeInMillis ^Calendar (:calendar before)))
+                                            (* 60 1000)))) ; one minute between two commits
+                               ffirst)]
+            :when commit]
+        {:commit-info commit})))
 
   (timeline-scanner :catchphrase
-    (fn [commits]
+    (fn [commits & {:keys [threshold] :or {threshold 10}}]
       (->> commits
         (group-by (juxt :email :message))
-        (filter (fn [[_ cs]] (<= 10 (count cs))))
-        (map (fn [[_ cs]] {:commit-info (first cs)})))))
+        (filter (fn [[_ cs]] (<= threshold (count cs))))
+        (map (fn [[_ cs]]
+               {:commit-info (util/min-by :calendar cs)})))))
 
   (timeline-scanner :loneliness
     (fn [commits]
       (let [taxon (fn [^Calendar calendar]
                     [(.get calendar Calendar/YEAR) (.get calendar Calendar/MONTH)])
-            current-month (taxon (Calendar/getInstance))]
-        (->>
-          (for [[tx month-commits] (group-by #(taxon (:calendar %)) commits)
-                :when (not= current-month tx)
-                :let [authored-commits (group-by :email month-commits)]
-                :when (= 1 (count authored-commits))]
-            (first authored-commits))
-          (into {})
-          (map (fn [[_ cs]] {:commit-info (ffirst cs)}))))))
+            current-month (taxon (Calendar/getInstance))
+            lonely-authors (for [[tx month-commits] (group-by #(taxon (:calendar %)) commits)
+                                 :when (not= current-month tx)
+                                 :let [authored-commits (group-by :email month-commits)]
+                                 :when (= 1 (count authored-commits))]
+                             (first authored-commits))]
+        (->> lonely-authors
+          (reduce (fn [storage [email cs]]
+                    (update-in storage [email] concat cs)) {})
+          (map (fn [[_email cs]]
+                 {:commit-info (util/min-by :calendar cs)}))))))
 
   (timeline-scanner :necromancer
     (fn [commits]
@@ -400,12 +389,13 @@
             necro? (fn [[before commit]]
                           (let [threshold (doto (.clone (:calendar commit))
                                                 (.add Calendar/MONTH -1))]
-                            (< (compare (:calendar before) threshold) 0)))]
+                            (neg? (compare (:calendar before) threshold))))]
         (->> (map vector ordered (next ordered))
              (filter necro?)
              (map second)
              (group-by :email)
-             (map (fn [[author-email cs]] {:commit-info (first cs)})))))))
+             (map (fn [[_email cs]]
+                    {:commit-info (util/min-by :calendar cs)})))))))
 
 
 ;; combo

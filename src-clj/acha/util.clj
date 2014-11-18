@@ -4,14 +4,17 @@
     [cognitect.transit :as transit]
     [clojure.string :as string])
   (:import
-    [java.util Calendar]
+    [java.util Calendar TimeZone]
     [java.io ByteArrayOutputStream ByteArrayInputStream]
     [java.security MessageDigest]))
 
-(defn create-calendar ^Calendar [time timezone]
-  (doto
-    (Calendar/getInstance timezone)
-    (.setTime time)))
+(defn create-calendar 
+  (^Calendar [time] 
+    (create-calendar time (TimeZone/getTimeZone "UTC")))
+  (^Calendar [time timezone]
+    (doto
+      (Calendar/getInstance timezone)
+      (.setTime time))))
 
 (defn write-transit-bytes [x]
   (let [baos (ByteArrayOutputStream.)
@@ -94,3 +97,8 @@
 
 (defn map-vals [f m]
   (mapmap (fn [k v] [k (f v)]) m))
+
+(defn min-by [f coll]
+  (reduce #(if (neg? (compare (f %1) (f %2))) %1 %2)
+          (first coll)
+          coll))

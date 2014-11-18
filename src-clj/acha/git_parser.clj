@@ -180,8 +180,6 @@
     {:id (.getName rev-commit)
      :author (.getName ident)
      :email  (util/normalize-str (.getEmailAddress ident))
-     :time time
-     :timezone timezone
      :calendar (util/create-calendar time timezone)
      :between-time (- (.getCommitTime rev-commit) (.getTime (.getWhen ident)))
      :message message
