@@ -109,15 +109,15 @@
       (sync-achievements repo-info new-achievements)
       (db/update-repo-state id :idle))))
 
-(defn- worker [worker-id]
-  (logging/info "Worker #" worker-id " is ready")
+(defn- worker []
+  (logging/info "Worker is ready")
   (loop []
     (try
       (when-let [repo (not-empty (db/get-next-repo-to-process))]
         (try
-          (logging/info "Worker #" worker-id "has started processing" repo)
+          (logging/info "Worker has started processing" repo)
           (analyze repo)
-          (logging/info "Worker #" worker-id "has finished processing" repo)
+          (logging/info "Worker has finished processing" repo)
           (catch Exception e
             (db/update-repo-state (:id repo) :error (util/reason e))
             (logging/error e "Repo analysis failed"))))
@@ -129,4 +129,5 @@
 
 (defn run-workers []
   (doseq [id (range 4)]
-    (future (worker id))))
+    (doto (Thread. #(worker) (str "worker#" id))
+          (.start))))
