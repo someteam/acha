@@ -98,7 +98,12 @@
 (defn map-vals [f m]
   (mapmap (fn [k v] [k (f v)]) m))
 
-(defn min-by [f coll]
-  (reduce #(if (neg? (compare (f %1) (f %2))) %1 %2)
-          (first coll)
-          coll))
+(defn map-by [key-fn coll]
+  (->> coll (map #(vector (key-fn %) %)) (into {})))
+
+(defn min-by [f [x & xs]]
+  (reduce #(if (neg? (compare (f %1) (f %2))) %1 %2) x xs))
+
+(defn max-by [f [x & xs]]
+  (reduce #(if (pos? (compare (f %1) (f %2))) %1 %2) x xs))
+

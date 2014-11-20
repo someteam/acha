@@ -54,7 +54,7 @@
   :key :collision,
   :name "Collision"}
  {:description "10+ commits in a row", :key :combo, :name "Combo"}
- {:description "Make a commit after someone had N commits in a row",
+ {:description "Make a commit after someone had 10+ commits in a row",
   :key :combo-breaker,
   :name "Combo Breaker"}
  {:description "Only add a comment",

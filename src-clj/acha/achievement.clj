@@ -77,6 +77,34 @@
            not-empty
            (every? identity)))
 
+(defn calculate-combos
+  [commits]
+  (let [sha->commit (util/map-by :id commits)
+        ;; determine relationship between parent and children
+        parent->children (->> (for [child commits, parent (:parents child)]
+                                [parent child])
+                              (reduce (fn [acc [k v]] (update-in acc [k] conj v)) {}))
+        init-commits (filter #(= 0 (:parents-count %)) commits)]
+    (loop [[current & rest-queue] (seq init-commits)
+           combos {}]
+      (if current
+        ;; determine current combo streak from commit parents
+        (let [length (->> (:parents current)
+                          (map sha->commit)
+                          (filter #(= (:email %) (:email current)))
+                          (keep combos)
+                          (reduce max 0) inc)]
+          ;; add children to queue if we could increase their combo streak
+          (recur (concat
+                   (->> (get parent->children (:id current))
+                        (filter (fn [child]
+                                  (or (not (contains? combos child)) ; unvisited node
+                                      (and (= (:email child) (:email current)) ; it's a combo and I can prolong it
+                                           (< (combos child) (inc length)))))))
+                   rest-queue)
+                 (update-in combos [current] (fnil max 0) length)))
+        combos))))
+
 (defscanners base
   (commit-scanner :bad-motherfucker
     (fn [{:keys [message]}]
@@ -395,32 +423,51 @@
              (map second)
              (group-by :email)
              (map (fn [[_email cs]]
-                    {:commit-info (util/min-by :calendar cs)})))))))
+                    {:commit-info (util/min-by :calendar cs)}))))))
 
+  (timeline-scanner :combo
+    (fn [commits]
+      (let [streak 10
+            combos (calculate-combos commits)]
+        (->> combos
+          (filter #(<= streak (second %)))
+          (group-by (comp :email first))
+          (util/map-vals (partial util/max-by second))
+          (map (fn [[_email [commit combo-length]]]
+                 {:commit-info commit
+                  :level (quot combo-length streak)}))))))
 
-;; combo
-;; combo-breaker
-;; what-happended-here
-;; all-things-die
-;; good-boy
+  (timeline-scanner :combo-breaker
+    (fn [commits]
+      (let [streak 10
+            combos (calculate-combos commits)
+            sha->commit (util/map-by :id commits)
+            combo-breaks (for [child commits
+                               parent (:parents child)
+                               :let [combo-length (combos (sha->commit parent))]
+                               :when (and (not= (:email child) (:email parent))
+                                          (<= streak combo-length))]
+                           [child combo-length])]
+        (->> combo-breaks
+          (group-by (comp :email first))
+          (util/map-vals (partial util/max-by second))
+          (map (fn [[_email [commit combo-length]]]
+                 {:commit-info commit
+                  :level (quot combo-length streak)}))))))
 
+)
 
   ;;  TODO
   ;;  commenter
   ;;  blamer
-  ;;  catchphrase
   ;;  waste
-  ;;  loneliness
-  ;;  necromancer
   ;;  collision
   ;;  peacemaker
-  ;;  combo-breaker
-  ;;  combo
   ;;  worker-bee
   ;;  oops
-  ;;  what-happened-here
-  ;;  all-things-die
-  ;;  goodboy
+  ;;  [!] what-happened-here
+  ;;  [!] all-things-die
+  ;;  [!] goodboy
   ;;  commit-get
 
 
