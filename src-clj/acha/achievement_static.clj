@@ -94,7 +94,7 @@
  {:description "Use word “fix” in a commit message",
   :key :fix,
   :name "Save the Day"}
- {:description "Two different commits within 1 minute",
+ {:description "Two different commits within 15 seconds",
   :key :flash,
   :name "Flash"}
  {:description "Commit on Apr 1", :key :fools-day, :name "Fools’ Code"}

@@ -385,7 +385,7 @@
                                (filter (fn [[commit before]]
                                          (< (- (.getTimeInMillis ^Calendar (:calendar commit))
                                                (.getTimeInMillis ^Calendar (:calendar before)))
-                                            (* 60 1000)))) ; one minute between two commits
+                                            (* 15 1000)))) ; one minute between two commits
                                ffirst)]
             :when commit]
         {:commit-info commit})))
