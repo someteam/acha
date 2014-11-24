@@ -370,8 +370,11 @@
             (->> anniv-commits
               (group-by :email)
               (map (fn [[email commits]]
-                     {:commit-info (first commits)
-                      :level (count commits)}))))))))
+                     (let [level (->> commits
+                                   (map #(.get (:calendar %) Calendar/YEAR))
+                                   distinct count)]
+                       {:commit-info (first commits)
+                        :level level})))))))))
 
   ;; FIXME Should we take into account merge commits?
   (timeline-scanner :flash
