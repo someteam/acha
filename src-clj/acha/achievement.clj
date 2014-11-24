@@ -446,8 +446,8 @@
             combos (calculate-combos commits)
             sha->commit (util/map-by :id commits)
             combo-breaks (for [child commits
-                               parent (:parents child)
-                               :let [combo-length (combos (sha->commit parent))]
+                               parent (map sha->commit (:parents child))
+                               :let [combo-length (combos parent)]
                                :when (and (not= (:email child) (:email parent))
                                           (<= streak combo-length))]
                            [child combo-length])]
