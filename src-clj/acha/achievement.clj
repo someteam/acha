@@ -77,13 +77,16 @@
            not-empty
            (every? identity)))
 
+(defn- parentage [commits]
+  (->> (for [child commits, parent (:parents child)]
+         [parent child])
+       (reduce (fn [acc [k v]] (update-in acc [k] conj v)) {})))
+
 (defn calculate-combos
   [commits]
   (let [sha->commit (util/map-by :id commits)
         ;; determine relationship between parent and children
-        parent->children (->> (for [child commits, parent (:parents child)]
-                                [parent child])
-                              (reduce (fn [acc [k v]] (update-in acc [k] conj v)) {}))
+        parent->children (parentage commits)
         init-commits (filter #(= 0 (count (:parents %))) commits)]
     (loop [[current & rest-queue] (seq init-commits)
            combos {}]
@@ -428,9 +431,8 @@
                     {:commit-info (util/min-by :calendar cs)}))))))
 
   (timeline-scanner :combo
-    (fn [commits]
-      (let [streak 10
-            combos (calculate-combos commits)]
+    (fn [commits & {:keys [streak] :or {streak 10}}]
+      (let [combos (calculate-combos commits)]
         (->> combos
           (filter #(<= streak (second %)))
           (group-by (comp :email first))
@@ -440,17 +442,19 @@
                   :level (quot combo-length streak)}))))))
 
   (timeline-scanner :combo-breaker
-    (fn [commits]
-      (let [streak 10
-            combos (calculate-combos commits)
+    (fn [commits & {:keys [streak] :or {streak 10}}]
+      (let [combos (calculate-combos commits)
             sha->commit (util/map-by :id commits)
+            parent->children (parentage commits)
             combo-breaks (for [child commits
                                parent (map sha->commit (:parents child))
                                :let [combo-length (combos parent)]
-                               :when (and (not= (:email child) (:email parent))
-                                          (<= streak combo-length))]
+                               :when (->> (:id parent)
+                                          (parent->children)
+                                          (every? #(not= (:email %) (:email parent))))]
                            [child combo-length])]
         (->> combo-breaks
+          (filter #(<= streak (second %)))
           (group-by (comp :email first))
           (util/map-vals (partial util/max-by second))
           (map (fn [[_email [commit combo-length]]]
