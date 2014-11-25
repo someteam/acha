@@ -20,7 +20,7 @@
   [scanners sname f & {:keys [include-merges]}]
   (update-in scanners [:commit-scanners] assoc sname
     (fn [commit-info]
-      (when (or include-merges (<= (:parents-count commit-info) 1))
+      (when (or include-merges (<= (count (:parents commit-info)) 1))
         (when-let [ret (f commit-info)]
           (if (map? ret) ret {}))))))
 
@@ -84,7 +84,7 @@
         parent->children (->> (for [child commits, parent (:parents child)]
                                 [parent child])
                               (reduce (fn [acc [k v]] (update-in acc [k] conj v)) {}))
-        init-commits (filter #(= 0 (:parents-count %)) commits)]
+        init-commits (filter #(= 0 (count (:parents %))) commits)]
     (loop [[current & rest-queue] (seq init-commits)
            combos {}]
       (if current
@@ -353,28 +353,27 @@
             (re-find #"(?i)\bgnu\b(.*?)\blicense\b" line))))))
 
   (commit-scanner :hydra
-    (fn [{:keys [parents-count]}]
-      (<= 3 parents-count))
+    (fn [{:keys [parents]}]
+      (<= 3 (count parents)))
     :include-merges true)
 
   (timeline-scanner :anniversary
     (fn [commits]
-      (let [init-commit (last commits)]
-        (when (= 0 (:parents-count init-commit)) ;; it's really init-commit
-          (let [birthday (:calendar init-commit)
-                anniv-commits (filter (fn [{:keys [calendar]}]
-                                        (and (= (.get birthday Calendar/MONTH) (.get calendar Calendar/MONTH))
-                                             (= (.get birthday Calendar/DAY_OF_MONTH) (.get calendar Calendar/DAY_OF_MONTH))
-                                             (not= (.get birthday Calendar/YEAR) (.get calendar Calendar/YEAR))))
-                                      commits)]
-            (->> anniv-commits
-              (group-by :email)
-              (map (fn [[email commits]]
-                     (let [level (->> commits
-                                   (map #(.get (:calendar %) Calendar/YEAR))
-                                   distinct count)]
-                       {:commit-info (first commits)
-                        :level level})))))))))
+      (when-first [init-commit (filter #(= 0 (count (:parents %))) commits)]
+        (let [birthday (:calendar init-commit)
+              anniv-commits (filter (fn [{:keys [calendar]}]
+                                      (and (= (.get birthday Calendar/MONTH) (.get calendar Calendar/MONTH))
+                                           (= (.get birthday Calendar/DAY_OF_MONTH) (.get calendar Calendar/DAY_OF_MONTH))
+                                           (not= (.get birthday Calendar/YEAR) (.get calendar Calendar/YEAR))))
+                                    commits)]
+          (->> anniv-commits
+            (group-by :email)
+            (map (fn [[email commits]]
+                   (let [level (->> commits
+                                 (map #(.get (:calendar %) Calendar/YEAR))
+                                 distinct count)]
+                     {:commit-info (first commits)
+                      :level level}))))))))
 
   ;; FIXME Should we take into account merge commits?
   (timeline-scanner :flash

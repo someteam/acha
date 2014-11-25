@@ -10,7 +10,7 @@
     {:between-time -1411450912411,
      :email "warhol@acha-acha.co",
      :calendar (util/create-calendar #inst "2014-10-09")
-     :parents-count 1,
+     :parents ["parent-id"],
      :author "Andy Warhol",
      :id "28736ac09b8d82c9075e8b69b60590edfffba74b",
      :changed-files [],

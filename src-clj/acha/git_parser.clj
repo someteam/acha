@@ -183,8 +183,7 @@
      :calendar (util/create-calendar time timezone)
      :between-time (- (.getCommitTime rev-commit) (.getTime (.getWhen ident)))
      :message message
-     :parents-count (.getParentCount rev-commit)
-     :parents (map #(.getName %) (.getParents rev-commit))
+     :parents (mapv #(.getName %) (.getParents rev-commit))
      :changed-files (mapv diff-parser diffs)}))
 
 (defn commit-info-without-diffs [^Git repo ^RevCommit rev-commit ^DiffFormatter df ^ObjectReader reader]
