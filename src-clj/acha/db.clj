@@ -209,8 +209,8 @@
       :ach/user     (:userid a)
       :ach/achent   (-> (:type a) keyword static/table-map :id)
       :ach/sha1     (:sha1 a)
-      :ach/ts       (java.util.Date. (:timestamp a))
-      :ach/assigned (java.util.Date. (:assigned a))}
+      :ach/ts       (java.util.Date. (long (:timestamp a)))
+      :ach/assigned (java.util.Date. (long (:assigned a)))}
     (:level a)
       (assoc :ach/level (:level a))))
 
