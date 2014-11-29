@@ -378,16 +378,16 @@
                      {:commit-info (first commits)
                       :level level}))))))))
 
-  ;; FIXME Should we take into account merge commits?
   (timeline-scanner :flash
     (fn [commits]
       (for [[email author-commits] (group-by :email commits)
             :let [ordered (sort-by :calendar #(compare %2 %1) author-commits) ; desc
                   commit  (->> (map vector ordered (next ordered))
                                (filter (fn [[commit before]]
-                                         (< (- (.getTimeInMillis ^Calendar (:calendar commit))
+                                         (< 0
+                                            (- (.getTimeInMillis ^Calendar (:calendar commit))
                                                (.getTimeInMillis ^Calendar (:calendar before)))
-                                            (* 15 1000)))) ; one minute between two commits
+                                            (* 15 1000))))
                                ffirst)]
             :when commit]
         {:commit-info commit})))
