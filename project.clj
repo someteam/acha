@@ -13,7 +13,7 @@
                        #"public/react-.*"]
 
   :dependencies [
-    [org.clojure/clojure "1.7.0-alpha2"]
+    [org.clojure/clojure "1.7.0-alpha4"]
     [org.clojure/tools.logging "0.3.1"]
     [ch.qos.logback/logback-classic "1.1.2"]
 
@@ -29,10 +29,10 @@
     [org.xerial/sqlite-jdbc "3.7.2"]
     [com.mchange/c3p0 "0.9.2.1"]
     
-    [org.clojure/clojurescript "0.0-2356" :exclusions [org.mozilla/rhino]]
+    [org.clojure/clojurescript "0.0-2371" :exclusions [org.mozilla/rhino]]
     [org.clojure/core.async "0.1.338.0-5c5012-alpha"]
-    [com.cognitect/transit-cljs "0.8.188"]
-    [datascript "0.4.1" :exclusions [org.clojure/clojurescript]]
+    [com.cognitect/transit-cljs "0.8.192"]
+    [datascript "0.6.0"]
     [sablono "0.2.22"]
     [com.facebook/react "0.11.2"]
   ]
@@ -47,7 +47,7 @@
       { :id "prod"
         :source-paths ["src-cljs"]
         :compiler {
-          :externs       ["react/externs/react.js" "datascript/externs.js"]
+          :externs       ["react/externs/react.js"]
           :preamble      ["react/react_with_addons.min.js" "public/md5.js"]
           :output-to     "resources/public/acha.min.js"
           :optimizations :advanced

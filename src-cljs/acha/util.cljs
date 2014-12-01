@@ -1,12 +1,16 @@
 (ns acha.util
   (:require
     [datascript :as d]
+    [datascript.core :as dc]
     [cognitect.transit :as transit])
   (:require-macros
     [acha :refer [profile]]))
 
+(defn datom [[e a v tx added]]
+  (dc/Datom. e a v (or tx d/tx0) (if (nil? added) true added)))
+
 (defn read-transit [s]
-  (transit/read (transit/reader :json) s))
+  (transit/read (transit/reader :json {:handlers {"datascript/Datom" datom}}) s))
 
 (defn write-transit [s]
   (transit/write (transit/writer :json) s))

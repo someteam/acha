@@ -391,19 +391,13 @@
                  :on-message #(async/put! data-ch %))]
     (go
       (when (async/<! socket-ch) ;; open socket
-        (swap! state assoc :progress 0.1)
-        (u/ajax "/api/db/" (fn [tx-data] (async/put! ajax-ch tx-data)))
+        (swap! state assoc :progress 0.3)
+        (u/ajax "/api/datoms/" (fn [datoms] (async/put! ajax-ch datoms) (swap! state assoc :progress 0.6)))
         (let [[dump _] (async/alts! [ajax-ch (async/timeout 30000)])]
           (when dump  ;; wait ajax
-            (let [new-conn (d/create-conn schema)
-                  parts    (partition-all 100 dump)
-                  percent  (/ 0.89 (count parts))]
-              (profile (str "Pushed " (count dump) " entities")
-                (doseq [ents parts]
-                  (d/transact! new-conn ents)
-                  (swap! state update-in [:progress] + percent)
-                  (async/<! (async/timeout 1)))) ;; temporary free js thread here
-              (reset! conn @new-conn)
+            (profile "DB initialization"
+              (reset! conn (d/init-db dump schema))
+              (println "Pushed" (count (:eavt @conn)) "datoms")
               (swap! state assoc
                 :first-load? false
                 :progress 1))

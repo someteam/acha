@@ -69,11 +69,27 @@
     (map db/user->entity   (db/get-user-list))
     (map db/ach->entity    (db/get-ach-list))))
 
+(defn- entity->datom [e]
+  (map (fn [[k v]]
+         (transit/tagged-value "datascript/Datom" [(:db/id e) k v]))
+       (dissoc e :db/id)))
+
+(defn smart-dump []
+  (->
+    [(transit/tagged-value "datascript/Datom" [0 :meta/app-version acha.core/version])
+     (transit/tagged-value "datascript/Datom" [0 :meta/db-version  (:version (db/db-meta))])]
+    (into (comp (map db/achent->entity) (mapcat entity->datom)) acha.achievement-static/table)
+    (into (comp (map db/repo->entity)   (mapcat entity->datom)) (db/get-repo-list))
+    (into (comp (map db/user->entity)   (mapcat entity->datom)) (db/get-user-list))
+    (into (comp (map db/ach->entity)    (mapcat entity->datom)) (db/get-ach-list))))
+
 (def api-handler
   (->
     (compojure.core/routes
       (compojure.core/GET "/db/" []
         (full-dump))
+      (compojure.core/GET "/datoms/" []
+        {:body (smart-dump)})
       (compojure.core/POST "/add-repo/" [:as req]
         {:body (add-repo (get-in req [:params "url"]))})
       (compojure.core/POST "/delete-repo/" [:as req]
@@ -144,3 +160,4 @@
                     handler)]
       (server/run-server handler {:port port :ip ip}))
     (logging/info "Server ready at" (str ip ":" port))))
+
