@@ -107,3 +107,23 @@
 (defn max-by [f [x & xs]]
   (reduce #(if (pos? (compare (f %1) (f %2))) %1 %2) x xs))
 
+(defn -reduce
+  "Variant of reduce that does not unwrap (reduced)"
+  [f init coll]
+  (reduce #(let [result (f %1 %2)]
+                (cond-> result
+                  ;; wrap twice because reduce will unwrap one reduced
+                  ;; but we want to pass that info down the line
+                  (reduced? result) reduced))
+           init coll))
+
+(defn -reduce-kv
+  "Variant of reduce-kv that does not unwrap (reduced)"
+  [f init coll]
+  (reduce-kv #(let [result (f %1 %2 %3)]
+                (cond-> result
+                  ;; wrap twice because reduce-kv will unwrap one reduced
+                  ;; but we want to pass that info down the line
+                  (reduced? result) reduced))
+             init coll))
+

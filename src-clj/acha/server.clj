@@ -63,11 +63,12 @@
 (defn- entity->flat [rf]
   (completing
     (fn [result entity]
-      (reduce-kv (fn [result attr val]
-                   (if (= attr :db/id)
-                     result
-                     (rf result [(:db/id entity) attr val])))
-                 result entity))))
+      (util/-reduce-kv
+        (fn [result attr val]
+          (if (= attr :db/id)
+            result
+            (rf result [(:db/id entity) attr val])))
+        result entity))))
 
 (defn full-dump []
   (let [ent->datoms (comp entity->flat
