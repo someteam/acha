@@ -392,7 +392,7 @@
     (go
       (when (async/<! socket-ch) ;; open socket
         (swap! state assoc :progress 0.3)
-        (u/ajax "/api/datoms/" (fn [datoms] (async/put! ajax-ch datoms) (swap! state assoc :progress 0.6)))
+        (u/ajax "/api/db/" (fn [datoms] (async/put! ajax-ch datoms) (swap! state assoc :progress 0.6)))
         (let [[dump _] (async/alts! [ajax-ch (async/timeout 30000)])]
           (when dump  ;; wait ajax
             (profile "DB initialization"

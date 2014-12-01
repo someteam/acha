@@ -60,36 +60,32 @@
       {:result :deleted, :id id})
     {:result :error, :text (str "No such repo: " id)}))
 
-(defn- full-dump []
-  (concat
-    [[:db/add 0 :meta/app-version acha.core/version]
-     [:db/add 0 :meta/db-version  (:version (db/db-meta))]]
-    (map db/achent->entity acha.achievement-static/table)
-    (map db/repo->entity   (db/get-repo-list))
-    (map db/user->entity   (db/get-user-list))
-    (map db/ach->entity    (db/get-ach-list))))
+(defn- entity->flat [rf]
+  (completing
+    (fn [result entity]
+      (reduce-kv (fn [result attr val]
+                   (if (= attr :db/id)
+                     result
+                     (rf result [(:db/id entity) attr val])))
+                 result entity))))
 
-(defn- entity->datom [e]
-  (map (fn [[k v]]
-         (transit/tagged-value "datascript/Datom" [(:db/id e) k v]))
-       (dissoc e :db/id)))
-
-(defn smart-dump []
-  (->
-    [(transit/tagged-value "datascript/Datom" [0 :meta/app-version acha.core/version])
-     (transit/tagged-value "datascript/Datom" [0 :meta/db-version  (:version (db/db-meta))])]
-    (into (comp (map db/achent->entity) (mapcat entity->datom)) acha.achievement-static/table)
-    (into (comp (map db/repo->entity)   (mapcat entity->datom)) (db/get-repo-list))
-    (into (comp (map db/user->entity)   (mapcat entity->datom)) (db/get-user-list))
-    (into (comp (map db/ach->entity)    (mapcat entity->datom)) (db/get-ach-list))))
+(defn full-dump []
+  (let [ent->datoms (comp entity->flat
+                          (map #(transit/tagged-value "datascript/Datom" %)))]
+    (-> []
+      (into ent->datoms [{:db/id 0
+                          :meta/app-version acha.core/version
+                          :meta/db-version  (:version (db/db-meta))}])
+      (into (comp (map db/achent->entity) ent->datoms) acha.achievement-static/table)
+      (into (comp (map db/repo->entity)   ent->datoms) (db/get-repo-list))
+      (into (comp (map db/user->entity)   ent->datoms) (db/get-user-list))
+      (into (comp (map db/ach->entity)    ent->datoms) (db/get-ach-list)))))
 
 (def api-handler
   (->
     (compojure.core/routes
       (compojure.core/GET "/db/" []
-        (full-dump))
-      (compojure.core/GET "/datoms/" []
-        {:body (smart-dump)})
+        {:body (full-dump)})
       (compojure.core/POST "/add-repo/" [:as req]
         {:body (add-repo (get-in req [:params "url"]))})
       (compojure.core/POST "/delete-repo/" [:as req]
