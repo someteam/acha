@@ -263,7 +263,7 @@
   (let [ach-cnt (u/qmap '[:find  ?u (count ?a)
                           :where [?e :ach/achent ?a]
                                  [?e :ach/user ?u]] db)
-        users (->> users (sort-by #(ach-cnt (:db/id %) -1)) reverse)]
+        users (->> users (sort-by #(ach-cnt (:db/id %) -1)) reverse (take 40))]
     (s/html
       [:.users_pane.pane
         [:h1 "Users"]
@@ -398,6 +398,8 @@
             (profile "DB initialization"
               (reset! conn (d/init-db dump schema))
               (println "Pushed" (count (:eavt @conn)) "datoms")
+              (println (count (d/datoms @conn :aevt :user/name)) "users")
+              (println (count (d/datoms @conn :aevt :ach/sha1)) "achievements")
               (swap! state assoc
                 :first-load? false
                 :progress 1))
