@@ -6,16 +6,16 @@
 
 Grab a jar [from latest release](https://github.com/someteam/acha/releases/latest):
 
-    curl -L -O https://github.com/someteam/acha/releases/download/0.2.3/acha-uber-0.2.3.jar
+    curl -L -O https://github.com/someteam/acha/releases/download/0.2.4/acha-uber-0.2.4.jar
 
 Run it as:
 
-    java -jar acha-uber-0.2.3.jar
+    java -jar acha-uber-0.2.4.jar
     open http://localhost:8080/
 
 Following configuration options are supported:
 
-    java -jar acha-uber-0.2.3.jar --ip 0.0.0.0 --port 8080 --dir .acha
+    java -jar acha-uber-0.2.4.jar --ip 0.0.0.0 --port 8080 --dir .acha
 
 ## Building from source
 

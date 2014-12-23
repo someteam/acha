@@ -1,4 +1,4 @@
-(defproject acha "0.2.3"
+(defproject acha "0.2.4"
   :description "Enterprise Git Achievements Provider. Web scale. In the cloud"
   :url "http://acha-acha.co"
 
@@ -32,7 +32,7 @@
     [org.clojure/clojurescript "0.0-2371" :exclusions [org.mozilla/rhino]]
     [org.clojure/core.async "0.1.338.0-5c5012-alpha"]
     [com.cognitect/transit-cljs "0.8.192"]
-    [datascript "0.6.0"]
+    [datascript "0.7.2"]
     [sablono "0.2.22"]
     [com.facebook/react "0.11.2"]
   ]

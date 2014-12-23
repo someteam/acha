@@ -2,7 +2,7 @@
   (:require
     [clojure.core.async :as async]))
 
-(def version "0.2.3")
+(def version "0.2.4")
 
 (def working-dir ".acha")
 
