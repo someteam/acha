@@ -10,7 +10,7 @@
     [acha.achievement-static :as static])
   (:import com.mchange.v2.c3p0.ComboPooledDataSource))
 
-(def ^:const ^:private db-version "0.2.14")
+(def ^:const ^:private db-version "0.2.15")
 
 (def ^:private gen-id-key (keyword "last_insert_rowid()"))
 
@@ -52,7 +52,7 @@
       (logging/info "Creating DB" (db-path))
       (db-do-commands (db-conn)
         (create-table-ddl :meta
-            [:version :text])
+                          [:version :text])
         (create-table-ddl :user
                           [:id :integer "primary key autoincrement"]
                           [:name :text]
@@ -64,9 +64,10 @@
                           [:url :text]
                           [:state :text]
                           [:reason :text]
+                          [:snapshot :integer]
                           [:timestamp :integer "not null default 0"])
         "CREATE UNIQUE INDEX `url_unique` ON `repo` (`url` ASC)"
-        (create-table-ddl :repo_seen
+        (create-table-ddl :scanned_commit
                           [:repoid :integer "references repo (id)"]
                           [:sha1 :text])
         (create-table-ddl :achievement
@@ -145,13 +146,16 @@
 (defn count-new-repos []
   (count (query (db-conn) "select * from repo where state = \"waiting\"")))
 
-(defn get-repo-seen-commits [repo-id]
-  (->> (query (db-conn) ["select * from repo_seen where repoid = ?" repo-id])
+(defn get-scanned-commits [repo-id]
+  (->> (query (db-conn) ["select * from scanned_commit where repoid = ?" repo-id])
        (map :sha1)
        set))
 
-(defn insert-repo-seen-commit [repo-id sha1]
-  (insert! (db-conn) :repo_seen {:repoid repo-id :sha1 sha1}))
+(defn insert-scanned-commit [repo-id sha1]
+  (insert! (db-conn) :scanned_commit {:repoid repo-id :sha1 sha1}))
+
+(defn update-scanned-timeline [repo-id snapshot]
+  (update! (db-conn) :repo {:snapshot snapshot} ["id = ?" repo-id]))
 
 (defn delete-repo [id]
   (let [conn  (db-conn)
@@ -159,7 +163,7 @@
         _     (delete! conn :achievement ["repoid = ?" id])
         users (query conn "select id from user where id not in (select distinct userid from achievement)")
         _     (delete! conn :user ["id not in (select distinct userid from achievement)"])
-        _     (delete! conn :repo_seen ["repoid = ?" id])
+        _     (delete! conn :scanned_commit ["repoid = ?" id])
         _     (delete! conn :repo ["id = ?" id])]
     (concat 
       (map :id aches)

@@ -192,6 +192,10 @@
 (defn commit-info [^Git repo ^RevCommit rev-commit ^DiffFormatter df ^ObjectReader reader]
   (commit-info-core repo rev-commit df reader (partial parse-diff-entry reader)))
 
+(defn branches [^Git repo]
+  (->> (clj-jgit.porcelain/git-branch-list repo)
+       (map #(.. % (getObjectId) (getName)))))
+
 (defn- repo-info [url]
   (let [repo (load-repo url)
         reader (-> repo .getRepository .newObjectReader)
