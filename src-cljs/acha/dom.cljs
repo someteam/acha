@@ -1,7 +1,7 @@
 (ns acha.dom
   (:require
     [goog.events :as events]
-    [goog.history.EventType :as EventType]
+    [goog.history.EventType :as history.EventType]
     [clojure.string :as str]
     [acha.util :as u])
   (:import
@@ -45,7 +45,7 @@
 
 (defn listen-nav [callback]
   (doto history
-    (events/listen EventType/NAVIGATE
+    (events/listen history.EventType/NAVIGATE
       (fn [e]
         (callback (.-token e))))
     (.setUseFragment true)

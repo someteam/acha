@@ -4,7 +4,6 @@
             [clj-jgit.porcelain :as jgit.p]
             [clj-jgit.querying :as jgit.q]
             [clojure.java.io :as io]
-            [clojure.tools.logging :as logging]
             [clojure.string :as string])
   (:import [java.security MessageDigest]
            [java.io ByteArrayOutputStream]
@@ -45,7 +44,7 @@
     (if (.exists (io/as-file path))
       (doto (jgit.p/load-repo path)
         (jgit.p/git-fetch-all))
-        (clone url path))))
+      (clone url path))))
 
 (defn diff-formatter
   [^Git repo]
@@ -201,11 +200,3 @@
         reader (-> repo .getRepository .newObjectReader)
         formatter (diff-formatter repo)]
     (map #(commit-info repo % formatter reader) (jgit.q/rev-list repo))))
-
-(defn setup []
-  (use 'acha.git-parser :reload)
-  (try
-    (repo-info "https://github.com/someteam/acha.git")
-    (catch Exception e
-      (logging/error e "Something went wrong"))))
-
