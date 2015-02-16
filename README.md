@@ -19,7 +19,7 @@ Following configuration options are supported:
 
 ## Building from source
 
-    lein do clean, cljsbuild clean, cljsbuild once prod, uberjar
+    lein do clean, cljsbuild once prod, uberjar
     java -jar target/acha-uber.jar &
 
 ## Development mode
