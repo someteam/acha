@@ -49,10 +49,12 @@
     "resources/public/acha.min.js"
     "resources/public/acha.js"
   ]
+  :hooks [leiningen.cljsbuild]
   :cljsbuild { 
     :builds [
       { :id "prod"
         :source-paths ["src-cljs"]
+        :jar true
         :compiler {
           :preamble      ["public/md5.js"]
           :output-to     "resources/public/acha.min.js"
