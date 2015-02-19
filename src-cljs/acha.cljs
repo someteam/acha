@@ -216,7 +216,7 @@
         (if-let [web-url (repo-web-url repo-url)]
           [:a.rp__url {:href web-url :target "_blank"} repo-url]
           [:.rp__url repo-url])))
-    (when (str/blank? (:repo/reason repo))
+    (when-not (str/blank? (:repo/reason repo))
       (list
         [:.rp__reason (:repo/reason repo)]
         [:button.rp__delete {:on-click (fn [_] (delete-repo (:db/id repo)))}]))
