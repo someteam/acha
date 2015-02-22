@@ -49,6 +49,9 @@
  {:description "Add ClojureScript file to the repo",
   :key :clojurescript,
   :name "Even Lispers Hate Lisp (in a browser)"}
+ {:description "Add Emacs Lisp file to the repo",
+  :key :emacs-lisp,
+  :name "Older Than You Are"}
  {:description
   "Publish commit with the same N first chars of SHA-1 as existing commit",
   :key :collision,
