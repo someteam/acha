@@ -306,6 +306,7 @@
   (language-scanner :css ["css" "sass" "scss" "less" "haml"] :multi-listed? false)
   (language-scanner :cxx ["c++" "cc" "cpp" "cxx" "pcc" "hh" "hpp" "hxx" "vcproj"])
   (language-scanner :dart ["dart"])
+  (language-scanner :emacs-lisp ["el"])
   (language-scanner :erlang ["erl" "hrl"])
   (language-scanner :go ["go"])
   (language-scanner :haskell ["hs" "lhs"])
