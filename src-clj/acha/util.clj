@@ -44,7 +44,7 @@
 (defn normalize-str [str]
   (-> str string/trim string/lower-case))
 
-(defn normalize-uri [uri]
+(defn- normalize-scheme-uri [uri]
   (let [u (.normalize (java.net.URI. uri))
         normalized  (java.net.URI.
                       (some-> (.getScheme u) string/lower-case)
@@ -55,6 +55,18 @@
                       (.getQuery u)
                       (.getFragment u))]
     (str normalized)))
+
+(defn- normalize-schemeless-uri [uri]
+  (when-let [[_ user host path] (re-matches #"(.+)@([\w\d\.]+):(.*)" uri)]
+    (str user "@" (normalize-str host) ":" path)))
+
+(defn normalize-uri [uri]
+  (let [normalized (if (re-find #"^(\w+://)" uri)
+                     (normalize-scheme-uri uri)
+                     (normalize-schemeless-uri uri))]
+    (if-not (string/blank? normalized)
+      normalized
+      (throw (ex-info "Unknown uri format" {:uri uri})))))
 
 (defn resolve-redirects
   ([url] (resolve-redirects url url 0 nil))

@@ -45,7 +45,7 @@
       (catch Exception e
         (async/put! acha.core/events
           [{:message/class :error
-            :message/text  (str "Cannot add" url ": " (util/reason e))}])
+            :message/text  (str "Cannot add " url ": " (util/reason e))}])
           {:result :error, :url url})
         )))
 
