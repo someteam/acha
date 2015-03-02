@@ -3,7 +3,7 @@
 (def table #{"ahole" "anus" "ash0le" "ash0les" "asholes" "ass" "assface" 
 "assh0le" "assh0lez" "asshole" "assholes" "assholz" "asswipe" "azzhole" "bassterds" 
 "bastard" "bastards" "bastardz" "basterds" "basterdz" "biatch" "bitch" "bitches" 
-"blow" "boffing" "butthole" "buttwipe" "c0ck" "c0cks" "c0k" "carpet" 
+"boffing" "butthole" "buttwipe" "c0ck" "c0cks" "c0k" "carpet" 
 "cawk" "cawks" "clit" "cnts" "cntz" "cock" "cockhead" "cock-head" 
 "cocks" "cocksucker" "cock-sucker" "crap" "cum" "cunt" "cunts" "cuntz" 
 "dick" "dild0" "dild0s" "dildo" "dildos" "dilld0" "dilld0s" "dominatricks" 
