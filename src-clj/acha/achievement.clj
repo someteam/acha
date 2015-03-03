@@ -268,13 +268,13 @@
 
   (commit-scanner :ocd
     (fn [{:keys [changed-files]}]
-      (let [ocd? (fn [^String line-a ^String line-b]
-                   (and 
-                     ;; line-b is a part of line-a
-                     (.startsWith line-a line-b)
+      (let [ocd? (fn [^String line-new ^String line-old]
+                   (and
+                     ;; line-new is a part of line-old
+                     (.startsWith line-old line-new)
                      ;; the rest part contains spaces
-                     (re-matches #"^[ \t]+$" (.substring line-a (.length line-b)))))]
-        (check-changed-lines #(ocd? %2 %1) changed-files))))
+                     (re-matches #"^[ \t]+$" (.substring line-old (.length line-new)))))]
+        (check-changed-lines ocd? changed-files))))
 
   (date-scanner :christmas 12 25)
   (date-scanner :halloween 10 31)
