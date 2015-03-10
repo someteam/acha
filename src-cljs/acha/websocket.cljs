@@ -3,7 +3,9 @@
     [acha.util :as u]))
 
 (defn resolve-url [url]
-  (str "ws://" (.. js/window -location -host) url))
+  (let [location (.-location js/window)
+        websocket-protocol (if (= (.-protocol location) "https:") "wss:" "ws:")]
+    (str websocket-protocol "//" (.-host location) url)))
 
 (defn connect [url & {:keys [on-open on-close on-message]}]
   (let [url    (resolve-url url)
