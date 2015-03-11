@@ -25,7 +25,7 @@ Following configuration options are supported:
 ## Development mode
 
     lein cljsbuild auto dev &
-    lein run --reload true &
+    lein run --reload &
     open http://localhost:8080/index_dev.html
 
 ## License

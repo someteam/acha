@@ -238,19 +238,21 @@
 (defn db-meta []
   (first (query (db-conn) "SELECT * FROM meta")))
 
-(defn initialize-db []
-  (logging/info "Initialize db")
-  (if (db-exists?)
-    (when-not (= (:version (db-meta)) db-version)
-      (let [repos (get-repo-list)]
-        (drop-db)
-        (create-db)
-        (logging/info "Add repos" repos)
-        (doseq [{url :url} repos] (get-or-insert-repo url))))
-    (create-db))
-  (-> (db-conn) :datasource .hardReset)
-  (update! (db-conn) :repo {:timestamp 0} ["state <> ?" "idle"])
-  (update! (db-conn) :repo {:state "idle" :reason nil} ["state <> ?" "error"]))
+(defn initialize-db
+  ([] (initialize-db false))
+  ([force-reset?]
+    (logging/info "Initialize db")
+    (if (db-exists?)
+      (when (or force-reset? (not= (:version (db-meta)) db-version))
+        (let [repos (get-repo-list)]
+          (drop-db)
+          (create-db)
+          (logging/info "Add repos" repos)
+          (doseq [{url :url} repos] (get-or-insert-repo url))))
+      (create-db))
+    (-> (db-conn) :datasource .hardReset)
+    (update! (db-conn) :repo {:timestamp 0} ["state <> ?" "idle"])
+    (update! (db-conn) :repo {:state "idle" :reason nil} ["state <> ?" "error"])))
 
 
 ;; CLEANUP

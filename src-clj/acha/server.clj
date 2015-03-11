@@ -7,6 +7,7 @@
     [acha.db :as db]
     [acha.core]
     [clojure.tools.logging :as logging]
+    [clojure.tools.cli :as tools.cli]
     [clojure.java.io :as io]
     [clojure.core.async :as async]
     [org.httpkit.server :as server]
@@ -140,21 +141,29 @@
       (compojure.route/resources "/")
       (compojure.route/not-found "Page not found"))))
 
-(defn -main [& {:as opts}]
-  (let [working-dir (get opts "--dir" acha.core/working-dir)
-        ip          (get opts "--ip" "0.0.0.0")
-        port        (-> (get opts "--port" "8080") (Integer/parseInt))
-        dev         (contains? opts "--reload")]
+(defn -main [& args]
+  (let [[opts args banner] (tools.cli/cli args
+                             ["-h" "--help" "Print this flag" :default false :flag true]
+                             ["-d" "--dir"  "Working directory" :default acha.core/working-dir]
+                             ["-p" "--port" "Web interface port" :parse-fn #(Integer/parseInt %) :default 8080]
+                             ["--ip" "Bind address" :default "0.0.0.0"]
+                             ["--reload" "Reload web app on each request" :default false :flag true]
+                             ["--reset" "Force reset database before application starts" :default false :flag true])
+        working-dir (:dir opts)]
+
+    (when (:help opts)
+      (println banner)
+      (System/exit 0))
 
     (.mkdirs (io/as-file working-dir))
     (alter-var-root #'acha.core/working-dir (fn [_] working-dir))
     (logging/info "Working dir" working-dir)
-  
-    (db/initialize-db)
+
+    (db/initialize-db (:reset opts))
     (dispatcher/run-workers)
-    (let [handler (if dev
+    (let [handler (if (:reload opts)
                     (reload/wrap-reload #'handler {:dirs ["src-clj"]})
                     handler)]
-      (server/run-server handler {:port port :ip ip}))
-    (logging/info "Server ready at" (str ip ":" port))))
+      (server/run-server handler {:port (:port opts) :ip (:ip opts)}))
+    (logging/info "Server ready at" (str (:ip opts) ":" (:port opts)))))
 

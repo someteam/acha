@@ -15,6 +15,7 @@
   :dependencies [
     [org.clojure/clojure "1.7.0-alpha5"]
     [org.clojure/tools.logging "0.3.1"]
+    [org.clojure/tools.cli "0.3.1"]
     [ch.qos.logback/logback-classic "1.1.2"]
 
     [http-kit "2.1.19"]
