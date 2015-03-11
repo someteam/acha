@@ -94,7 +94,7 @@
 
 (defn avatar [email & [w]]
   (when email
-    (str "http://www.gravatar.com/avatar/" (js/md5 email) "?&d=retro" (when w (str "&s=" w)))))
+    (str "//www.gravatar.com/avatar/" (js/md5 email) "?&d=retro" (when w (str "&s=" w)))))
 
 (defn achent-img [achent]
   (when achent
