@@ -23,11 +23,20 @@
   (let [repo-name (->> (string/split url #"/") (remove string/blank?) last)]
     (str core/working-dir "/" repo-name "_" (util/md5 url))))
 
-(def jsch-factory (proxy [JschConfigSessionFactory] []
-  (configure [^OpenSshConfig$Host hc ^Session session]
-    (.getJSch ^JschConfigSessionFactory this hc FS/DETECTED))))
-
-(SshSessionFactory/setInstance jsch-factory)
+(defn init-session-factory
+  ([] (init-session-factory nil))
+  ([private-key]
+    (SshSessionFactory/setInstance
+      (proxy [JschConfigSessionFactory] []
+        (getJSch [^OpenSshConfig$Host hc ^FS fs]
+          (let [jsch (proxy-super getJSch hc fs)]
+            (when-not (string/blank? private-key)
+              (doto jsch
+                (.removeAllIdentity)
+                (.addIdentity (.getCanonicalPath (io/file private-key)))))
+            jsch))
+        (configure [^OpenSshConfig$Host hc ^Session session]
+          (.getJSch ^JschConfigSessionFactory this hc FS/DETECTED))))))
 
 (defn- clone [url path]
   (->

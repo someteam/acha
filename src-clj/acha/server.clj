@@ -147,6 +147,7 @@
                              ["-d" "--dir"  "Working directory" :default acha.core/working-dir]
                              ["-p" "--port" "Web interface port" :parse-fn #(Integer/parseInt %) :default 8080]
                              ["--ip" "Bind address" :default "0.0.0.0"]
+                             ["--private-key" "Custom private key"]
                              ["--reload" "Reload web app on each request" :default false :flag true]
                              ["--reset" "Force reset database before application starts" :default false :flag true])
         working-dir (:dir opts)]
@@ -160,6 +161,8 @@
     (logging/info "Working dir" working-dir)
 
     (db/initialize-db (:reset opts))
+    (git-parser/init-session-factory (:private-key opts))
+
     (dispatcher/run-workers)
     (let [handler (if (:reload opts)
                     (reload/wrap-reload #'handler {:dirs ["src-clj"]})
