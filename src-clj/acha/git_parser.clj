@@ -92,7 +92,7 @@
         (AbbreviatedObjectId/fromObjectId obj-id)))))
 
 (def binary-file-threshold (* 2 1024))
-(def big-file-threshold (* 10 1024 1024))
+(def big-file-threshold (* 512 1024))
 (def empty-array (byte-array 0))
 
 (def raw-comparator RawTextComparator/DEFAULT)
