@@ -15,9 +15,9 @@
     (catch Exception e
       (logging/error e "Failed commit achievement scan"))))
 
-(defn- analyze-commit [repo-info repo commit df reader]
+(defn- analyze-commit [repo-info repo commit]
   (try
-    (let [commit-info (git-parser/commit-info repo commit df reader)]
+    (let [commit-info (git-parser/commit-info repo commit)]
       (->> (for [[code scanner] (:commit-scanners achievement/base)
                  :let [report (scan-achievement scanner commit-info)]
                  :when report]
@@ -37,43 +37,33 @@
 
 (defn- find-commit-achievements [repo-info repo]
   (logging/info "Scanning new commits for identity achievements" (:url repo-info))
-  (let [seen (db/get-scanned-commits (:id repo-info))
-        df (git-parser/diff-formatter repo)
-        reader (git-parser/object-reader repo)]
-    (try
-      (transduce (comp
-                   (take 2000)
-                   (remove #(contains? seen (.getName %)))
-                   (map    #(analyze-commit repo-info repo % df reader)))
-                 (completing #(merge-with merge-achievements %1 %2))
-                 {}
-                 (git-parser/commit-list repo))
-      (finally
-        (.release reader)
-        (.release df)))))
+  (let [seen (db/get-scanned-commits (:id repo-info))]
+    (transduce (comp
+                 (take 2000)
+                 (remove #(contains? seen (.getName %)))
+                 (map    #(analyze-commit repo-info repo %)))
+               (completing #(merge-with merge-achievements %1 %2))
+               {}
+               (git-parser/commit-list repo))))
 
 (defn- find-timeline-achievements [repo-info repo]
   (logging/info "Scanning new commits for timeline achievements" (:url repo-info))
   (let [last-snapshot (:snapshot repo-info)
         current-snapshot (->> (git-parser/branches repo) sort hash)]
     (when (not= last-snapshot current-snapshot)
-      (let [df (git-parser/diff-formatter repo)
-            reader (git-parser/object-reader repo)]
-        (try
-          (let [commits (mapv #(git-parser/commit-info-without-diffs repo % df reader)
-                               (git-parser/commit-list repo))]
-            (->> (for [[code scanner] (:timeline-scanners achievement/base)
-                       report (scan-achievement scanner commits)
-                       :when report
-                       :let [commit-info (:commit-info report)]]
-                 [[(:email commit-info) code] (merge report
-                                                     (select-keys commit-info [:author :calendar :id]))])
-               (into {})))
-          (finally
-            ; todo insert if new or update
-            (db/update-scanned-timeline (:id repo-info) current-snapshot)
-            (.release reader)
-            (.release df)))))))
+      (try
+        (let [commits (mapv #(git-parser/commit-info-without-diffs repo %)
+                             (git-parser/commit-list repo))]
+          (->> (for [[code scanner] (:timeline-scanners achievement/base)
+                     report (scan-achievement scanner commits)
+                     :when report
+                     :let [commit-info (:commit-info report)]]
+               [[(:email commit-info) code] (merge report
+                                                   (select-keys commit-info [:author :calendar :id]))])
+             (into {})))
+        (finally
+          ; todo insert if new or update
+          (db/update-scanned-timeline (:id repo-info) current-snapshot))))))
 
 (defn- find-achievements [repo-info repo]
   (merge-with merge-achievements
