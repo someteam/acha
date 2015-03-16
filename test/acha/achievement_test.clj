@@ -18,8 +18,8 @@
     opts))
 
 (deftest date-scanner
-  (let [ach (commit-info :calendar (util/create-calendar #inst "2014-04-01"))]
-    (is ((get-in achievement/base [:commit-scanners :fools-day]) ach))))
+  (let [commit (commit-info :calendar (util/create-calendar #inst "2014-04-01"))]
+    (is ((get-in achievement/base [:commit-scanners :fools-day]) commit))))
 
 (deftest language-scanner
   (is ((get-in achievement/base [:commit-scanners :clojure])
@@ -28,87 +28,83 @@
 
 (deftest easy-fix
   (testing "nonadjacent lines"
-    (let [ach (commit-info :changed-files
-                [{:kind :edit
-                  :diff [{:added [["line a" 10]], :removed [["line b" 15]]}
-                         {:added [["line b" 10]], :removed [["line a" 15]]}]}])]
-      (is ((get-in achievement/base [:commit-scanners :easy-fix]) ach))))
+    (let [changed-file {:kind :edit
+                        :diff [{:added [["line a" 10]], :removed [["line b" 15]]}
+                               {:added [["line b" 10]], :removed [["line a" 15]]}]}
+          commit (commit-info :changed-files [changed-file])]
+      (is ((get-in achievement/base [:diff-scanners :easy-fix]) commit changed-file))))
   (testing "adjacent lines"
-    (let [ach (commit-info :changed-files
-                [{:kind :edit
-                  :diff [{:added [["line a" 10]], :removed [["line a" 11]]}]}])]
-      (is ((get-in achievement/base [:commit-scanners :easy-fix]) ach)))))
+    (let [changed-file {:kind :edit :diff [{:added [["line a" 10]], :removed [["line a" 11]]}]}
+          commit (commit-info :changed-files [changed-file])]
+      (is ((get-in achievement/base [:diff-scanners :easy-fix]) commit changed-file)))))
 
 (deftest mover
-  (let [ach (commit-info :changed-files [{:kind :rename}])]
-    (is ((get-in achievement/base [:commit-scanners :mover]) ach))))
+  (let [changed-file {:kind :rename}
+        commit (commit-info :changed-files [changed-file])]
+    (is ((get-in achievement/base [:diff-scanners :mover]) commit changed-file))))
 
 (deftest fat-ass
-  (let [ach (commit-info :changed-files [{:kind :add
-                                          :new-file {:type :binary
-                                                     :size 3000000}}])]
-    (is ((get-in achievement/base [:commit-scanners :fat-ass]) ach))))
+  (let [changed-file {:kind :add :new-file {:type :binary :size 3000000}}
+        commit (commit-info :changed-files [changed-file])]
+    (is ((get-in achievement/base [:diff-scanners :fat-ass]) commit changed-file))))
 
 (deftest world-balance
   (testing "balance in many files"
-    (let [ach (commit-info :changed-files
+    (let [commit (commit-info :changed-files
                            [{:kind :edit, :loc {:added 13 :removed 17}}
                             {:kind :edit, :loc {:added 17 :removed 13}}])]
-      (is ((get-in achievement/base [:commit-scanners :world-balance]) ach))))
+      (is ((get-in achievement/base [:commit-scanners :world-balance]) commit))))
   (testing "balance in one file"
-    (let [ach (commit-info :changed-files
+    (let [commit (commit-info :changed-files
                            [{:kind :edit, :loc {:added 10 :removed 10}}])]
-      (is (nil? ((get-in achievement/base [:commit-scanners :world-balance]) ach))))))
+      (is (nil? ((get-in achievement/base [:commit-scanners :world-balance]) commit))))))
 
 (deftest massive
-  (let [ach (commit-info :changed-files
+  (let [commit (commit-info :changed-files
                          [{:kind :edit, :loc {:added 2000 :removed 10}}])]
-    (is ((get-in achievement/base [:commit-scanners :massive]) ach))))
+    (is ((get-in achievement/base [:commit-scanners :massive]) commit))))
 
 (deftest eraser
   (testing "with additions"
-    (let [ach (commit-info :changed-files
+    (let [commit (commit-info :changed-files
                            [{:kind :edit, :loc {:added 200 :removed 10}}])]
-      (is (nil? ((get-in achievement/base [:commit-scanners :eraser]) ach)))))
+      (is (nil? ((get-in achievement/base [:commit-scanners :eraser]) commit)))))
   (testing "without additions"
-    (let [ach (commit-info :changed-files
+    (let [commit (commit-info :changed-files
                            [{:kind :edit, :loc {:added 0 :removed 10}}])]
-      (is ((get-in achievement/base [:commit-scanners :eraser]) ach)))))
+      (is ((get-in achievement/base [:commit-scanners :eraser]) commit)))))
 
 (deftest citation-needed
   (testing "link"
-    (let [ach (commit-info :message "See for more detilas http://stackoverflow.com/questions/701166/can-you-provide-some-examples-of-why-it-is-hard-to-parse-xml-and-html-with-a-reg")]
-      (is ((get-in achievement/base [:commit-scanners :citation-needed]) ach))))
+    (let [commit (commit-info :message "See for more detilas http://stackoverflow.com/questions/701166/can-you-provide-some-examples-of-why-it-is-hard-to-parse-xml-and-html-with-a-reg")]
+      (is ((get-in achievement/base [:commit-scanners :citation-needed]) commit))))
   (testing "without"
-    (let [ach (commit-info :message "bla-bla-bla")]
-      (is (not ((get-in achievement/base [:commit-scanners :citation-needed]) ach))))))
+    (let [commit (commit-info :message "bla-bla-bla")]
+      (is (not ((get-in achievement/base [:commit-scanners :citation-needed]) commit))))))
 
 (deftest holy-war
   (testing "true case"
-    (let [ach (commit-info :changed-files
-                [{:kind :edit
-                  :diff [{:added [["  line a" 10]], :removed [["	line a" 15]]}]}])]
-      (is ((get-in achievement/base [:commit-scanners :holy-war]) ach))))
+    (let [changed-file {:kind :edit :diff [{:added [["  line a" 10]], :removed [["	line a" 15]]}]}
+          commit (commit-info :changed-files [changed-file])]
+      (is ((get-in achievement/base [:diff-scanners :holy-war]) commit changed-file))))
   (testing "false case"
-    (let [ach (commit-info :changed-files
-                [{:kind :edit
-                  :diff [{:added [["  line a" 10]], :removed [["  line a 	" 15]]}]}])]
-      (is (not ((get-in achievement/base [:commit-scanners :holy-war]) ach))))))
+    (let [changed-file {:kind :edit :diff [{:added [["  line a" 10]], :removed [["  line a 	" 15]]}]}
+          commit (commit-info :changed-files [changed-file])]
+      (is (not ((get-in achievement/base [:diff-scanners :holy-war]) commit changed-file))))))
 
 (deftest ocd
-  (let [ach (commit-info :changed-files
-              [{:kind :edit
-                :diff [{:added [["  line a" 10]], :removed [["  line a  " 15]]}]}])]
-    (is ((get-in achievement/base [:commit-scanners :ocd]) ach))))
+  (let [changed-file {:kind :edit :diff [{:added [["  line a" 10]], :removed [["  line a  " 15]]}]}
+        commit (commit-info :changed-files [changed-file])]
+    (is ((get-in achievement/base [:diff-scanners :ocd]) commit changed-file))))
 
 (deftest multi-lingua
   (testing "3 main languages"
-    (is (= ((get-in achievement/base [:commit-scanners :multilingual])
-              (commit-info
-                :changed-files [{:kind :add, :new-file {:path "project.clj"}}
-                                {:kind :edit, :new-file {:path "project.java"}}
-                                {:kind :edit, :new-file {:path "react.js"}}]))
-           {:level 1})))
+    (let [commit (commit-info
+                   :changed-files [{:kind :add, :new-file {:path "project.clj"}}
+                                   {:kind :edit, :new-file {:path "project.java"}}
+                                   {:kind :edit, :new-file {:path "react.js"}}])]
+      (is (= ((get-in achievement/base [:commit-scanners :multilingual]) commit)
+             [{:level 1 :commit-info commit}]))))
   (testing "2 main languages and xml"
     (is (nil? ((get-in achievement/base [:commit-scanners :multilingual])
                  (commit-info

@@ -16,13 +16,17 @@
   [name & scanners]
   `(def ~name (-> {} ~@scanners)))
 
-(defn commit-scanner
-  [scanners sname f & {:keys [include-merges]}]
-  (update-in scanners [:commit-scanners] assoc sname
-    (fn [commit-info]
+(defn single-commit-scanner
+  [group scanners sname f & {:keys [include-merges]}]
+  (update-in scanners [group] assoc sname
+    (fn [commit-info & args]
       (when (or include-merges (<= (count (:parents commit-info)) 1))
-        (when-let [ret (f commit-info)]
-          (if (map? ret) ret {}))))))
+        (when-let [ret (apply f commit-info args)]
+          [(-> (when (map? ret) ret)
+               (assoc :commit-info commit-info))])))))
+
+(def commit-scanner (partial single-commit-scanner :commit-scanners))
+(def diff-scanner   (partial single-commit-scanner :diff-scanners))
 
 (defn timeline-scanner
   [scanners sname f]
@@ -67,9 +71,8 @@
              (fn [{:keys [changed-files]}]
                (scan-filenames rexps changed-files #{:add}))))))
 
-(defn- check-changed-lines [f changed-files]
-  (some->> (for [{:keys [diff]} changed-files
-                 {:keys [added removed]} diff]
+(defn- check-changed-lines [f {:keys [diff]}]
+  (some->> (for [{:keys [added removed]} diff]
              (when (and (not= 0 (count added))
                         (= (count added) (count removed)))
                (every? (fn [[[l1 _] [l2 _]]] (f l1 l2))
@@ -116,7 +119,7 @@
 
   (commit-scanner :hello-linus
     (fn [commit-info]
-      (when-let [a ((get-in base [:commit-scanners :bad-motherfucker]) commit-info)]
+      (when-first [a ((get-in base [:commit-scanners :bad-motherfucker]) commit-info)]
         (<= 5 (:level a)))))
 
   (commit-scanner :borat
@@ -146,7 +149,6 @@
 
   (commit-scanner :mark-of-the-beast #(.contains ^String (:id %) "666"))
 
-  ;; LOC achievements
   (commit-scanner :world-balance
     (fn [{:keys [changed-files]}]
       (let [loc (calculate-loc changed-files (filter #(not= (:added %) (:removed %))))]
@@ -163,39 +165,37 @@
       (let [loc (calculate-loc changed-files)]
         (<= 1000 (:added loc)))))
 
-  ;; DIFF achievements
-  (commit-scanner :easy-fix
-    (fn [{:keys [changed-files]}]
+  (diff-scanner :easy-fix
+    (fn [{:keys [changed-files]} {:keys [diff]}]
       (and
         ; only one file was changed
         (= (count changed-files) 1)
-        (let [diff (get-in changed-files [0 :diff])]
-          (or
-            ; swap two nonadjacent lines
-            (and
-              (= 2 (count diff))
-              ; one not blank lines
-              (->> (for [d [0 1], m [:added :removed]]
-                     (and (= 1 (count (get-in diff [d m])))
-                          (not (string/blank? (get-in diff [d m 0 0])))))
-                   (every? true?))
-              ; content added in one edit == removed in another edit
-              (= (get-in diff [0 :added 0 0])   (get-in diff [1 :removed 0 0]))
-              (= (get-in diff [1 :added 0 0])   (get-in diff [0 :removed 0 0])))
+        (or
+          ; swap two nonadjacent lines
+          (and
+            (= 2 (count diff))
+            ; one not blank lines
+            (->> (for [d [0 1], m [:added :removed]]
+                   (and (= 1 (count (get-in diff [d m])))
+                        (not (string/blank? (get-in diff [d m 0 0])))))
+                 (every? true?))
+            ; content added in one edit == removed in another edit
+            (= (get-in diff [0 :added 0 0])   (get-in diff [1 :removed 0 0]))
+            (= (get-in diff [1 :added 0 0])   (get-in diff [0 :removed 0 0])))
 
-            ; swap two adjacent lines
-            (and
-              (= 1 (count diff))
-              ; one line
-              (= 1 (count (get-in diff [0 :added])))
-              (= 1 (count (get-in diff [0 :removed])))
-              ; not blank line
-              (not (string/blank? (get-in diff [0 :added 0 0])))
-              ; the smae
-              (= (get-in diff [0 :added 0 0])   (get-in diff [0 :removed 0 0]))
-              ; adjacent
-              (= 1 (Math/abs (- (get-in diff [0 :added 0 1])
-                                (get-in diff [0 :removed 0 1]))))))))))
+          ; swap two adjacent lines
+          (and
+            (= 1 (count diff))
+            ; one line
+            (= 1 (count (get-in diff [0 :added])))
+            (= 1 (count (get-in diff [0 :removed])))
+            ; not blank line
+            (not (string/blank? (get-in diff [0 :added 0 0])))
+            ; the smae
+            (= (get-in diff [0 :added 0 0])   (get-in diff [0 :removed 0 0]))
+            ; adjacent
+            (= 1 (Math/abs (- (get-in diff [0 :added 0 1])
+                              (get-in diff [0 :removed 0 1])))))))))
 
   ;; COMMIT DATE AND TIME
   (commit-scanner :programmers-day
@@ -226,10 +226,10 @@
     (fn [{:keys [between-time]}]
       (<= (* 60 60 24 30) between-time)))
 
-  (commit-scanner :mover
-    (fn [{:keys [changed-files]}]
-      (some #(and (= (:kind %) :rename)
-                  (= 0 (count (:diff %)))) changed-files)))
+  (diff-scanner :mover
+    (fn [commit-info changed-file]
+      (and (= (:kind changed-file) :rename)
+           (= 0 (count (:diff changed-file))))))
 
   ;; ASK. It's not possible to have a commit without message or without files (except merges)
   (commit-scanner :empty-commit
@@ -244,14 +244,13 @@
     (fn [{:keys [message]}]
       (emoji/contains-emoji? message)))
 
-  (commit-scanner :fat-ass
-    (fn [{:keys [changed-files]}]
-      (some #(and (= :add (:kind %))
-                  (<= (* 2 1024 1024) (get-in % [:new-file :size] 0)))
-            changed-files)))
+  (diff-scanner :fat-ass
+    (fn [commit-info changed-file]
+      (and (= :add (:kind changed-file))
+           (<= (* 2 1024 1024) (get-in changed-file [:new-file :size] 0)))))
 
-  (commit-scanner :holy-war
-    (fn [{:keys [changed-files]}]
+  (diff-scanner :holy-war
+    (fn [commit-info changed-file]
       (let [war? (fn [^String line-a ^String line-b]
                    (and ;; one line has tab another doesn't have tab
                         (or (and (re-find #"\t(.*?)\S" line-a)
@@ -264,17 +263,17 @@
                         ;; number of space characters is changed (not tab deletion)
                         (not= (clojure.string/replace line-a #"[^ ]" "")
                               (clojure.string/replace line-b #"[^ ]" ""))))]
-        (check-changed-lines war? changed-files))))
+        (check-changed-lines war? changed-file))))
 
-  (commit-scanner :ocd
-    (fn [{:keys [changed-files]}]
+  (diff-scanner :ocd
+    (fn [commit-info changed-file]
       (let [ocd? (fn [^String line-new ^String line-old]
                    (and
                      ;; line-new is a part of line-old
                      (.startsWith line-old line-new)
                      ;; the rest part contains spaces
                      (re-matches #"^[ \t]+$" (.substring line-old (.length line-new)))))]
-        (check-changed-lines ocd? changed-files))))
+        (check-changed-lines ocd? changed-file))))
 
   (date-scanner :christmas 12 25)
   (date-scanner :halloween 10 31)
@@ -346,9 +345,9 @@
         (when (<= threshold level)
           {:level (inc (- level threshold))}))))
 
-  (commit-scanner :for-stallman
-    (fn [{:keys [changed-files]}]
-      (when-let [licenses (scan-filenames [#"(?i)^license(\.md)?$"] changed-files #{:add})]
+  (diff-scanner :for-stallman
+    (fn [commit-info changed-file]
+      (when-let [licenses (scan-filenames [#"(?i)^license(\.md)?$"] [changed-file] #{:add})]
         (some identity
           (for [{:keys [diff]} licenses
                 {:keys [added _]} diff

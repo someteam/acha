@@ -138,4 +138,3 @@
                   ;; but we want to pass that info down the line
                   (reduced? result) reduced))
              init coll))
-

@@ -201,7 +201,7 @@
  {:description "Add Objective-C file to the repo",
   :key :objective-c,
   :name "NSVeryDescriptiveAchievementNameWithParame..."}
- {:description "Commit with just trailing spaces removed",
+ {:description "Commit a file with just trailing spaces removed",
   :key :ocd,
   :name "OCD"}
  {:description "Commit and revert commit within 1 minute",

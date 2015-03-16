@@ -9,31 +9,53 @@
     [acha.core]
     [acha.git-parser :as git-parser]))
 
-(defn- scan-achievement [scanner obj]
-  (try
-    (scanner obj)
-    (catch Exception e
-      (logging/error e "Failed commit achievement scan"))))
-
-(defn- analyze-commit [repo-info repo commit]
-  (try
-    (let [commit-info (git-parser/commit-info repo commit)]
-      (->> (for [[code scanner] (:commit-scanners achievement/base)
-                 :let [report (scan-achievement scanner commit-info)]
-                 :when report]
-           [[(:email commit-info) code] (merge report
-                                               (select-keys commit-info [:author :calendar :id]))])
-         (into {})))
-    (catch Exception e
-      (logging/error e "Failed commit-info parsing" (.getName commit)))
-    (finally
-      (db/insert-scanned-commit (:id repo-info) (.getName commit)))))
-
 (defn- merge-achievements [a b]
   (cond
     (< (:level a 0) (:level b 0)) a
     (< (:level b 0) (:level a 0)) b
     :else a))
+
+(defn- scan-aches-group [group & args]
+  (let [safely-scan (fn [code scanner args]
+                      (try
+                        (apply scanner args)
+                        (catch Exception e
+                          (logging/error e "Failed to run achievement scanner" code args))))]
+    (->>
+      (for [[code scanner] (get achievement/base group)
+            report (safely-scan code scanner args)
+            :when report
+            :let [achievement (-> report
+                                (dissoc :commit-info)
+                                (merge (select-keys (:commit-info report)
+                                                    [:author :calendar :id :email])))
+                  akey [(get-in report [:commit-info :email]) code]]]
+        [akey achievement])
+      (into {}))))
+
+(defn- find-diff-achievements [repo commit-info]
+  (let [[files aches] (reduce
+                        (fn [[changed-files achievements] changed-file]
+                          (let [file-with-diff (git-parser/parse-diff repo changed-file)
+                                file-with-loc (git-parser/calculate-loc file-with-diff)
+                                new-achievements (scan-aches-group :diff-scanners commit-info file-with-diff)]
+                            [(conj changed-files file-with-loc)
+                             (merge-with merge-achievements
+                               achievements new-achievements)]))
+                       nil
+                       (:changed-files commit-info))]
+    [(assoc commit-info :changed-files files) aches]))
+
+(defn- analyze-commit [repo-info repo commit]
+  (try
+    (let [commit-info (git-parser/commit-info repo commit)
+          [enhanced-commit-info diff-aches] (find-diff-achievements repo commit-info)
+          commit-aches (scan-aches-group :commit-scanners enhanced-commit-info)]
+      (concat commit-aches diff-aches))
+    (catch Exception e
+      (logging/error e "Failed commit-info parsing" (.getName commit)))
+    (finally
+      (db/insert-scanned-commit (:id repo-info) (.getName commit)))))
 
 (defn- find-commit-achievements [repo-info repo]
   (logging/info "Scanning new commits for identity achievements" (:url repo-info))
@@ -52,15 +74,9 @@
         current-snapshot (->> (git-parser/branches repo) sort hash)]
     (when (not= last-snapshot current-snapshot)
       (try
-        (let [commits (mapv #(git-parser/commit-info-without-diffs repo %)
-                             (git-parser/commit-list repo))]
-          (->> (for [[code scanner] (:timeline-scanners achievement/base)
-                     report (scan-achievement scanner commits)
-                     :when report
-                     :let [commit-info (:commit-info report)]]
-               [[(:email commit-info) code] (merge report
-                                                   (select-keys commit-info [:author :calendar :id]))])
-             (into {})))
+        (->> (git-parser/commit-list repo)
+             (map #(git-parser/commit-info repo %))
+             (scan-aches-group :timeline-scanners))
         (finally
           ; todo insert if new or update
           (db/update-scanned-timeline (:id repo-info) current-snapshot))))))

@@ -99,10 +99,10 @@
 (def diff-algorithm (DiffAlgorithm/getAlgorithm DiffAlgorithm$SupportedAlgorithm/HISTOGRAM))
 
 (defn- parse-edit-list [^EditList el ^RawText a ^RawText b]
-  (->> el
-    (mapv (fn [^Edit e]
-          {:removed (mapv #(vector (.getString a %) %) (range (.getBeginA e) (.getEndA e)))
-           :added   (mapv #(vector (.getString b %) %) (range (.getBeginB e) (.getEndB e)))}))))
+  (mapv (fn [^Edit e]
+         {:removed (mapv #(vector (.getString a %) %) (range (.getBeginA e) (.getEndA e)))
+          :added   (mapv #(vector (.getString b %) %) (range (.getBeginB e) (.getEndB e)))})
+    el))
 
 (defn- parse-change-kind
   [^DiffEntry entry ^ObjectReader reader]
@@ -110,17 +110,9 @@
         old-file {:id (-> entry .getOldId .name)}
         new-file {:id (-> entry .getNewId .name), :path (normalize-path (.getNewPath entry))}]
     (case change-kind
-      :add    {:kind change-kind, :new-file new-file}
-      :delete {:kind change-kind, :old-file old-file}
-      {:kind change-kind, :old-file old-file, :new-file new-file})))
-
-(defn- calc-loc [diff]
-  (reduce (fn [s {:keys [added removed]}]
-            (-> s
-              (update-in [:added] + (count added))
-              (update-in [:removed] + (count removed))))
-    {:added 0 :removed 0}
-    diff))
+      :add    {:kind change-kind, :new-file new-file, :entry entry}
+      :delete {:kind change-kind, :old-file old-file, :entry entry}
+      {:kind change-kind, :old-file old-file, :new-file new-file, :entry entry})))
 
 (defn- load-obj [^AbbreviatedObjectId id ^String path ^ObjectReader reader]
   (let [loader (.. (ContentSource/create reader)
@@ -162,22 +154,34 @@
         (assoc :diff (-> (.diff alg raw-comparator old-raw new-raw)
                          (parse-edit-list old-raw new-raw)))))))
 
-(defn- parse-diff-entry [^DiffEntry entry ^ObjectReader reader]
-  (let [{:keys [kind old-file new-file]} (parse-change-kind entry reader)
-        {:keys [diff] :as diff-changes} (parse-diff-changes entry diff-algorithm reader)
-        has-diffs? (not (empty? diff))]
-    (cond-> {:kind kind,
-              :old-file (merge old-file (:old-file diff-changes))
-              :new-file (merge new-file (:new-file diff-changes))}
-      has-diffs? (assoc :diff diff)
-      has-diffs? (assoc :loc (calc-loc diff)))))
+(defn parse-diff [^Git repo changed-file]
+  (let [reader (object-reader repo)]
+    (try
+      (let [{:keys [kind old-file new-file entry]} changed-file
+            {:keys [diff] :as diff-changes} (parse-diff-changes entry diff-algorithm reader)
+            has-diffs? (not (empty? diff))]
+        {:kind kind,
+         :old-file (merge old-file (:old-file diff-changes))
+         :new-file (merge new-file (:new-file diff-changes))
+         :diff diff})
+      (finally
+        (.release reader)))))
+
+(defn calculate-loc [changed-file]
+  (let [lines-of-code (reduce (fn [s {:keys [added removed]}]
+                                (-> s
+                                  (update-in [:added] + (count added))
+                                  (update-in [:removed] + (count removed))))
+                        {:added 0 :removed 0}
+                        (:diff changed-file))]
+  (assoc changed-file :loc lines-of-code)))
 
 (defn- tree-iterator ^AbstractTreeIterator [^RevCommit commit ^ObjectReader reader]
   (if commit
     (doto (CanonicalTreeParser.) (.reset reader (.getTree commit)))
     (EmptyTreeIterator.)))
 
-(defn- commit-info-core [^Git repo ^RevCommit rev-commit diff-parser]
+(defn commit-info [^Git repo ^RevCommit rev-commit]
   (let [reader (object-reader repo)
         diff-formatter (diff-formatter repo)]
     (try
@@ -195,16 +199,10 @@
        :between-time (- (.getCommitTime rev-commit) (.getTime (.getWhen ident)))
        :message message
        :parents (mapv #(.getName %) (.getParents rev-commit))
-       :changed-files (mapv #(diff-parser % reader) diffs)})
+       :changed-files (mapv #(parse-change-kind % reader) diffs)})
       (finally
         (.release reader)
         (.release diff-formatter)))))
-
-(defn commit-info-without-diffs [^Git repo ^RevCommit rev-commit]
-  (commit-info-core repo rev-commit parse-change-kind))
-
-(defn commit-info [^Git repo ^RevCommit rev-commit]
-  (commit-info-core repo rev-commit parse-diff-entry))
 
 (defn branches [^Git repo]
   (->> (clj-jgit.porcelain/git-branch-list repo)
