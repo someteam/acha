@@ -15,7 +15,7 @@ Run it as:
 
 Following configuration options are supported:
 
-    java -jar acha-uber-0.2.4.jar --ip 0.0.0.0 --port 8080 --dir .acha
+    java -jar acha-uber-0.2.4.jar --ip 0.0.0.0 --port 8080 --dir .acha --private-key ~/.ssh/custom_key
 
 ## Building from source
 
