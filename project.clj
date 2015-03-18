@@ -21,8 +21,8 @@
     [http-kit "2.1.19"]
     [ring/ring-core "1.3.2" :exclusions [commons-codec org.clojure/tools.reader]]
     [ring/ring-devel "1.3.2"]
-    [compojure "1.3.1"]
-    [com.cognitect/transit-clj "0.8.259" :exclusions [org.msgpack/msgpack org.clojure/test.check]]
+    [compojure "1.3.2"]
+    [com.cognitect/transit-clj "0.8.269" :exclusions [org.msgpack/msgpack org.clojure/test.check]]
 
     [clj-jgit "0.8.3" :exclusions [org.clojure/core.memoize]]
 
@@ -30,14 +30,14 @@
     [org.xerial/sqlite-jdbc "3.8.7"]
     [com.mchange/c3p0 "0.9.5"]
     
-    [org.clojure/clojurescript "0.0-2816"]
+    [org.clojure/clojurescript "0.0-3123"]
     [cljsjs/react-with-addons "0.12.2-4"]
-    [rum "0.2.4" :exclusions [cljsjs/react]]
+    [rum "0.2.6" :exclusions [cljsjs/react]]
 
     [org.clojure/core.async "0.1.338.0-5c5012-alpha"]
     [com.cognitect/transit-cljs "0.8.205"]
     [datascript "0.9.0"]
-    [sablono "0.3.1" :exclusions [cljsjs/react]]
+    [sablono "0.3.4" :exclusions [cljsjs/react]]
   ]
 
   :plugins [
