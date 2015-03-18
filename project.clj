@@ -1,4 +1,4 @@
-(defproject acha "0.2.4"
+(defproject acha "0.2.5"
   :description "Enterprise Git Achievements Provider. Web scale. In the cloud"
   :url "http://acha-acha.co"
 
