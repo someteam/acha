@@ -336,8 +336,8 @@
 (defn group-aches [aches]
   (->> aches
     (group-by :ach/achent)
-    (sort-by (fn [[achent aches]] (list (reduce max 0 (map :ach/ts aches))
-                                        (:achent/key achent))))
+    (sort-by (fn [[achent aches]] (vector (reduce max 0 (map :ach/ts aches))
+                                          (:achent/key achent))))
     reverse))
 
 (rum/defc index-page < rum/static [db state]
