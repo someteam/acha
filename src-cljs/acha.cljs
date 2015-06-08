@@ -151,7 +151,9 @@
 
 (defn- commit-web-url [clone-url sha1]
   (when-let [web-url (repo-web-url clone-url)]
-    (str web-url "/commit/" sha1)))
+    (condp re-find web-url
+      #"(?i)^https?://(www\.)?bitbucket\.org" (str web-url "/commits/" sha1)
+      (str web-url "/commit/" sha1))))
 
 (defn ach-details [ach]
   (str (get-in ach [:ach/user :user/name])
