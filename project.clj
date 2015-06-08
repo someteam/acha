@@ -26,8 +26,8 @@
 
     [clj-jgit "0.8.3" :exclusions [org.clojure/core.memoize]]
 
-    [org.clojure/java.jdbc "0.3.6"]
-    [org.xerial/sqlite-jdbc "3.8.7"]
+    [org.clojure/java.jdbc "0.3.7"]
+    [org.xerial/sqlite-jdbc "3.8.10.1"]
     [com.mchange/c3p0 "0.9.5"]
     
     [org.clojure/clojurescript "0.0-3123"]
