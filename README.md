@@ -1,6 +1,6 @@
 # Acha-acha
 
-![Rick Hickey achievements](https://dl.dropboxusercontent.com/u/11486892/acha-hickey.png)
+![Rick Hickey achievements](./hickey.png)
 
 ## Usage
 
