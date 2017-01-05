@@ -150,10 +150,13 @@
       nil))))
 
 (defn- commit-web-url [clone-url sha1]
-  (when-let [web-url (repo-web-url clone-url)]
-    (condp re-find web-url
-      #"(?i)^https?://(www\.)?bitbucket\.org" (str web-url "/commits/" sha1)
-      (str web-url "/commit/" sha1))))
+  (if clone-url
+    (when-let [web-url (repo-web-url clone-url)]
+      (condp re-find web-url
+        #"(?i)^https?://(www\.)?bitbucket\.org" (str web-url "/commits/" sha1)
+        (str web-url "/commit/" sha1)))
+    nil)
+  )
 
 (defn ach-details [ach]
   (str (get-in ach [:ach/user :user/name])
@@ -446,6 +449,6 @@
       (doseq [datom (:tx-data tx-report)
               :when (and (= (.-a datom) :message/text)
                          (.-added datom))]
-        (js/setTimeout (fn [] 
+        (js/setTimeout (fn []
                          (d/transact! conn [[:db.fn/retractEntity (.-e datom)]]))
                        10000)))))
