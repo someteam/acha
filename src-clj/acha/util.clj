@@ -97,7 +97,8 @@
     normalize-uri
     (as-> url
       (if (or (.startsWith url "http://")
-              (.startsWith url "https://"))
+              (.startsWith url "https://")
+              (.startsWith url "git@"))
         (resolve-redirects url)
         url))))
 
