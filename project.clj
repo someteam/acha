@@ -24,7 +24,7 @@
     [compojure "1.3.4"]
     [com.cognitect/transit-clj "0.8.275" :exclusions [org.msgpack/msgpack org.clojure/test.check]]
 
-    [clj-jgit "0.8.8" :exclusions [org.clojure/core.memoize]]
+    [clj-jgit "0.8.10" :exclusions [org.clojure/core.memoize]]
 
     [org.clojure/java.jdbc "0.3.7"]
     [org.xerial/sqlite-jdbc "3.8.10.1"]

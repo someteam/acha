@@ -9,6 +9,7 @@
            [java.io ByteArrayOutputStream]
            [com.jcraft.jsch Session JSch]
            [org.eclipse.jgit.api Git]
+           [org.eclipse.jgit.storage.file WindowCacheConfig]
            [org.eclipse.jgit.diff ContentSource RawText RawTextComparator DiffFormatter]
            [org.eclipse.jgit.diff DiffAlgorithm DiffAlgorithm$SupportedAlgorithm DiffEntry DiffEntry$Side]
            [org.eclipse.jgit.diff Edit EditList MyersDiff]
@@ -22,6 +23,15 @@
 (defn- data-dir [url]
   (let [repo-name (->> (string/split url #"/") (remove string/blank?) last)]
     (str core/working-dir "/" repo-name "_" (util/md5 url))))
+
+(defn init-cache []
+  (doto (WindowCacheConfig.)
+    (.setPackedGitOpenFiles 10)
+    (.setPackedGitMMAP true)
+    (.setDeltaBaseCacheLimit 0)
+    (.setPackedGitLimit (* 64 1024))
+    (.setStreamFileThreshold (* 128 1024))
+    (.install)))
 
 (defn init-session-factory
   ([] (init-session-factory nil))
@@ -165,7 +175,7 @@
          :new-file (merge new-file (:new-file diff-changes))
          :diff diff})
       (finally
-        (.release reader)))))
+        (.close reader)))))
 
 (defn calculate-loc [changed-file]
   (let [lines-of-code (reduce (fn [s {:keys [added removed]}]
@@ -201,8 +211,8 @@
        :parents (mapv #(.getName %) (.getParents rev-commit))
        :changed-files (mapv #(parse-change-kind % reader) diffs)})
       (finally
-        (.release reader)
-        (.release diff-formatter)))))
+        (.close reader)
+        (.close diff-formatter)))))
 
 (defn branches [^Git repo]
   (->> (clj-jgit.porcelain/git-branch-list repo)

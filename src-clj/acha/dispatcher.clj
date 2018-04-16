@@ -129,7 +129,7 @@
           (logging/info "Worker has started processing" repo)
           (analyze repo)
           (logging/info "Worker has finished processing" repo)
-          (catch Exception e
+          (catch Throwable e
             (db/update-repo-state (:id repo) :error (util/reason e))
             (logging/error e "Repo analysis failed"))))
       (Thread/sleep (rand-int 2000))

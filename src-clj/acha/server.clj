@@ -161,6 +161,7 @@
     (logging/info "Working dir" working-dir)
 
     (db/initialize-db (:reset opts))
+    (git-parser/init-cache)
     (git-parser/init-session-factory (:private-key opts))
 
     (dispatcher/run-workers)
