@@ -1,26 +1,29 @@
-# Acha-acha
-
-![Rick Hickey achievements](./hickey.png)
+![Rick Hickey achievements](https://raw.githubusercontent.com/someteam/acha/master/hickey.png)
 
 ## Usage
 
-Grab a jar [from latest release](https://github.com/someteam/acha/releases/latest):
+If you have a docker use the following command to boot acha-acha on localhost:
 
-    curl -L -O https://github.com/someteam/acha/releases/download/0.2.5/acha-uber-0.2.5.jar
+    docker run --rm -p 8080:8080 someteam/acha
 
-Run it as:
+After that open http://localhost:8080/ to see acha-acha in your browser
 
-    java -jar acha-uber-0.2.5.jar
-    open http://localhost:8080/
+### Custom private key
 
-Following configuration options are supported:
+If you want to use acha-acha for private repositories you need to provide the private key with read access:
 
-    java -jar acha-uber-0.2.5.jar --ip 0.0.0.0 --port 8080 --dir .acha --private-key ~/.ssh/custom_key
+    docker run --rm -p 8080:8080 -v /path/to/private/id_rsa:/root/.ssh/id_rsa someteam/acha
+
+### Mount a custom storage
+
+If you want to store acha-acha state outside the container, use the following command to mount external working directory:
+
+    docker run --rm -p 8080:8080 -v /path/to/working_dir:/app/.acha someteam/acha
 
 ## Building from source
 
     lein do clean, cljsbuild once prod, uberjar
-    java -jar target/acha-uber.jar &
+    java -jar target/acha-uber.jar --ip 0.0.0.0 --port 8080 --dir .acha --private-key ~/.ssh/custom_key
 
 ## Development mode
 
@@ -32,5 +35,4 @@ Following configuration options are supported:
 
 Copyright © Nikita Prokopov, Julie Prokopova, Renat Idrisov, Andrey Vasenin, Dmitry Ivanov
 
-Distributed under the Eclipse Public License either version 1.0 or (at
-your option) any later version.
+Distributed under the Eclipse Public License either version 1.0 or (at your option) any later version.
