@@ -1,7 +1,5 @@
 ![Rick Hickey achievements](https://raw.githubusercontent.com/someteam/acha/master/hickey.png)
 
-[![Build Status](https://travis-ci.org/someteam/acha.svg?branch=master)](https://travis-ci.org/someteam/acha)
-
 ## Usage
 
 If you have a docker use the following command to boot acha-acha on localhost:
