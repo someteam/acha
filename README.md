@@ -10,7 +10,7 @@ After that open http://localhost:8080/ to see acha-acha in your browser
 
 ### Custom private key
 
-If you want to use acha-acha for private repositories you need to provide the private key with read access:
+If you want to use acha-acha for private repositories or use ssh urls you need to provide the private key with read access:
 
     docker run --rm -p 8080:8080 -v /path/to/private/id_rsa:/root/.ssh/id_rsa someteam/acha
 
